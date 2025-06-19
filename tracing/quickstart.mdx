@@ -1,0 +1,260 @@
+---
+title: Quickstart
+description: Get started with distributed tracing and observability in ZeroEval
+---
+
+ZeroEval provides comprehensive distributed tracing capabilities to help you monitor, debug, and optimize your AI applications. This guide will get you started with tracing in minutes.
+
+
+## Installation
+
+<CodeGroup>
+
+```bash pip
+pip install zeroeval
+```
+
+```bash poetry
+poetry add zeroeval
+```
+
+</CodeGroup>
+
+## Basic Setup
+
+Initialize ZeroEval at the start of your application:
+
+```python
+import zeroeval as ze
+
+# Option 1: Use saved credentials from `zeroeval setup`
+ze.init()
+
+# Option 2: Provide API key directly from
+#           https://app.zeroeval.com/settings?tab=api-keys
+ze.init(api_key="YOUR_API_KEY")
+```
+
+<Note>
+  Run `zeroeval setup` once to save your API key securely to
+  `~/.config/zeroeval/config.json`
+</Note>
+
+## Quick Example
+
+Here's a simple example that demonstrates automatic tracing:
+
+```python
+import zeroeval as ze
+from zeroeval.observability.tracer import tracer
+
+ze.init(api_key="YOUR_API_KEY")
+```
+
+That's it! Suported framework calls like OpenAI, LangChain and LangGraph are automatically traced.
+
+## Decorator Pattern
+
+The `@span` decorator is the easiest way to add tracing:
+
+```python
+from zeroeval.observability.decorators import span
+
+@span(name="fetch_data")
+def fetch_data(user_id: str):
+    # Function arguments are automatically captured as inputs
+    # Return values are automatically captured as outputs
+    return {"user_id": user_id, "name": "John Doe"}
+
+@span(name="process_data", attributes={"version": "1.0"})
+def process_data(data: dict):
+    # Add custom attributes for better filtering
+    return f"Welcome, {data['name']}!"
+```
+
+## Span Lifecycle Control
+
+For more control over span lifecycles:
+
+```python
+from zeroeval.observability.decorators import span
+
+def complex_workflow():
+    with span(name="data_pipeline") as pipeline_span:
+        # Fetch stage
+        with span(name="fetch_stage") as fetch_span:
+            data = fetch_external_data()
+            fetch_span.set_io(output_data=str(data))
+
+        # Process stage
+        with span(name="process_stage") as process_span:
+            processed = transform_data(data)
+            process_span.set_io(
+                input_data=str(data),
+                output_data=str(processed)
+            )
+
+        # Save stage
+        with span(name="save_stage") as save_span:
+            result = save_to_database(processed)
+            save_span.set_io(output_data=f"Saved {result} records")
+```
+
+## Error Handling
+
+Errors are automatically captured and traced:
+
+```python
+@span(name="risky_operation")
+def risky_operation():
+    try:
+        # Your code here
+        result = 1 / 0  # This will raise an error
+    except Exception as e:
+        # Error details are automatically captured
+        # including error type, message, and stack trace
+        raise
+```
+
+The span will show:
+- **status**: "error"
+- **error_code**: "ZeroDivisionError"
+- **error_message**: "division by zero"
+- **error_stack**: Full traceback
+
+## Integrations
+
+### OpenAI
+
+```python
+import openai
+
+# OpenAI calls are automatically traced!
+client = openai.OpenAI()
+
+@span(name="chat_with_gpt")
+def chat_with_gpt(prompt: str):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
+```
+
+### LangChain
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+# All LangChain components are automatically traced
+@span(name="langchain_pipeline")
+def analyze_sentiment(text: str):
+    model = ChatOpenAI(model="gpt-4")
+    prompt = ChatPromptTemplate.from_template(
+        "Analyze the sentiment of: {text}"
+    )
+    chain = prompt | model
+
+    # This creates nested spans for each component
+    result = chain.invoke({"text": text})
+    return result.content
+```
+
+## Sessions and Traces
+
+Group related spans into sessions for better organization:
+
+```python
+import uuid
+
+# Create a session for a user interaction
+session_id = str(uuid.uuid4())
+
+@span(name="user_request", session_id=session_id)
+def handle_user_request(request):
+    # All nested spans inherit the session_id
+    validate_request(request)
+    process_request(request)
+    return generate_response(request)
+
+@span(name="validate_request")
+def validate_request(request):
+    # Automatically part of the same session
+    pass
+```
+
+## Custom Attributes
+
+Add metadata to spans for better filtering and analysis:
+
+```python
+@span(
+    name="model_inference",
+    attributes={
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 150,
+        "user_tier": "premium"
+    }
+)
+def generate_text(prompt: str):
+    # Attributes are searchable in the ZeroEval dashboard
+    return model.generate(prompt)
+```
+
+## Manual I/O Control
+
+Sometimes you need precise control over what's captured:
+
+```python
+@span(name="process_file")
+def process_large_file(file_path: str):
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    # Don't capture huge file contents
+    # Instead, capture summary info
+    current_span = span.get_current()
+    current_span.set_io(
+        input_data=f"File: {file_path} (size: {len(content)} bytes)",
+        output_data="Processing complete"
+    )
+
+    return process_content(content)
+```
+
+## Configuration
+
+Fine-tune the tracer behavior:
+
+```python
+from zeroeval.observability.tracer import tracer
+
+# Configure tracer settings
+tracer.configure(
+    flush_interval=5.0,        # Flush every 5 seconds
+    max_spans=200,             # Buffer up to 200 spans
+    collect_code_details=True  # Capture source code context
+)
+```
+
+## Async Support
+
+Full support for async/await:
+
+```python
+@span(name="async_operation")
+async def fetch_data_async(url: str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+@span(name="parallel_fetch")
+async def fetch_multiple():
+    urls = ["http://api1.com", "http://api2.com"]
+    results = await asyncio.gather(*[
+        fetch_data_async(url) for url in urls
+    ])
+    return results
+```
