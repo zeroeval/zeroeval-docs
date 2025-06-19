@@ -1,0 +1,68 @@
+---
+title: Best Practices
+description: Getting the most out of tracing
+---
+
+Maximize the effectiveness of your tracing implementation with these proven best practices.
+
+<AccordionGroup>
+  <Accordion title="Use Descriptive Span Names">
+    Choose names that clearly describe what the operation does:
+    ```python
+    # Good
+    @span(name="validate_user_credentials")
+    @span(name="fetch_product_catalog")
+    
+    # Less descriptive
+    @span(name="process")
+    @span(name="function1")
+    ```
+  </Accordion>
+
+  <Accordion title="Capture Meaningful I/O">
+    Balance between useful debugging info and performance:
+    ```python
+    # Good - Summary info for large data
+    span.set_io(
+        input_data=f"Processing {len(items)} items",
+        output_data=f"Processed successfully, {success_count} succeeded"
+    )
+    
+    # Avoid - Capturing huge payloads
+    span.set_io(
+        input_data=entire_database_dump,  # Don't do this!
+        output_data=massive_result_set
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Use Attributes for Filtering">
+    Add attributes that help you filter and analyze traces:
+    ```python
+    @span(
+        name="api_request",
+        attributes={
+            "endpoint": "/api/users",
+            "method": "GET",
+            "environment": "production",
+            "version": "2.1.0"
+        }
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Group Related Operations">
+    Use sessions to group related operations:
+    ```python
+    # All operations for a single user request
+    session_id = str(uuid.uuid4())
+    
+    @span(name="handle_request", session_id=session_id)
+    def handle_request():
+        authenticate()
+        fetch_data()
+        process_data()
+        return_response()
+    ```
+  </Accordion>
+</AccordionGroup> 
