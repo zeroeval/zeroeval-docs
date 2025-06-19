@@ -19,11 +19,11 @@
           },
           {
             "group": "Evaluations",
-            "pages": ["evaluations/coming-soon"]
+            "pages": ["evaluations/datasets", "evaluations/experiments"]
           },
           {
             "group": "A/B Testing",
-            "pages": ["ab-testing/coming-soon"]
+            "pages": ["ab-testing/proxy", "ab-testing/signals"]
           }
         ]
       }

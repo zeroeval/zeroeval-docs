@@ -1,0 +1,64 @@
+---
+title: 'Datasets'
+description: 'Create, version, and manage datasets with the ZeroEval Python SDK.'
+---
+
+## Why datasets?
+
+**Datasets** are named, versioned collections of rows. Each row is just a Python `dict`. Use them to store test cases for your model and share them across experiments.
+
+## Quick example
+
+```python
+import zeroeval as ze
+
+ze.init()  # 1️⃣ pick up API key from `zeroeval setup`
+
+capitals = ze.Dataset(
+    name="Capitals",
+    description="Country → capital mapping",
+    data=[
+        {"input": "Colombia", "output": "Bogotá"},
+        {"input": "Peru",     "output": "Lima"},
+    ],
+)
+
+capitals.push()          # 🚀 creates version 1 in your workspace
+capitals = ze.Dataset.pull("Capitals")  # later, fetch it back
+print(capitals[0])       # {'input': 'Colombia', 'output': 'Bogotá'}
+```
+
+## Adding rows
+
+```python
+capitals.add_rows([{"input": "USA", "output": "Washington, DC"}])
+capitals.push()  # automatically becomes version 2
+```
+
+### Multimodal fields
+
+Images, audio, video or plain URLs are all welcome:
+
+```python
+medical = ze.Dataset("Chest_X_Ray", [{"symptoms": "shortness of breath"}])
+
+medical.add_image(0, "scan", "sample_images/patient01.jpg")
+medical.add_audio(0, "dictation", "sample_audio/doctor_note.wav")
+medical.add_media_url(0, "external_report",
+                      "https://example.com/report.pdf", media_type="image")
+medical.push()
+```
+
+### Inspecting & slicing
+
+```python
+len(capitals)     # number of rows
+capitals.columns  # ['input', 'output']
+sample = capitals[:5]  # standard list slicing for quick smoke-tests
+```
+
+### Versioning cheat-sheet
+
+• Push with a duplicate name → automatically creates next version.  
+• `ze.Dataset.pull("Capitals", version_number=2)` → fetch specific version.  
+• All versions stay immutable—perfect for reproducible experiments.

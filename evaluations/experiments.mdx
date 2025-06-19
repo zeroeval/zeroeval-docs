@@ -1,0 +1,78 @@
+---
+title: 'Experiments'
+description: 'Run tasks and evaluators on your datasets – locally or in the cloud.'
+---
+
+## TL;DR
+
+1. Pull (or create) a dataset  
+2. Write a **task** – any Python function that maps a row ➜ model output  
+3. Optionally write **evaluators** – functions that score `(row, output)`  
+4. Wrap them in `ze.Experiment` and call `.run()`
+
+## Minimal example
+
+```python
+import zeroeval as ze
+
+ze.init()
+dataset = ze.Dataset.pull("Capitals")
+
+def task(row):
+    # imagine calling an LLM here
+    return row["input"].upper()
+
+def exact_match(row, output):
+    return row["output"].upper() == output
+
+exp = ze.Experiment(
+    dataset=dataset,
+    task=task,
+    evaluators=[exact_match],
+    name="Capitals-baseline"
+)
+
+results = exp.run()     # uploads outputs + scores
+```
+
+`results` is a list of `ExperimentResult` objects and also appears in the ZeroEval web console.
+
+## Running just the task
+
+Need to iterate fast? Run the task first, add evaluators later:
+
+```python
+results = exp.run_task()                       # only model calls
+exp.run_evaluators([exact_match], results)     # score later (or change evaluator)
+```
+
+## Subsets & slices
+
+```python
+exp.run(dataset[:100])   # only the first 100 rows
+```
+
+## Tracing and spans
+
+If you have the tracing decorators installed, any spans inside your task are automatically picked up:
+
+```python
+from zeroeval.observability.decorators import span
+
+@span(name="model_call")
+def task(row):
+    # autotraced
+    return call_llm(row["input"])
+```
+
+## Multimodal experiments
+
+Experiments work with datasets that contain images/audio/video exactly the same way – simply pass those fields to your model API and write the right evaluator.
+
+Full multimodal example lives in `zeroeval-sdk/examples/experiments.2.multimodal.py`.
+
+## Tips
+
+• Use multiple evaluators – they all run in one pass.  
+• Pass `raise_on_error=True` to `.run_task()` while debugging.  
+• Results stream live to the dashboard; no need to wait synchronously.

@@ -1,0 +1,109 @@
+---
+title: 'Signals'
+description: 'Capture real-world feedback and tie it back to your A/B test variants.'
+---
+
+## What's a signal?
+
+A **signal** is any piece of user feedback or behaviour you care about – thumbs-up, a 5-star rating, dwell time, purchase completed … you name it. You send the signal once you have the `completion.id` from the proxy response, and ZeroEval links it to the correct variant.
+
+## Endpoint
+
+```
+POST https://api.zeroeval.com/workspaces/<WORKSPACE_ID>/tests/signals
+```
+
+Auth is the same bearer API key you used for the proxy.
+
+### Payload schema
+
+| field          | type                 | required | notes                                              |
+| -------------- | -------------------- | -------- | -------------------------------------------------- |
+| completion_id  | string               | ✅       | **OpenAI completion ID** returned by the proxy     |
+| name           | string               | ✅       | e.g. `user_satisfaction`                           |
+| value          | string \| bool \| int \| float | ✅       | your data – see examples below                    |
+
+## Common signal patterns
+
+Below are some quick copy-pasta snippets for the most common cases.
+
+### 1. Binary feedback (👍 / 👎)
+
+```python
+import requests
+
+payload = {
+    "completion_id": completion.id,
+    "name": "thumbs_up",
+    "value": True  # or False
+}
+requests.post(
+    f"https://api.zeroeval.com/workspaces/{WORKSPACE_ID}/tests/signals",
+    json=payload,
+    headers={"Authorization": f"Bearer {ZE_API_KEY}"}
+)
+```
+
+### 2. Star rating (1–5)
+
+```js
+fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/tests/signals`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${ZE_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    completion_id: completion.id,
+    name: "star_rating",
+    value: 4, // any integer 1–5
+  }),
+});
+```
+
+### 3. Continuous metric (e.g. time-on-task)
+
+```python
+payload = {
+    "completion_id": completion.id,
+    "name": "time_on_task_sec",
+    "value": 12.85  # float works too
+}
+```
+
+### 4. Categorical outcome
+
+```js
+{
+  completion_id: completion.id,
+  name: "task_status",
+  value: "success" // could also be "retry" / "fail"
+}
+```
+
+---
+
+## Best practices
+
+• Send signals _as they happen_ – latency isn't an issue, we process them async.  
+• Re-use the same `name` consistently; that's how we aggregate.  
+• One completion can have multiple signals (different names).  
+• If you POST the same `(completion_id, name)` twice, we'll overwrite the previous value – handy for edits.
+
+---
+
+## Putting it all together
+
+```python
+# 1️⃣ get an LLM answer via the proxy
+completion = client.chat.completions.create(...)
+
+# 2️⃣ capture user reaction
+send_signal(
+    completion_id=completion.id,
+    name="helpful",
+    value=True,
+)
+```
+
+That's it! Head back to the ZeroEval dashboard to watch the plots update live and crown your winning model. 
