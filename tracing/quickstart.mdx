@@ -5,14 +5,6 @@ description: Get started with distributed tracing and observability in ZeroEval
 
 ZeroEval provides comprehensive distributed tracing capabilities to help you monitor, debug, and optimize your AI applications. This guide will get you started with tracing in minutes.
 
-## What is Tracing?
-
-Tracing allows you to:
-
-- **Monitor** every step of your AI workflows in real-time
-- **Debug** issues by seeing exact inputs, outputs, and errors
-- **Optimize** performance by identifying bottlenecks
-- **Track** costs and token usage across models
 
 ## Installation
 
@@ -80,7 +72,7 @@ def process_data(data: dict):
     return f"Welcome, {data['name']}!"
 ```
 
-## Context Manager Pattern
+## Span Lifecycle Control
 
 For more control over span lifecycles:
 
@@ -122,13 +114,13 @@ def risky_operation():
         # Error details are automatically captured
         # including error type, message, and stack trace
         raise
-
-# The span will show:
-# - status: "error"
-# - error_code: "ZeroDivisionError"
-# - error_message: "division by zero"
-# - error_stack: Full traceback
 ```
+
+The span will show:
+- **status**: "error"
+- **error_code**: "ZeroDivisionError"
+- **error_message**: "division by zero"
+- **error_stack**: Full traceback
 
 ## Integrations
 
@@ -147,12 +139,6 @@ def chat_with_gpt(prompt: str):
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
-```
-
-This creates a trace hierarchy:
-```
-chat_with_gpt
-└── openai.chat.completions.create
 ```
 
 ### LangChain
@@ -272,53 +258,3 @@ async def fetch_multiple():
     ])
     return results
 ```
-
-## Viewing Traces
-
-Once you've added tracing to your application:
-
-1. Run your application with tracing enabled
-2. Go to the [ZeroEval Dashboard](https://app.zeroeval.com)
-3. Navigate to **Monitoring → Live**
-4. Click on any trace to see the full hierarchy
-5. Analyze performance, debug errors, and optimize your workflows
-
-<Frame>
-  <img src="/images/traces-dashboard.png" alt="ZeroEval Traces Dashboard" />
-</Frame>
-
-## Advanced Topics
-
-For more advanced tracing features, check out:
-
-<CardGroup cols={2}>
-  <Card title="Best Practices" icon="star" href="/tracing/best-practices">
-    Proven practices for effective tracing
-  </Card>
-  <Card title="Framework Integrations" icon="plug" href="/tracing/integrations">
-    Automatic tracing for OpenAI, LangChain, and more
-  </Card>
-  <Card
-    title="Custom Integrations"
-    icon="code"
-    href="/tracing/custom-integrations"
-  >
-    Build your own framework integrations
-  </Card>
-  <Card
-    title="Performance Optimization"
-    icon="gauge"
-    href="/tracing/performance"
-  >
-    Tips for high-performance tracing
-  </Card>
-  <Card title="Trace Analysis" icon="chart-line" href="/tracing/analysis">
-    Analyze traces to find bottlenecks
-  </Card>
-</CardGroup>
-
-## Need Help?
-
-- 📧 Email us at [founders@zeroeval.com](mailto:founders@zeroeval.com)
-- 💬 Join our [Slack community](https://join.slack.com/t/zeroeval-community)
-- 📚 Check out more [examples on GitHub](https://github.com/zeroeval/examples)
