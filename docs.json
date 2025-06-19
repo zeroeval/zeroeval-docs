@@ -3,7 +3,7 @@
   "theme": "mint",
   "name": "ZeroEval Documentation",
   "colors": {
-    "primary": "#a3fca2",
+    "primary": "#469d5c",
     "light": "#07C983",
     "dark": "#0a0a0a"
   },
@@ -74,8 +74,8 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://zeroeval.com"
+      "label": "Console",
+      "href": "https://app.zeroeval.com"
     }
   },
   "footer": {
