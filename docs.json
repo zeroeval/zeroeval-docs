@@ -7,7 +7,7 @@
     "light": "#07C983",
     "dark": "#0a0a0a"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
   "navigation": {
     "tabs": [
       {
@@ -48,11 +48,6 @@
     ],
     "global": {
       "anchors": [
-        {
-          "anchor": "Platform",
-          "href": "https://zeroeval.com",
-          "icon": "code-simple"
-        },
         {
           "anchor": "Community",
           "href": "https://discord.gg/MuExkGMNVz",
