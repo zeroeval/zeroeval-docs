@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "ZeroEval Documentation",
   "colors": {
-    "primary": "#16A34A",
+    "primary": "#a3fca2",
     "light": "#07C983",
-    "dark": "#15803D"
+    "dark": "#0a0a0a"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -14,19 +14,16 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Get Started",
-            "pages": ["index", "quickstart", "development"]
+            "group": "Tracing",
+            "pages": ["tracing/quickstart"]
           },
           {
-            "group": "Essentials",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
-            ]
+            "group": "Evaluations",
+            "pages": ["evaluations/coming-soon"]
+          },
+          {
+            "group": "A/B Testing",
+            "pages": ["ab-testing/coming-soon"]
           }
         ]
       },
@@ -52,19 +49,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Platform",
+          "href": "https://zeroeval.com",
+          "icon": "code-simple"
         },
         {
           "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "href": "https://discord.gg/MuExkGMNVz",
+          "icon": "discord"
         }
       ]
     }
