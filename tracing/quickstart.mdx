@@ -46,6 +46,7 @@ Here's a simple example that demonstrates automatic tracing:
 
 ```python
 import zeroeval as ze
+from zeroeval.observability.tracer import tracer
 
 ze.init(api_key="YOUR_API_KEY")
 ```
@@ -54,18 +55,18 @@ That's it! Suported framework calls like OpenAI, LangChain and LangGraph are aut
 
 ## Decorator Pattern
 
-The `@ze.span` decorator is the easiest way to add tracing:
+The `@span` decorator is the easiest way to add tracing:
 
 ```python
-import zeroeval as ze
+from zeroeval.observability.decorators import span
 
-@ze.span(name="fetch_data")
+@span(name="fetch_data")
 def fetch_data(user_id: str):
     # Function arguments are automatically captured as inputs
     # Return values are automatically captured as outputs
     return {"user_id": user_id, "name": "John Doe"}
 
-@ze.span(name="process_data", attributes={"version": "1.0"})
+@span(name="process_data", attributes={"version": "1.0"})
 def process_data(data: dict):
     # Add custom attributes for better filtering
     return f"Welcome, {data['name']}!"
@@ -76,17 +77,17 @@ def process_data(data: dict):
 For more control over span lifecycles:
 
 ```python
-import zeroeval as ze
+from zeroeval.observability.decorators import span
 
 def complex_workflow():
-    with ze.span(name="data_pipeline") as pipeline_span:
+    with span(name="data_pipeline") as pipeline_span:
         # Fetch stage
-        with ze.span(name="fetch_stage") as fetch_span:
+        with span(name="fetch_stage") as fetch_span:
             data = fetch_external_data()
             fetch_span.set_io(output_data=str(data))
 
         # Process stage
-        with ze.span(name="process_stage") as process_span:
+        with span(name="process_stage") as process_span:
             processed = transform_data(data)
             process_span.set_io(
                 input_data=str(data),
@@ -94,7 +95,7 @@ def complex_workflow():
             )
 
         # Save stage
-        with ze.span(name="save_stage") as save_span:
+        with span(name="save_stage") as save_span:
             result = save_to_database(processed)
             save_span.set_io(output_data=f"Saved {result} records")
 ```
@@ -104,7 +105,7 @@ def complex_workflow():
 Errors are automatically captured and traced:
 
 ```python
-@ze.span(name="risky_operation")
+@span(name="risky_operation")
 def risky_operation():
     try:
         # Your code here
@@ -127,12 +128,11 @@ The span will show:
 
 ```python
 import openai
-import zeroeval as ze
 
 # OpenAI calls are automatically traced!
 client = openai.OpenAI()
 
-@ze.span(name="chat_with_gpt")
+@span(name="chat_with_gpt")
 def chat_with_gpt(prompt: str):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -144,12 +144,11 @@ def chat_with_gpt(prompt: str):
 ### LangChain
 
 ```python
-import zeroeval as ze
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 # All LangChain components are automatically traced
-@ze.span(name="langchain_pipeline")
+@span(name="langchain_pipeline")
 def analyze_sentiment(text: str):
     model = ChatOpenAI(model="gpt-4")
     prompt = ChatPromptTemplate.from_template(
@@ -168,19 +167,18 @@ Group related spans into sessions for better organization:
 
 ```python
 import uuid
-import zeroeval as ze
 
 # Create a session for a user interaction
 session_id = str(uuid.uuid4())
 
-@ze.span(name="user_request", session_id=session_id)
+@span(name="user_request", session_id=session_id)
 def handle_user_request(request):
     # All nested spans inherit the session_id
     validate_request(request)
     process_request(request)
     return generate_response(request)
 
-@ze.span(name="validate_request")
+@span(name="validate_request")
 def validate_request(request):
     # Automatically part of the same session
     pass
@@ -191,9 +189,7 @@ def validate_request(request):
 Add metadata to spans for better filtering and analysis:
 
 ```python
-import zeroeval as ze
-
-@ze.span(
+@span(
     name="model_inference",
     attributes={
         "model": "gpt-4",
@@ -212,16 +208,14 @@ def generate_text(prompt: str):
 Sometimes you need precise control over what's captured:
 
 ```python
-import zeroeval as ze
-
-@ze.span(name="process_file")
+@span(name="process_file")
 def process_large_file(file_path: str):
     with open(file_path, 'r') as f:
         content = f.read()
 
     # Don't capture huge file contents
     # Instead, capture summary info
-    current_span = ze.span.get_current()
+    current_span = span.get_current()
     current_span.set_io(
         input_data=f"File: {file_path} (size: {len(content)} bytes)",
         output_data="Processing complete"
@@ -235,10 +229,10 @@ def process_large_file(file_path: str):
 Fine-tune the tracer behavior:
 
 ```python
-import zeroeval as ze
+from zeroeval.observability.tracer import tracer
 
 # Configure tracer settings
-ze.tracer.configure(
+tracer.configure(
     flush_interval=5.0,        # Flush every 5 seconds
     max_spans=200,             # Buffer up to 200 spans
     collect_code_details=True  # Capture source code context
@@ -250,15 +244,13 @@ ze.tracer.configure(
 Full support for async/await:
 
 ```python
-import zeroeval as ze
-
-@ze.span(name="async_operation")
+@span(name="async_operation")
 async def fetch_data_async(url: str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
 
-@ze.span(name="parallel_fetch")
+@span(name="parallel_fetch")
 async def fetch_multiple():
     urls = ["http://api1.com", "http://api2.com"]
     results = await asyncio.gather(*[

@@ -9,31 +9,27 @@ Maximize the effectiveness of your tracing implementation with these proven best
   <Accordion title="Use Descriptive Span Names">
     Choose names that clearly describe what the operation does:
     ```python
-    import zeroeval as ze
-    
     # Good
-    @ze.span(name="validate_user_credentials")
-    @ze.span(name="fetch_product_catalog")
+    @span(name="validate_user_credentials")
+    @span(name="fetch_product_catalog")
     
     # Less descriptive
-    @ze.span(name="process")
-    @ze.span(name="function1")
+    @span(name="process")
+    @span(name="function1")
     ```
   </Accordion>
 
   <Accordion title="Capture Meaningful I/O">
     Balance between useful debugging info and performance:
     ```python
-    import zeroeval as ze
-    
     # Good - Summary info for large data
-    ze.span.set_io(
+    span.set_io(
         input_data=f"Processing {len(items)} items",
         output_data=f"Processed successfully, {success_count} succeeded"
     )
     
     # Avoid - Capturing huge payloads
-    ze.span.set_io(
+    span.set_io(
         input_data=entire_database_dump,  # Don't do this!
         output_data=massive_result_set
     )
@@ -43,9 +39,7 @@ Maximize the effectiveness of your tracing implementation with these proven best
   <Accordion title="Use Attributes for Filtering">
     Add attributes that help you filter and analyze traces:
     ```python
-    import zeroeval as ze
-    
-    @ze.span(
+    @span(
         name="api_request",
         attributes={
             "endpoint": "/api/users",
@@ -60,13 +54,10 @@ Maximize the effectiveness of your tracing implementation with these proven best
   <Accordion title="Group Related Operations">
     Use sessions to group related operations:
     ```python
-    import uuid
-    import zeroeval as ze
-    
     # All operations for a single user request
     session_id = str(uuid.uuid4())
     
-    @ze.span(name="handle_request", session_id=session_id)
+    @span(name="handle_request", session_id=session_id)
     def handle_request():
         authenticate()
         fetch_data()
