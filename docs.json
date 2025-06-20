@@ -60,5 +60,8 @@
       "x": "https://x.com/LlmStats",
       "github": "https://github.com/zeroeval"
     }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude"]
   }
 }
