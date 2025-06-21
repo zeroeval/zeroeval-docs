@@ -1,0 +1,305 @@
+---
+title: Sessions
+description: Group related spans into sessions for better organization and analysis
+---
+
+Sessions provide a powerful way to group related spans together, making it easier to track and analyze complex workflows, user interactions, or multi-step processes. This guide covers everything you need to know about working with sessions.
+
+## What are Sessions?
+
+Sessions are logical groupings of spans that belong to the same context or workflow. Common use cases include:
+
+- **User Sessions**: Track all operations performed during a single user interaction
+- **Batch Processing**: Group spans from processing multiple items in a batch
+- **Multi-Agent Workflows**: Track interactions across multiple AI agents
+- **Request Lifecycles**: Follow a request through multiple services or components
+
+## Creating Sessions
+
+### Basic Session with ID
+
+The simplest way to create a session is by providing a session ID:
+
+```python
+import uuid
+from zeroeval.observability.decorators import span
+
+# Generate a unique session ID
+session_id = str(uuid.uuid4())
+
+@span(name="process_request", session=session_id)
+def process_request(data):
+    # This span belongs to the session
+    return transform_data(data)
+```
+
+### Named Sessions
+
+For better organization in the ZeroEval dashboard, you can provide both an ID and a descriptive name:
+
+```python
+@span(
+    name="user_interaction",
+    session={
+        "id": session_id,
+        "name": "Customer Support Chat - User #12345"
+    }
+)
+def handle_support_chat(user_id, message):
+    # Process the support request
+    return generate_response(message)
+```
+
+## Session Inheritance
+
+Child spans automatically inherit the session from their parent span:
+
+```python
+session_info = {
+    "id": str(uuid.uuid4()),
+    "name": "Order Processing Pipeline"
+}
+
+@span(name="process_order", session=session_info)
+def process_order(order_id):
+    # These nested calls automatically belong to the same session
+    validate_order(order_id)
+    charge_payment(order_id)
+    fulfill_order(order_id)
+    
+@span(name="validate_order")
+def validate_order(order_id):
+    # Automatically part of the parent's session
+    return check_inventory(order_id)
+
+@span(name="charge_payment")
+def charge_payment(order_id):
+    # Also inherits the session
+    return process_payment(order_id)
+```
+
+## Advanced Session Patterns
+
+### Multi-Agent Workflows
+
+Track complex workflows involving multiple AI agents:
+
+```python
+session = {
+    "id": str(uuid.uuid4()),
+    "name": "Research Assistant Workflow"
+}
+
+@span(name="research_coordinator", session=session)
+async def coordinate_research(topic):
+    # Coordinator agent
+    tasks = plan_research_tasks(topic)
+    
+    # Each researcher works in the same session
+    results = []
+    for task in tasks:
+        result = await research_agent(task)
+        results.append(result)
+    
+    # Synthesizer also in the same session
+    return await synthesize_findings(results)
+
+@span(name="research_agent")
+async def research_agent(task):
+    # Automatically inherits session from parent
+    return await perform_research(task)
+
+@span(name="synthesis_agent")
+async def synthesize_findings(results):
+    # Also part of the same session
+    return create_summary(results)
+```
+
+### User Journey Tracking
+
+Track a complete user journey across multiple interactions:
+
+```python
+class UserSession:
+    def __init__(self, user_id):
+        self.session = {
+            "id": f"user-{user_id}-{uuid.uuid4()}",
+            "name": f"User Journey - {user_id}"
+        }
+    
+    @span(name="login", session=lambda self: self.session)
+    def login(self, credentials):
+        # Track login attempt
+        return authenticate(credentials)
+    
+    @span(name="browse_products", session=lambda self: self.session)
+    def browse(self, category):
+        # Track browsing behavior
+        return fetch_products(category)
+    
+    @span(name="add_to_cart", session=lambda self: self.session)
+    def add_to_cart(self, product_id):
+        # Track cart interactions
+        return update_cart(product_id)
+    
+    @span(name="checkout", session=lambda self: self.session)
+    def checkout(self):
+        # Track purchase completion
+        return process_checkout()
+```
+
+### Batch Processing Sessions
+
+Group operations when processing multiple items:
+
+```python
+def process_batch(items, batch_name):
+    session = {
+        "id": f"batch-{uuid.uuid4()}",
+        "name": f"Batch Processing - {batch_name}"
+    }
+    
+    @span(name="batch_processor", session=session)
+    def run_batch():
+        results = []
+        for i, item in enumerate(items):
+            # Each item processing is part of the batch session
+            with span(name=f"process_item_{i}", session=session) as item_span:
+                try:
+                    result = process_single_item(item)
+                    item_span.set_io(
+                        input_data=f"Item: {item}",
+                        output_data=f"Result: {result}"
+                    )
+                    results.append(result)
+                except Exception as e:
+                    item_span.set_error(
+                        code=type(e).__name__,
+                        message=str(e)
+                    )
+        
+        return results
+    
+    return run_batch()
+```
+
+## Context Manager Sessions
+
+You can also use sessions with the context manager pattern:
+
+```python
+session_info = {
+    "id": str(uuid.uuid4()),
+    "name": "Data Pipeline Run"
+}
+
+with span(name="etl_pipeline", session=session_info) as pipeline_span:
+    # Extract phase
+    with span(name="extract_data") as extract_span:
+        raw_data = fetch_from_source()
+        extract_span.set_io(output_data=f"Extracted {len(raw_data)} records")
+    
+    # Transform phase
+    with span(name="transform_data") as transform_span:
+        clean_data = transform_records(raw_data)
+        transform_span.set_io(
+            input_data=f"{len(raw_data)} raw records",
+            output_data=f"{len(clean_data)} clean records"
+        )
+    
+    # Load phase
+    with span(name="load_data") as load_span:
+        result = save_to_destination(clean_data)
+        load_span.set_io(output_data=f"Loaded to {result['location']}")
+```
+
+## Best Practices
+
+### 1. Use Descriptive Session Names
+
+```python
+# ❌ Poor: Generic name
+session = {"id": "123", "name": "Session"}
+
+# ✅ Good: Descriptive and searchable
+session = {
+    "id": f"support-{ticket_id}-{timestamp}",
+    "name": f"Support Ticket #{ticket_id} - {customer_name}"
+}
+```
+
+### 2. Include Relevant Context
+
+```python
+session = {
+    "id": str(uuid.uuid4()),
+    "name": f"API Request - {endpoint} - {user_id}"
+}
+
+@span(
+    name="api_handler",
+    session=session,
+    attributes={
+        "endpoint": endpoint,
+        "method": request.method,
+        "user_id": user_id,
+        "api_version": "v2"
+    }
+)
+def handle_api_request(request):
+    # Attributes help filter sessions in the dashboard
+    return process_request(request)
+```
+
+### 3. Consistent Session Lifecycle
+
+```python
+class SessionManager:
+    def __init__(self):
+        self.sessions = {}
+    
+    def get_or_create_session(self, key, name_template):
+        if key not in self.sessions:
+            self.sessions[key] = {
+                "id": str(uuid.uuid4()),
+                "name": name_template.format(key=key)
+            }
+        return self.sessions[key]
+    
+    def clear_session(self, key):
+        if key in self.sessions:
+            del self.sessions[key]
+
+# Usage
+session_mgr = SessionManager()
+
+@span(name="user_action", session=lambda: session_mgr.get_or_create_session(
+    user_id, 
+    "User Session - {key}"
+))
+def handle_user_action(user_id, action):
+    return process_action(action)
+```
+
+### 4. Session Metadata in Attributes
+
+Enhance session tracking with additional metadata:
+
+```python
+@span(
+    name="ml_inference",
+    session={
+        "id": experiment_id,
+        "name": f"ML Experiment - {model_name}"
+    },
+    attributes={
+        "model_name": model_name,
+        "model_version": model_version,
+        "experiment_type": "A/B test",
+        "cohort": "treatment",
+        "timestamp": datetime.now().isoformat()
+    }
+)
+def run_inference(input_data):
+    return model.predict(input_data)
+```

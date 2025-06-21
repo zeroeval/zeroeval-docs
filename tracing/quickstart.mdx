@@ -161,29 +161,6 @@ def analyze_sentiment(text: str):
     return result.content
 ```
 
-## Sessions and Traces
-
-Group related spans into sessions for better organization:
-
-```python
-import uuid
-
-# Create a session for a user interaction
-session_id = str(uuid.uuid4())
-
-@span(name="user_request", session_id=session_id)
-def handle_user_request(request):
-    # All nested spans inherit the session_id
-    validate_request(request)
-    process_request(request)
-    return generate_response(request)
-
-@span(name="validate_request")
-def validate_request(request):
-    # Automatically part of the same session
-    pass
-```
-
 ## Custom Attributes
 
 Add metadata to spans for better filtering and analysis:

@@ -15,7 +15,11 @@
         "groups": [
           {
             "group": "Tracing",
-            "pages": ["tracing/quickstart", "tracing/best-practices"]
+            "pages": [
+              "tracing/quickstart",
+              "tracing/sessions",
+              "tracing/best-practices"
+            ]
           },
           {
             "group": "Evaluations",
