@@ -63,7 +63,22 @@
     "socials": {
       "x": "https://x.com/LlmStats",
       "github": "https://github.com/zeroeval"
-    }
+    },
+    "links": [
+      {
+        "header": "LLM lists",
+        "items": [
+          {
+            "label": "llms.txt",
+            "href": "https://docs.zeroeval.com/llms.txt"
+          },
+          {
+            "label": "llms-full.txt",
+            "href": "https://docs.zeroeval.com/llms-full.txt"
+          }
+        ]
+      }
+    ]
   },
   "contextual": {
     "options": ["copy", "view", "chatgpt", "claude"]
