@@ -57,9 +57,9 @@ exp.run(dataset[:100])   # only the first 100 rows
 If you have the tracing decorators installed, any spans inside your task are automatically picked up:
 
 ```python
-from zeroeval.observability.decorators import span
+import zeroeval as ze
 
-@span(name="model_call")
+@ze.span(name="model_call")
 def task(row):
     # autotraced
     return call_llm(row["input"])

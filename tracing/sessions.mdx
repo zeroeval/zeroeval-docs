@@ -22,12 +22,12 @@ The simplest way to create a session is by providing a session ID:
 
 ```python
 import uuid
-from zeroeval.observability.decorators import span
+import zeroeval as ze
 
 # Generate a unique session ID
 session_id = str(uuid.uuid4())
 
-@span(name="process_request", session=session_id)
+@ze.span(name="process_request", session=session_id)
 def process_request(data):
     # This span belongs to the session
     return transform_data(data)
@@ -38,7 +38,7 @@ def process_request(data):
 For better organization in the ZeroEval dashboard, you can provide both an ID and a descriptive name:
 
 ```python
-@span(
+@ze.span(
     name="user_interaction",
     session={
         "id": session_id,
@@ -60,19 +60,19 @@ session_info = {
     "name": "Order Processing Pipeline"
 }
 
-@span(name="process_order", session=session_info)
+@ze.span(name="process_order", session=session_info)
 def process_order(order_id):
     # These nested calls automatically belong to the same session
     validate_order(order_id)
     charge_payment(order_id)
     fulfill_order(order_id)
     
-@span(name="validate_order")
+@ze.span(name="validate_order")
 def validate_order(order_id):
     # Automatically part of the parent's session
     return check_inventory(order_id)
 
-@span(name="charge_payment")
+@ze.span(name="charge_payment")
 def charge_payment(order_id):
     # Also inherits the session
     return process_payment(order_id)
@@ -90,7 +90,7 @@ session = {
     "name": "Research Assistant Workflow"
 }
 
-@span(name="research_coordinator", session=session)
+@ze.span(name="research_coordinator", session=session)
 async def coordinate_research(topic):
     # Coordinator agent
     tasks = plan_research_tasks(topic)
@@ -104,12 +104,12 @@ async def coordinate_research(topic):
     # Synthesizer also in the same session
     return await synthesize_findings(results)
 
-@span(name="research_agent")
+@ze.span(name="research_agent")
 async def research_agent(task):
     # Automatically inherits session from parent
     return await perform_research(task)
 
-@span(name="synthesis_agent")
+@ze.span(name="synthesis_agent")
 async def synthesize_findings(results):
     # Also part of the same session
     return create_summary(results)
@@ -127,22 +127,22 @@ class UserSession:
             "name": f"User Journey - {user_id}"
         }
     
-    @span(name="login", session=lambda self: self.session)
+    @ze.span(name="login", session=lambda self: self.session)
     def login(self, credentials):
         # Track login attempt
         return authenticate(credentials)
     
-    @span(name="browse_products", session=lambda self: self.session)
+    @ze.span(name="browse_products", session=lambda self: self.session)
     def browse(self, category):
         # Track browsing behavior
         return fetch_products(category)
     
-    @span(name="add_to_cart", session=lambda self: self.session)
+    @ze.span(name="add_to_cart", session=lambda self: self.session)
     def add_to_cart(self, product_id):
         # Track cart interactions
         return update_cart(product_id)
     
-    @span(name="checkout", session=lambda self: self.session)
+    @ze.span(name="checkout", session=lambda self: self.session)
     def checkout(self):
         # Track purchase completion
         return process_checkout()
@@ -159,12 +159,12 @@ def process_batch(items, batch_name):
         "name": f"Batch Processing - {batch_name}"
     }
     
-    @span(name="batch_processor", session=session)
+    @ze.span(name="batch_processor", session=session)
     def run_batch():
         results = []
         for i, item in enumerate(items):
             # Each item processing is part of the batch session
-            with span(name=f"process_item_{i}", session=session) as item_span:
+            with ze.span(name=f"process_item_{i}", session=session) as item_span:
                 try:
                     result = process_single_item(item)
                     item_span.set_io(
@@ -193,14 +193,14 @@ session_info = {
     "name": "Data Pipeline Run"
 }
 
-with span(name="etl_pipeline", session=session_info) as pipeline_span:
+with ze.span(name="etl_pipeline", session=session_info) as pipeline_span:
     # Extract phase
-    with span(name="extract_data") as extract_span:
+    with ze.span(name="extract_data") as extract_span:
         raw_data = fetch_from_source()
         extract_span.set_io(output_data=f"Extracted {len(raw_data)} records")
     
     # Transform phase
-    with span(name="transform_data") as transform_span:
+    with ze.span(name="transform_data") as transform_span:
         clean_data = transform_records(raw_data)
         transform_span.set_io(
             input_data=f"{len(raw_data)} raw records",
@@ -208,7 +208,7 @@ with span(name="etl_pipeline", session=session_info) as pipeline_span:
         )
     
     # Load phase
-    with span(name="load_data") as load_span:
+    with ze.span(name="load_data") as load_span:
         result = save_to_destination(clean_data)
         load_span.set_io(output_data=f"Loaded to {result['location']}")
 ```
@@ -236,7 +236,7 @@ session = {
     "name": f"API Request - {endpoint} - {user_id}"
 }
 
-@span(
+@ze.span(
     name="api_handler",
     session=session,
     attributes={
@@ -273,7 +273,7 @@ class SessionManager:
 # Usage
 session_mgr = SessionManager()
 
-@span(name="user_action", session=lambda: session_mgr.get_or_create_session(
+@ze.span(name="user_action", session=lambda: session_mgr.get_or_create_session(
     user_id, 
     "User Session - {key}"
 ))
@@ -286,7 +286,7 @@ def handle_user_action(user_id, action):
 Enhance session tracking with additional metadata:
 
 ```python
-@span(
+@ze.span(
     name="ml_inference",
     session={
         "id": experiment_id,
