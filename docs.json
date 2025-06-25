@@ -18,6 +18,7 @@
             "pages": [
               "tracing/quickstart",
               "tracing/sessions",
+              "tracing/tagging",
               "tracing/best-practices"
             ]
           },

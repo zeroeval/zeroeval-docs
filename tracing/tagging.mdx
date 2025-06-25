@@ -1,0 +1,89 @@
+---
+title: Tags
+description: Simple ways to attach rich, query-able tags to your traces.
+---
+
+Tags are key–value pairs that can be attached to any **span**, **trace**, or **session**.  
+They power the facet filters in the ZeroEval console so you can slice-and-dice your telemetry by *user*, *plan*, *model*, *tenant*, or anything else that matters to your business.
+
+## 1. Tag once, inherit everywhere
+
+When you add a `tags` dictionary to the **first** span you create, every child span automatically gets the same tags.  That means you set them once and they flow down the entire call-stack.
+
+```python
+import zeroeval as ze
+
+@ze.span(
+    name="handle_request",
+    tags={
+        "user_id": "42",          # who triggered the request
+        "tenant": "acme-corp",    # multi-tenant identifier
+        "plan": "enterprise"      # commercial plan
+    }
+)
+def handle_request():
+    authenticate()
+    fetch_data()
+    process()
+
+    # Two nested child spans – they automatically inherit *all* the tags
+    with ze.span(name="fetch_data"):
+        ...
+
+    with ze.span(name="process", tags={"stage": "post"}):
+        ...
+```
+
+<br/>
+
+## 2. Tag a single span
+
+If you want to tag only a **single** span (or override a tag inherited from a parent) simply provide the `tags` argument on that specific decorator or context manager.
+
+```python
+import zeroeval as ze
+
+@ze.span(name="top_level")
+def top_level():
+    # Child span with its own tags – *not* inherited by siblings
+    with ze.span(name="db_call", tags={"table": "customers", "operation": "SELECT"}):
+        query_database()
+
+    # Another child span without tags – it has no knowledge of the db_call tags
+    with ze.span(name="render"):
+        render_template()
+```
+
+Under the hood these tags live only on that single span, they are **not** copied to siblings or parents.
+
+## 3. Granular tagging (session, trace, or span)
+
+You can add granular tags at the session, trace, or span level after they've been created:
+
+```python
+import uuid
+from langchain_core.messages import HumanMessage
+import zeroeval as ze
+
+DEMO_TAGS = {"example": "langgraph_tags_demo", "project": "zeroeval"}
+
+SESSION_ID = str(uuid.uuid4())
+SESSION_INFO = {"id": SESSION_ID, "name": "Tags Demo Session"}
+
+with ze.span(
+    name="demo.root_invoke",
+    session=SESSION_INFO,
+    tags={**DEMO_TAGS, "run": "invoke"},
+):
+    # 1️⃣ Tag the *current* span only
+    ze.set_tag(ze.get_current_span(), {"phase": "pre-run"})
+
+    # 2️⃣ Tag the whole trace – root + all children (past *and* future)
+    ze.set_tag(ze.get_current_trace(), {"run_mode": "invoke"})
+
+    # 3️⃣ Tag the entire session
+    ze.set_tag(ze.get_current_session(), {"env": "local"})
+
+    result = app.invoke({"messages": [HumanMessage(content="hello")], "count": 0})
+```
+
