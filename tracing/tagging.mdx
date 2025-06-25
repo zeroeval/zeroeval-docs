@@ -3,8 +3,7 @@ title: Tags
 description: Simple ways to attach rich, query-able tags to your traces.
 ---
 
-Tags are key–value pairs that can be attached to any **span**, **trace**, or **session**.  
-They power the facet filters in the ZeroEval console so you can slice-and-dice your telemetry by *user*, *plan*, *model*, *tenant*, or anything else that matters to your business.
+Tags are key–value pairs that can be attached to any **span**, **trace**, or **session**. They power the facet filters in the console so you can slice-and-dice your telemetry by *user*, *plan*, *model*, *tenant*, or anything else that matters to your business.
 
 ## 1. Tag once, inherit everywhere
 
@@ -76,13 +75,16 @@ with ze.span(
     tags={**DEMO_TAGS, "run": "invoke"},
 ):
     # 1️⃣ Tag the *current* span only
-    ze.set_tag(ze.get_current_span(), {"phase": "pre-run"})
+    current_span = ze.get_current_span()
+    ze.set_tag(current_span, {"phase": "pre-run"})
 
     # 2️⃣ Tag the whole trace – root + all children (past *and* future)
-    ze.set_tag(ze.get_current_trace(), {"run_mode": "invoke"})
+    current_trace = ze.get_current_trace()
+    ze.set_tag(current_trace, {"run_mode": "invoke"})
 
     # 3️⃣ Tag the entire session
-    ze.set_tag(ze.get_current_session(), {"env": "local"})
+    current_session = ze.get_current_session()
+    ze.set_tag(current_session, {"env": "local"})
 
     result = app.invoke({"messages": [HumanMessage(content="hello")], "count": 0})
 ```
