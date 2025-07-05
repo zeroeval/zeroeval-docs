@@ -18,16 +18,21 @@
             "pages": [
               "tracing/quickstart",
               "tracing/sessions",
-              "tracing/tagging"
+              "tracing/tagging",
+              "tracing/signals"
             ]
           },
           {
             "group": "Evaluations",
-            "pages": ["evaluations/datasets", "evaluations/experiments"]
+            "pages": [
+              "evaluations/datasets",
+              "evaluations/experiments",
+              "evaluations/ab-tests"
+            ]
           },
           {
-            "group": "A/B Testing",
-            "pages": ["ab-testing/proxy", "ab-testing/signals"]
+            "group": "LLM Router",
+            "pages": ["llm-router/introduction"]
           }
         ]
       }
@@ -35,7 +40,7 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Community",
+          "anchor": "Community & Support",
           "href": "https://discord.gg/MuExkGMNVz",
           "icon": "discord"
         }

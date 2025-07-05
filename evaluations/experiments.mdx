@@ -1,13 +1,13 @@
 ---
-title: 'Experiments'
-description: 'Run tasks and evaluators on your datasets – locally or in the cloud.'
+title: "Experiments"
+description: "Run tasks and evaluators on your datasets – locally or in the cloud."
 ---
 
 ## TL;DR
 
-1. Pull (or create) a dataset  
-2. Write a **task** – any Python function that maps a row ➜ model output  
-3. Optionally write **evaluators** – functions that score `(row, output)`  
+1. Pull (or create) a dataset
+2. Write a **task** – any Python function that maps a row ➜ model output
+3. Optionally write **evaluators** – functions that score `(row, output)`
 4. Wrap them in `ze.Experiment` and call `.run()`
 
 ## Minimal example

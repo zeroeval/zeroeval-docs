@@ -1,0 +1,251 @@
+---
+title: "Signals"
+description: "Capture real-world feedback and metrics to enrich your traces, spans, and sessions."
+---
+
+## What's a signal?
+
+A **signal** is any piece of user feedback, behavior, or metric you care about – thumbs-up, a 5-star rating, dwell time, task completion, error rates … you name it. Signals help you understand how your AI system performs in the real world by connecting user outcomes to your traces.
+
+You can attach signals to:
+
+- **Completions** (LLM responses)
+- **Spans** (individual operations)
+- **Sessions** (user interactions)
+- **Traces** (entire request flows)
+
+## Using signals in code
+
+### With the Python SDK
+
+```python
+import zeroeval as ze
+
+# Initialize the tracer
+ze.init(api_key="your-api-key")
+
+# Start a span and add a signal
+with ze.trace("user_query") as span:
+    # Your AI logic here
+    response = process_user_query(query)
+
+    # Add a signal to the current span
+    ze.set_signal("user_satisfaction", True)
+    ze.set_signal("response_quality", 4.5)
+    ze.set_signal("task_completed", "success")
+```
+
+### Setting signals on different targets
+
+```python
+# On the current span
+ze.set_signal("helpful", True)
+
+# On a specific span
+span = ze.current_span()
+ze.set_signal(span, {"rating": 5, "category": "excellent"})
+
+# On the current trace
+ze.set_trace_signal("conversion", True)
+
+# On the current session
+ze.set_session_signal("user_engaged", True)
+```
+
+## API endpoint
+
+For direct API calls, send signals to:
+
+```
+POST https://api.zeroeval.com/workspaces/<WORKSPACE_ID>/signals
+```
+
+Auth is the same bearer API key you use for tracing.
+
+### Payload schema
+
+| field         | type                           | required | notes                                          |
+| ------------- | ------------------------------ | -------- | ---------------------------------------------- |
+| completion_id | string                         | ❌       | **OpenAI completion ID** (for LLM completions) |
+| span_id       | string                         | ❌       | **Span ID** (for specific spans)               |
+| trace_id      | string                         | ❌       | **Trace ID** (for entire traces)               |
+| session_id    | string                         | ❌       | **Session ID** (for user sessions)             |
+| name          | string                         | ✅       | e.g. `user_satisfaction`                       |
+| value         | string \| bool \| int \| float | ✅       | your data – see examples below                 |
+
+<Note>
+  You must provide at least one of: `completion_id`, `span_id`, `trace_id`, or
+  `session_id`.
+</Note>
+
+## Common signal patterns
+
+Below are some quick copy-pasta snippets for the most common cases.
+
+### 1. Binary feedback (👍 / 👎)
+
+<CodeGroup>
+
+```python Python SDK
+import zeroeval as ze
+
+# On current span
+ze.set_signal("thumbs_up", True)
+
+# On specific span
+ze.set_signal(span, {"helpful": False})
+```
+
+```python API
+import requests
+
+payload = {
+    "span_id": span.id,
+    "name": "thumbs_up",
+    "value": True  # or False
+}
+requests.post(
+    f"https://api.zeroeval.com/workspaces/{WORKSPACE_ID}/signals",
+    json=payload,
+    headers={"Authorization": f"Bearer {ZE_API_KEY}"}
+)
+```
+
+</CodeGroup>
+
+### 2. Star rating (1–5)
+
+<CodeGroup>
+
+```python Python SDK
+ze.set_signal("star_rating", 4)
+```
+
+```js JavaScript API
+fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${ZE_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    trace_id: trace.id,
+    name: "star_rating",
+    value: 4, // any integer 1–5
+  }),
+});
+```
+
+</CodeGroup>
+
+### 3. Continuous metrics
+
+<CodeGroup>
+
+```python Python SDK
+# Response time
+ze.set_signal("response_time_ms", 1250.5)
+
+# Task completion time
+ze.set_signal("time_on_task_sec", 12.85)
+
+# Accuracy score
+ze.set_signal("accuracy", 0.94)
+```
+
+```python API
+payload = {
+    "session_id": session.id,
+    "name": "time_on_task_sec",
+    "value": 12.85  # float works too
+}
+```
+
+</CodeGroup>
+
+### 4. Categorical outcomes
+
+<CodeGroup>
+
+```python Python SDK
+ze.set_signal("task_status", "success")
+ze.set_signal("error_type", "timeout")
+ze.set_signal("user_intent", "purchase")
+```
+
+```js JavaScript API
+{
+  completion_id: completion.id,
+  name: "task_status",
+  value: "success" // could also be "retry" / "fail"
+}
+```
+
+</CodeGroup>
+
+### 5. Session-level signals
+
+```python
+# Track user engagement across an entire session
+ze.set_session_signal("pages_visited", 5)
+ze.set_session_signal("converted", True)
+ze.set_session_signal("user_tier", "premium")
+```
+
+### 6. Trace-level signals
+
+```python
+# Track outcomes for an entire request flow
+ze.set_trace_signal("request_successful", True)
+ze.set_trace_signal("total_cost", 0.045)
+ze.set_trace_signal("model_used", "gpt-4o")
+```
+
+## Best practices
+
+• **Send signals as they happen** – latency isn't an issue, we process them async  
+• **Re-use the same `name` consistently** – that's how we aggregate and analyze  
+• **One target can have multiple signals** (different names)  
+• **Overwrite behavior** – if you POST the same `(target_id, name)` twice, we'll overwrite the previous value  
+• **Use meaningful names** – `user_satisfaction` is better than `signal1`  
+• **Choose appropriate targets** – completion signals for LLM responses, session signals for user behavior
+
+## Signal types
+
+Signals are automatically categorized based on their values:
+
+- **Boolean**: `true`/`false` values → useful for success/failure, yes/no feedback
+- **Numerical**: integers and floats → useful for ratings, scores, durations, costs
+- **Categorical**: strings → useful for status, categories, error types
+
+## Putting it all together
+
+```python
+import zeroeval as ze
+
+# Initialize tracing
+ze.init(api_key="your-api-key")
+
+# Start a session for user interaction
+with ze.trace("user_chat_session", session_name="Customer Support") as session:
+
+    # Process user query
+    with ze.trace("process_query") as span:
+        response = llm_client.chat.completions.create(...)
+
+        # Signal on the LLM completion
+        ze.set_signal("response_generated", True)
+        ze.set_signal("response_length", len(response.choices[0].message.content))
+
+    # Capture user feedback
+    user_rating = get_user_feedback()  # Your feedback collection logic
+
+    # Signal on the session
+    ze.set_session_signal("user_rating", user_rating)
+    ze.set_session_signal("issue_resolved", user_rating >= 4)
+
+    # Signal on the entire trace
+    ze.set_trace_signal("interaction_complete", True)
+```
+
+That's it! Your signals will appear in the ZeroEval dashboard, helping you understand how your AI system performs in real-world scenarios.
