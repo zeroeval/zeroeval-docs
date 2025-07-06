@@ -71,7 +71,7 @@ const { object } = await wrappedAI.generateObject({
   import { 
     ZeroEvalCallbackHandler, 
     setGlobalCallbackHandler 
-  } from '@zeroeval/sdk/langchain';
+  } from 'zeroeval/langchain';
   
   // Set globally, no need to pass on each individual call
   setGlobalCallbackHandler(new ZeroEvalCallbackHandler());

@@ -9,22 +9,22 @@ The ZeroEval TypeScript/JavaScript SDK provides tracing for Node.js and browser 
 
 <CodeGroup>
 ```bash npm
-npm install @zeroeval/sdk
+npm install zeroeval
 ```
 
 ```bash yarn
-yarn add @zeroeval/sdk
+yarn add zeroeval
 ```
 
 ```bash pnpm
-pnpm add @zeroeval/sdk
+pnpm add zeroeval
 ```
 </CodeGroup>
 
 ## Basic Setup
 
 ```ts
-import * as ze from '@zeroeval/sdk';
+import * as ze from 'zeroeval';
 
 // Option 1: Environment variable
 ze.init();
@@ -52,7 +52,7 @@ ze.init({
 The primary pattern for adding spans in TypeScript/JavaScript:
 
 ```ts
-import * as ze from '@zeroeval/sdk';
+import * as ze from 'zeroeval';
 
 // Synchronous function
 const fetchData = (userId: string) =>
@@ -80,7 +80,7 @@ const processData = async (data: { name: string }) =>
 Handle nested spans and complex workflows:
 
 ```ts
-import * as ze from '@zeroeval/sdk';
+import * as ze from 'zeroeval';
 
 async function complexWorkflow() {
   return ze.withSpan({ name: 'data_pipeline' }, async () => {
@@ -141,7 +141,7 @@ The TypeScript SDK uses wrapper functions for integrations:
 
 ```ts
 import OpenAI from 'openai';
-import { wrapOpenAI } from '@zeroeval/sdk';
+import { wrapOpenAI } from 'zeroeval';
 
 // Wrap the OpenAI client for automatic tracing
 const client = wrapOpenAI(new OpenAI({
@@ -162,7 +162,7 @@ async function chatWithGpt(prompt: string) {
 ```ts
 import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
-import { wrapVercelAI } from '@zeroeval/sdk';
+import { wrapVercelAI } from 'zeroeval';
 
 // Wrap Vercel AI SDK for automatic tracing
 wrapVercelAI();
@@ -206,7 +206,7 @@ export async function analyzeSentiment(text: string) {
 Use the generic `wrap` function for any async function:
 
 ```ts
-import { wrap } from '@zeroeval/sdk';
+import { wrap } from 'zeroeval';
 
 // Wrap any async function
 const tracedFetch = wrap(fetch, { name: 'http_request' });
@@ -221,7 +221,7 @@ The SDK works in browser environments:
 
 ```html
 <script type="module">
-  import * as ze from 'https://unpkg.com/@zeroeval/sdk/dist/browser.js';
+  import * as ze from 'https://unpkg.com/zeroeval/dist/browser.js';
   
   ze.init({ apiKey: 'YOUR_API_KEY' });
   
@@ -266,7 +266,7 @@ interface InitOptions {
 Configure the tracer behavior:
 
 ```ts
-import { tracer } from '@zeroeval/sdk';
+import { tracer } from 'zeroeval';
 
 tracer.configure({
   flushInterval: 5,      // seconds
@@ -280,7 +280,7 @@ tracer.configure({
 Access current context information:
 
 ```ts
-import { getCurrentSpan, getCurrentTrace, getCurrentSession } from '@zeroeval/sdk';
+import { getCurrentSpan, getCurrentTrace, getCurrentSession } from 'zeroeval';
 
 function myFunction() {
   // Get current span
