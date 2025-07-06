@@ -38,16 +38,12 @@ ze.init({
   apiUrl: 'https://api.zeroeval.com', // optional
   flushInterval: 10, // seconds
   maxSpans: 100,
-  integrations: {
-    openai: true,
-    langchain: true
-  }
 });
 ```
 
-## TypeScript-Specific Patterns
+## Patterns
 
-### Function Wrapping Pattern
+### Function Wrapping
 
 The primary pattern for adding spans in TypeScript/JavaScript:
 
@@ -133,110 +129,7 @@ async function userJourney(userId: string) {
 }
 ```
 
-## Integrations
-
-The TypeScript SDK uses wrapper functions for integrations:
-
-### OpenAI
-
-```ts
-import OpenAI from 'openai';
-import { wrapOpenAI } from 'zeroeval';
-
-// Wrap the OpenAI client for automatic tracing
-const client = wrapOpenAI(new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-}));
-
-async function chatWithGpt(prompt: string) {
-  const response = await client.chat.completions.create({
-    model: 'gpt-4',
-    messages: [{ role: 'user', content: prompt }]
-  });
-  return response.choices?.[0]?.message?.content;
-}
-```
-
-### Vercel AI SDK
-
-```ts
-import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
-import { wrapVercelAI } from 'zeroeval';
-
-// Wrap Vercel AI SDK for automatic tracing
-wrapVercelAI();
-
-async function generate(prompt: string) {
-  const { text } = await generateText({
-    model: openai('gpt-4'),
-    prompt: prompt,
-  });
-  return text;
-}
-```
-
-### LangChain
-
-```ts
-import { ChatOpenAI } from '@langchain/openai';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
-
-// Enable LangChain integration during init
-ze.init({
-  apiKey: 'YOUR_API_KEY',
-  integrations: { langchain: true }
-});
-
-export async function analyzeSentiment(text: string) {
-  const model = new ChatOpenAI({ modelName: 'gpt-4' });
-  const prompt = ChatPromptTemplate.fromTemplate(
-    'Analyze the sentiment of: {text}'
-  );
-  const chain = prompt.pipe(model);
-
-  // Automatically traced through callbacks
-  const result = await chain.invoke({ text });
-  return result.content;
-}
-```
-
-### Generic Wrapper
-
-Use the generic `wrap` function for any async function:
-
-```ts
-import { wrap } from 'zeroeval';
-
-// Wrap any async function
-const tracedFetch = wrap(fetch, { name: 'http_request' });
-
-// Use it normally
-const response = await tracedFetch('https://api.example.com/data');
-```
-
-## Browser Usage
-
-The SDK works in browser environments:
-
-```html
-<script type="module">
-  import * as ze from 'https://unpkg.com/zeroeval/dist/browser.js';
-  
-  ze.init({ apiKey: 'YOUR_API_KEY' });
-  
-  // Use ze.withSpan as normal
-  const result = await ze.withSpan(
-    { name: 'browser_operation' },
-    async () => {
-      const response = await fetch('/api/data');
-      return response.json();
-    }
-  );
-</script>
-```
-
-## TypeScript Types
+## TS Types
 
 The SDK is fully typed. Key interfaces:
 
@@ -261,20 +154,6 @@ interface InitOptions {
 }
 ```
 
-## Advanced Configuration
-
-Configure the tracer behavior:
-
-```ts
-import { tracer } from 'zeroeval';
-
-tracer.configure({
-  flushInterval: 5,      // seconds
-  maxSpans: 200,        // buffer size
-  collectCodeDetails: true
-});
-```
-
 ## Helper Functions
 
 Access current context information:
@@ -296,10 +175,3 @@ function myFunction() {
   console.log({ span, traceId, sessionId });
 }
 ```
-
-## Next Steps
-
-- Learn about [Sessions](/tracing/sdks/typescript/sessions) for grouping related spans
-- Explore [Tagging](/tracing/sdks/typescript/tagging) for better organization
-- Implement [Signals](/tracing/sdks/typescript/signals) to capture user feedback
-- Check out [Advanced Configuration](/tracing/sdks/typescript/configuration) options 
