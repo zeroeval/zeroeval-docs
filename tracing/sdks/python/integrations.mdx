@@ -1,0 +1,90 @@
+---
+title: Integrations
+description: Automatic instrumentation for popular AI/ML frameworks
+---
+
+ZeroEval automatically instruments popular AI/ML frameworks. Initialize ZeroEval before importing frameworks you want to trace.
+
+```python
+import zeroeval as ze
+ze.init(api_key="YOUR_API_KEY")
+```
+
+## OpenAI
+
+```python
+import zeroeval as ze
+ze.init()  # Initialize first
+
+import openai
+client = openai.OpenAI()
+
+# This call is automatically traced
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Streaming is also automatically traced
+stream = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+```
+
+## LangChain
+
+```python
+import zeroeval as ze
+ze.init()
+
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+# All components are automatically traced
+model = ChatOpenAI()
+prompt = ChatPromptTemplate.from_template("Tell me about {topic}")
+chain = prompt | model
+
+response = chain.invoke({"topic": "AI"})
+```
+
+## LangGraph
+
+```python
+import zeroeval as ze
+ze.init()
+
+from langgraph.graph import StateGraph, START, END
+from langchain_core.messages import HumanMessage
+
+# Define a multi-node graph
+workflow = StateGraph(AgentState)
+workflow.add_node("reasoning", reasoning_node)
+workflow.add_node("agent", agent_node)
+workflow.add_node("tools", tool_node)
+
+workflow.add_conditional_edges(
+    "agent",
+    should_continue,
+    {"tools": "tools", "end": END}
+)
+
+app = workflow.compile()
+
+# Full graph execution is automatically traced
+result = app.invoke({"messages": [HumanMessage(content="Help me plan a trip")]})
+
+# Streaming is also supported
+for chunk in app.stream({"messages": [HumanMessage(content="Hello")]}):
+    print(chunk)
+```
+
+<Note>
+  Need help? Contact us at [founders@zeroeval.com](mailto:founders@zeroeval.com) or join our [Discord](https://discord.gg/MuExkGMNVz).
+</Note> 

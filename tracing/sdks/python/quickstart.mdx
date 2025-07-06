@@ -1,0 +1,210 @@
+---
+title: Quickstart
+description: Get started with ZeroEval tracing in Python applications
+---
+
+The ZeroEval Python SDK provides seamless integration with your Python applications through automatic instrumentation and a simple decorator-based API.
+
+## Installation
+
+<CodeGroup>
+```bash pip
+pip install zeroeval
+```
+```bash poetry
+poetry add zeroeval
+```
+</CodeGroup>
+
+## Basic Setup
+
+```python
+import zeroeval as ze
+
+# Option 1: Use saved credentials from `zeroeval setup`
+ze.init()
+
+# Option 2: Provide API key directly from
+#           https://app.zeroeval.com/settings?tab=api-keys
+ze.init(api_key="YOUR_API_KEY")
+```
+
+<Note>
+  Run `zeroeval setup` once to save your API key securely to
+  `~/.config/zeroeval/config.json`
+</Note>
+
+## Python-Specific Patterns
+
+### Decorator Pattern
+
+The `@span` decorator is the easiest way to add tracing:
+
+```python
+import zeroeval as ze
+
+@ze.span(name="fetch_data")
+def fetch_data(user_id: str):
+    # Function arguments are automatically captured as inputs
+    # Return values are automatically captured as outputs
+    return {"user_id": user_id, "name": "John Doe"}
+
+@ze.span(name="process_data", attributes={"version": "1.0"})
+def process_data(data: dict):
+    # Add custom attributes for better filtering
+    return f"Welcome, {data['name']}!"
+```
+
+### Context Manager Pattern
+
+For more control over span lifecycles:
+
+```python
+import zeroeval as ze
+
+def complex_workflow():
+    with ze.span(name="data_pipeline") as pipeline_span:
+        # Fetch stage
+        with ze.span(name="fetch_stage") as fetch_span:
+            data = fetch_external_data()
+            fetch_span.set_io(output_data=str(data))
+
+        # Process stage
+        with ze.span(name="process_stage") as process_span:
+            processed = transform_data(data)
+            process_span.set_io(
+                input_data=str(data),
+                output_data=str(processed)
+            )
+
+        # Save stage
+        with ze.span(name="save_stage") as save_span:
+            result = save_to_database(processed)
+            save_span.set_io(output_data=f"Saved {result} records")
+```
+
+### Async Support
+
+Full support for async/await:
+
+```python
+@ze.span(name="async_operation")
+async def fetch_data_async(url: str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+@ze.span(name="parallel_fetch")
+async def fetch_multiple():
+    urls = ["http://api1.com", "http://api2.com"]
+    results = await asyncio.gather(*[
+        fetch_data_async(url) for url in urls
+    ])
+    return results
+```
+
+## Automatic Integrations
+
+The Python SDK automatically instruments popular frameworks through monkey-patching:
+
+### OpenAI
+
+```python
+import openai
+
+# OpenAI calls are automatically traced!
+client = openai.OpenAI()
+
+@ze.span(name="chat_with_gpt")
+def chat_with_gpt(prompt: str):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
+```
+
+### LangChain
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+# All LangChain components are automatically traced
+@ze.span(name="langchain_pipeline")
+def analyze_sentiment(text: str):
+    model = ChatOpenAI(model="gpt-4")
+    prompt = ChatPromptTemplate.from_template(
+        "Analyze the sentiment of: {text}"
+    )
+    chain = prompt | model
+
+    # This creates nested spans for each component
+    result = chain.invoke({"text": text})
+    return result.content
+```
+
+### LangGraph
+
+```python
+from langgraph.graph import StateGraph
+from typing import TypedDict
+
+class State(TypedDict):
+    messages: list[str]
+
+# LangGraph workflows are automatically traced
+graph = StateGraph(State)
+
+# Add nodes and edges...
+# All graph executions will be traced automatically
+```
+
+## Advanced Configuration
+
+Fine-tune the tracer behavior:
+
+```python
+from zeroeval.observability.tracer import tracer
+
+# Configure tracer settings
+tracer.configure(
+    flush_interval=5.0,        # Flush every 5 seconds
+    max_spans=200,             # Buffer up to 200 spans
+    collect_code_details=True  # Capture source code context
+)
+```
+
+## Helper Functions
+
+Access current context information:
+
+```python
+# Get the current span
+current_span = ze.span.get_current()
+
+# Get the current trace ID
+trace_id = ze.get_current_trace_id()
+
+# Get the current session ID
+session_id = ze.get_current_session_id()
+```
+
+## CLI Tools
+
+The Python SDK includes helpful CLI commands:
+
+```bash
+# Save your API key securely
+zeroeval setup
+
+# Run scripts with automatic tracing
+zeroeval run my_script.py
+```
+
+## Next Steps
+
+- Learn about [Sessions](/tracing/sdks/python/sessions) for grouping related spans
+- Explore [Tagging](/tracing/sdks/python/tagging) for better organization
+- Implement [Signals](/tracing/sdks/python/signals) to capture user feedback
+- Check out [Advanced Configuration](/tracing/sdks/python/configuration) options 

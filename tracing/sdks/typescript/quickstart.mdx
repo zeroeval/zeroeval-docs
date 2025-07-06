@@ -1,0 +1,305 @@
+---
+title: Quickstart
+description: Get started with ZeroEval tracing in TypeScript and JavaScript applications
+---
+
+The ZeroEval TypeScript/JavaScript SDK provides tracing for Node.js and browser applications through wrapper functions and integration callbacks.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install @zeroeval/sdk
+```
+
+```bash yarn
+yarn add @zeroeval/sdk
+```
+
+```bash pnpm
+pnpm add @zeroeval/sdk
+```
+</CodeGroup>
+
+## Basic Setup
+
+```ts
+import * as ze from '@zeroeval/sdk';
+
+// Option 1: Environment variable
+ze.init();
+
+// Option 2: API key
+ze.init({ apiKey: 'YOUR_API_KEY' });
+
+// Option 3: With additional configuration
+ze.init({
+  apiKey: 'YOUR_API_KEY',
+  apiUrl: 'https://api.zeroeval.com', // optional
+  flushInterval: 10, // seconds
+  maxSpans: 100,
+  integrations: {
+    openai: true,
+    langchain: true
+  }
+});
+```
+
+## TypeScript-Specific Patterns
+
+### Function Wrapping Pattern
+
+The primary pattern for adding spans in TypeScript/JavaScript:
+
+```ts
+import * as ze from '@zeroeval/sdk';
+
+// Synchronous function
+const fetchData = (userId: string) =>
+  ze.withSpan({ name: 'fetch_data' }, () => ({
+    userId,
+    name: 'John Doe'
+  }));
+
+// Async function
+const processData = async (data: { name: string }) =>
+  ze.withSpan(
+    {
+      name: 'process_data',
+      attributes: { version: '1.0' }
+    },
+    async () => {
+      const result = await transform(data);
+      return `Welcome, ${result.name}!`;
+    }
+  );
+```
+
+### Complex Workflows
+
+Handle nested spans and complex workflows:
+
+```ts
+import * as ze from '@zeroeval/sdk';
+
+async function complexWorkflow() {
+  return ze.withSpan({ name: 'data_pipeline' }, async () => {
+    // Fetch stage
+    const data = await ze.withSpan(
+      { name: 'fetch_stage' },
+      fetchExternalData
+    );
+
+    // Process stage
+    const processed = await ze.withSpan(
+      { name: 'process_stage' },
+      () => transformData(data)
+    );
+
+    // Save stage
+    const result = await ze.withSpan(
+      { name: 'save_stage' },
+      () => saveToDatabase(processed)
+    );
+
+    return result;
+  });
+}
+```
+
+### Sessions
+
+Group related spans into sessions:
+
+```ts
+import { v4 as uuidv4 } from 'uuid';
+
+const sessionId = uuidv4();
+
+// All spans within will belong to this session
+async function userJourney(userId: string) {
+  return ze.withSpan(
+    {
+      name: 'user_journey',
+      sessionId: sessionId,
+      sessionName: `User ${userId} Session`
+    },
+    async () => {
+      await login(userId);
+      await browseProducts();
+      await checkout();
+    }
+  );
+}
+```
+
+## Integrations
+
+The TypeScript SDK uses wrapper functions for integrations:
+
+### OpenAI
+
+```ts
+import OpenAI from 'openai';
+import { wrapOpenAI } from '@zeroeval/sdk';
+
+// Wrap the OpenAI client for automatic tracing
+const client = wrapOpenAI(new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+}));
+
+async function chatWithGpt(prompt: string) {
+  const response = await client.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: prompt }]
+  });
+  return response.choices?.[0]?.message?.content;
+}
+```
+
+### Vercel AI SDK
+
+```ts
+import { openai } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+import { wrapVercelAI } from '@zeroeval/sdk';
+
+// Wrap Vercel AI SDK for automatic tracing
+wrapVercelAI();
+
+async function generate(prompt: string) {
+  const { text } = await generateText({
+    model: openai('gpt-4'),
+    prompt: prompt,
+  });
+  return text;
+}
+```
+
+### LangChain
+
+```ts
+import { ChatOpenAI } from '@langchain/openai';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+
+// Enable LangChain integration during init
+ze.init({
+  apiKey: 'YOUR_API_KEY',
+  integrations: { langchain: true }
+});
+
+export async function analyzeSentiment(text: string) {
+  const model = new ChatOpenAI({ modelName: 'gpt-4' });
+  const prompt = ChatPromptTemplate.fromTemplate(
+    'Analyze the sentiment of: {text}'
+  );
+  const chain = prompt.pipe(model);
+
+  // Automatically traced through callbacks
+  const result = await chain.invoke({ text });
+  return result.content;
+}
+```
+
+### Generic Wrapper
+
+Use the generic `wrap` function for any async function:
+
+```ts
+import { wrap } from '@zeroeval/sdk';
+
+// Wrap any async function
+const tracedFetch = wrap(fetch, { name: 'http_request' });
+
+// Use it normally
+const response = await tracedFetch('https://api.example.com/data');
+```
+
+## Browser Usage
+
+The SDK works in browser environments:
+
+```html
+<script type="module">
+  import * as ze from 'https://unpkg.com/@zeroeval/sdk/dist/browser.js';
+  
+  ze.init({ apiKey: 'YOUR_API_KEY' });
+  
+  // Use ze.withSpan as normal
+  const result = await ze.withSpan(
+    { name: 'browser_operation' },
+    async () => {
+      const response = await fetch('/api/data');
+      return response.json();
+    }
+  );
+</script>
+```
+
+## TypeScript Types
+
+The SDK is fully typed. Key interfaces:
+
+```ts
+interface SpanOptions {
+  name: string;
+  sessionId?: string;
+  sessionName?: string;
+  tags?: Record<string, string>;
+  attributes?: Record<string, unknown>;
+  inputData?: unknown;
+  outputData?: unknown;
+}
+
+interface InitOptions {
+  apiKey?: string;
+  apiUrl?: string;
+  flushInterval?: number;
+  maxSpans?: number;
+  collectCodeDetails?: boolean;
+  integrations?: Record<string, boolean>;
+}
+```
+
+## Advanced Configuration
+
+Configure the tracer behavior:
+
+```ts
+import { tracer } from '@zeroeval/sdk';
+
+tracer.configure({
+  flushInterval: 5,      // seconds
+  maxSpans: 200,        // buffer size
+  collectCodeDetails: true
+});
+```
+
+## Helper Functions
+
+Access current context information:
+
+```ts
+import { getCurrentSpan, getCurrentTrace, getCurrentSession } from '@zeroeval/sdk';
+
+function myFunction() {
+  // Get current span
+  const span = getCurrentSpan();
+  
+  // Get current trace ID
+  const traceId = getCurrentTrace();
+  
+  // Get current session ID
+  const sessionId = getCurrentSession();
+  
+  // Use them as needed
+  console.log({ span, traceId, sessionId });
+}
+```
+
+## Next Steps
+
+- Learn about [Sessions](/tracing/sdks/typescript/sessions) for grouping related spans
+- Explore [Tagging](/tracing/sdks/typescript/tagging) for better organization
+- Implement [Signals](/tracing/sdks/typescript/signals) to capture user feedback
+- Check out [Advanced Configuration](/tracing/sdks/typescript/configuration) options 

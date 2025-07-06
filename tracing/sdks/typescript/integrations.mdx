@@ -1,0 +1,89 @@
+---
+title: Integrations
+description: Tracing integrations with popular libraries
+---
+
+## OpenAI
+
+```typescript
+import { OpenAI } from 'openai';
+import * as ze from 'zeroeval';
+
+// Wrap the OpenAI client
+const openai = ze.wrap(new OpenAI());
+
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+```
+
+## Vercel AI SDK
+
+```typescript
+import * as ai from 'ai';
+import { openai } from '@ai-sdk/openai';
+import * as ze from 'zeroeval';
+
+// Wrap the AI SDK module
+const wrappedAI = ze.wrap(ai);
+
+// Text generation
+const { text } = await wrappedAI.generateText({
+  model: openai('gpt-4'),
+  prompt: 'Write a haiku about coding'
+});
+
+// Streaming
+const { textStream } = await wrappedAI.streamText({
+  model: openai('gpt-4'),
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+for await (const delta of textStream) {
+  process.stdout.write(delta);
+}
+
+// Structured output
+const { object } = await wrappedAI.generateObject({
+  model: openai('gpt-4'),
+  schema: z.object({
+    name: z.string(),
+    age: z.number()
+  }),
+  prompt: 'Generate a random person'
+});
+```
+
+## LangChain / LangGraph
+
+```typescript
+  import { 
+    ZeroEvalCallbackHandler, 
+    setGlobalCallbackHandler 
+  } from '@zeroeval/sdk/langchain';
+  
+  // Set globally, no need to pass on each individual call
+  setGlobalCallbackHandler(new ZeroEvalCallbackHandler());
+  
+  // OPTIONAL: alternatively use per-invocation
+  const handler = new ZeroEvalCallbackHandler();
+  const result = await chain.invoke(
+    { topic: 'AI' },
+    { callbacks: [handler] }
+  );
+  ```
+
+<Note>
+  Need help? Check out our [GitHub examples](https://github.com/zeroeval/zeroeval-ts-sdk/tree/main/examples) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
+</Note> 

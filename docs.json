@@ -19,7 +19,26 @@
               "tracing/quickstart",
               "tracing/sessions",
               "tracing/tagging",
-              "tracing/signals"
+              "tracing/signals",
+              {
+                "group": "SDKs",
+                "pages": [
+                  {
+                    "group": "Python",
+                    "pages": [
+                      "tracing/sdks/python/quickstart",
+                      "tracing/sdks/python/integrations"
+                    ]
+                  },
+                  {
+                    "group": "TS/JS",
+                    "pages": [
+                      "tracing/sdks/typescript/quickstart",
+                      "tracing/sdks/typescript/integrations"
+                    ]
+                  }
+                ]
+              }
             ]
           },
           {
