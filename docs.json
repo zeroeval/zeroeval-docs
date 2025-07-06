@@ -26,14 +26,14 @@
                   {
                     "group": "Python",
                     "pages": [
-                      "tracing/sdks/python/quickstart",
+                      "tracing/sdks/python/setup",
                       "tracing/sdks/python/integrations"
                     ]
                   },
                   {
                     "group": "TS/JS",
                     "pages": [
-                      "tracing/sdks/typescript/quickstart",
+                      "tracing/sdks/typescript/setup",
                       "tracing/sdks/typescript/integrations"
                     ]
                   }
