@@ -34,9 +34,9 @@ ze.init(api_key="YOUR_API_KEY")
   `~/.config/zeroeval/config.json`
 </Note>
 
-## Python-Specific Patterns
+## Patterns
 
-### Decorator Pattern
+### Decorators
 
 The `@span` decorator is the easiest way to add tracing:
 
@@ -55,7 +55,7 @@ def process_data(data: dict):
     return f"Welcome, {data['name']}!"
 ```
 
-### Context Manager Pattern
+### Context Manager
 
 For more control over span lifecycles:
 
@@ -81,83 +81,6 @@ def complex_workflow():
         with ze.span(name="save_stage") as save_span:
             result = save_to_database(processed)
             save_span.set_io(output_data=f"Saved {result} records")
-```
-
-### Async Support
-
-Full support for async/await:
-
-```python
-@ze.span(name="async_operation")
-async def fetch_data_async(url: str):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-
-@ze.span(name="parallel_fetch")
-async def fetch_multiple():
-    urls = ["http://api1.com", "http://api2.com"]
-    results = await asyncio.gather(*[
-        fetch_data_async(url) for url in urls
-    ])
-    return results
-```
-
-## Automatic Integrations
-
-The Python SDK automatically instruments popular frameworks through monkey-patching:
-
-### OpenAI
-
-```python
-import openai
-
-# OpenAI calls are automatically traced!
-client = openai.OpenAI()
-
-@ze.span(name="chat_with_gpt")
-def chat_with_gpt(prompt: str):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
-```
-
-### LangChain
-
-```python
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-
-# All LangChain components are automatically traced
-@ze.span(name="langchain_pipeline")
-def analyze_sentiment(text: str):
-    model = ChatOpenAI(model="gpt-4")
-    prompt = ChatPromptTemplate.from_template(
-        "Analyze the sentiment of: {text}"
-    )
-    chain = prompt | model
-
-    # This creates nested spans for each component
-    result = chain.invoke({"text": text})
-    return result.content
-```
-
-### LangGraph
-
-```python
-from langgraph.graph import StateGraph
-from typing import TypedDict
-
-class State(TypedDict):
-    messages: list[str]
-
-# LangGraph workflows are automatically traced
-graph = StateGraph(State)
-
-# Add nodes and edges...
-# All graph executions will be traced automatically
 ```
 
 ## Advanced Configuration
@@ -190,7 +113,7 @@ trace_id = ze.get_current_trace_id()
 session_id = ze.get_current_session_id()
 ```
 
-## CLI Tools
+## CLI Tooling
 
 The Python SDK includes helpful CLI commands:
 
@@ -201,10 +124,3 @@ zeroeval setup
 # Run scripts with automatic tracing
 zeroeval run my_script.py
 ```
-
-## Next Steps
-
-- Learn about [Sessions](/tracing/sdks/python/sessions) for grouping related spans
-- Explore [Tagging](/tracing/sdks/python/tagging) for better organization
-- Implement [Signals](/tracing/sdks/python/signals) to capture user feedback
-- Check out [Advanced Configuration](/tracing/sdks/python/configuration) options 

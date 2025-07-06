@@ -9,7 +9,8 @@ Tags are key–value pairs that can be attached to any **span**, **trace**, or *
 
 When you add a `tags` dictionary to the **first** span you create, every child span automatically gets the same tags.  That means you set them once and they flow down the entire call-stack.
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 @ze.span(
@@ -33,13 +34,49 @@ def handle_request():
         ...
 ```
 
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+@ze.span({
+    name: "handle_request",
+    tags: {
+        user_id: "42",           // who triggered the request
+        tenant: "acme-corp",     // multi-tenant identifier
+        plan: "enterprise"       // commercial plan
+    }
+})
+function handleRequest() {
+    authenticate();
+    fetchData();
+    process();
+}
+
+// Two nested child spans – they automatically inherit *all* the tags
+function fetchData() {
+    ze.withSpan({ name: "fetch_data" }, () => {
+        // ...
+    });
+}
+
+function process() {
+    ze.withSpan({ 
+        name: "process", 
+        tags: { stage: "post" }
+    }, () => {
+        // ...
+    });
+}
+```
+</CodeGroup>
+
 <br/>
 
 ## 2. Tag a single span
 
 If you want to tag only a **single** span (or override a tag inherited from a parent) simply provide the `tags` argument on that specific decorator or context manager.
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 @ze.span(name="top_level")
@@ -53,13 +90,35 @@ def top_level():
         render_template()
 ```
 
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+@ze.span({ name: "top_level" })
+function topLevel() {
+    // Child span with its own tags – *not* inherited by siblings
+    ze.withSpan({
+        name: "db_call",
+        tags: { table: "customers", operation: "SELECT" }
+    }, () => {
+        queryDatabase();
+    });
+
+    // Another child span without tags – it has no knowledge of the db_call tags
+    ze.withSpan({ name: "render" }, () => {
+        renderTemplate();
+    });
+}
+```
+</CodeGroup>
+
 Under the hood these tags live only on that single span, they are **not** copied to siblings or parents.
 
 ## 3. Granular tagging (session, trace, or span)
 
 You can add granular tags at the session, trace, or span level after they've been created:
 
-```python
+<CodeGroup>
+```python Python
 import uuid
 from langchain_core.messages import HumanMessage
 import zeroeval as ze
@@ -88,4 +147,46 @@ with ze.span(
 
     result = app.invoke({"messages": [HumanMessage(content="hello")], "count": 0})
 ```
+
+```typescript TypeScript
+import { randomUUID } from 'crypto';
+import { HumanMessage } from '@langchain/core/messages';
+import * as ze from 'zeroeval';
+
+const DEMO_TAGS = { example: "langgraph_tags_demo", project: "zeroeval" };
+
+const SESSION_ID = randomUUID();
+const SESSION_INFO = { id: SESSION_ID, name: "Tags Demo Session" };
+
+ze.withSpan({
+    name: "demo.root_invoke",
+    sessionId: SESSION_INFO.id,
+    sessionName: SESSION_INFO.name,
+    tags: { ...DEMO_TAGS, run: "invoke" }
+}, async () => {
+    // 1️⃣ Tag the *current* span only
+    const currentSpan = ze.getCurrentSpan();
+    if (currentSpan) {
+        ze.setTag(currentSpan, { phase: "pre-run" });
+    }
+
+    // 2️⃣ Tag the whole trace – root + all children (past *and* future)
+    const currentTrace = ze.getCurrentTrace();
+    if (currentTrace) {
+        ze.setTag(currentTrace, { run_mode: "invoke" });
+    }
+
+    // 3️⃣ Tag the entire session
+    const currentSession = ze.getCurrentSession();
+    if (currentSession) {
+        ze.setTag(currentSession, { env: "local" });
+    }
+
+    const result = await app.invoke({ 
+        messages: [new HumanMessage("hello")], 
+        count: 0 
+    });
+});
+```
+</CodeGroup>
 

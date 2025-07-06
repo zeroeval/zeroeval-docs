@@ -20,7 +20,8 @@ Sessions are logical groupings of spans that belong to the same context or workf
 
 The simplest way to create a session is by providing a session ID:
 
-```python
+<CodeGroup>
+```python Python
 import uuid
 import zeroeval as ze
 
@@ -33,11 +34,27 @@ def process_request(data):
     return transform_data(data)
 ```
 
+```typescript TypeScript
+import { randomUUID } from 'crypto';
+import * as ze from 'zeroeval';
+
+// Generate a unique session ID
+const sessionId = randomUUID();
+
+@ze.span({ name: "process_request", sessionId })
+function processRequest(data: any) {
+    // This span belongs to the session
+    return transformData(data);
+}
+```
+</CodeGroup>
+
 ### Named Sessions
 
 For better organization in the ZeroEval dashboard, you can provide both an ID and a descriptive name:
 
-```python
+<CodeGroup>
+```python Python
 @ze.span(
     name="user_interaction",
     session={
@@ -50,11 +67,25 @@ def handle_support_chat(user_id, message):
     return generate_response(message)
 ```
 
+```typescript TypeScript
+@ze.span({
+    name: "user_interaction",
+    sessionId: sessionId,
+    sessionName: "Customer Support Chat - User #12345"
+})
+function handleSupportChat(userId: string, message: string) {
+    // Process the support request
+    return generateResponse(message);
+}
+```
+</CodeGroup>
+
 ## Session Inheritance
 
 Child spans automatically inherit the session from their parent span:
 
-```python
+<CodeGroup>
+```python Python
 session_info = {
     "id": str(uuid.uuid4()),
     "name": "Order Processing Pipeline"
@@ -78,13 +109,46 @@ def charge_payment(order_id):
     return process_payment(order_id)
 ```
 
+```typescript TypeScript
+const sessionInfo = {
+    id: randomUUID(),
+    name: "Order Processing Pipeline"
+};
+
+@ze.span({ 
+    name: "process_order", 
+    sessionId: sessionInfo.id,
+    sessionName: sessionInfo.name
+})
+function processOrder(orderId: string) {
+    // These nested calls automatically belong to the same session
+    validateOrder(orderId);
+    chargePayment(orderId);
+    fulfillOrder(orderId);
+}
+
+@ze.span({ name: "validate_order" })
+function validateOrder(orderId: string) {
+    // Automatically part of the parent's session
+    return checkInventory(orderId);
+}
+
+@ze.span({ name: "charge_payment" })
+function chargePayment(orderId: string) {
+    // Also inherits the session
+    return processPayment(orderId);
+}
+```
+</CodeGroup>
+
 ## Advanced Session Patterns
 
 ### Multi-Agent Workflows
 
 Track complex workflows involving multiple AI agents:
 
-```python
+<CodeGroup>
+```python Python
 session = {
     "id": str(uuid.uuid4()),
     "name": "Research Assistant Workflow"
@@ -115,11 +179,52 @@ async def synthesize_findings(results):
     return create_summary(results)
 ```
 
+```typescript TypeScript
+const session = {
+    id: randomUUID(),
+    name: "Research Assistant Workflow"
+};
+
+@ze.span({ 
+    name: "research_coordinator", 
+    sessionId: session.id,
+    sessionName: session.name
+})
+async function coordinateResearch(topic: string) {
+    // Coordinator agent
+    const tasks = planResearchTasks(topic);
+    
+    // Each researcher works in the same session
+    const results = [];
+    for (const task of tasks) {
+        const result = await researchAgent(task);
+        results.push(result);
+    }
+    
+    // Synthesizer also in the same session
+    return await synthesizeFindings(results);
+}
+
+@ze.span({ name: "research_agent" })
+async function researchAgent(task: any) {
+    // Automatically inherits session from parent
+    return await performResearch(task);
+}
+
+@ze.span({ name: "synthesis_agent" })
+async function synthesizeFindings(results: any[]) {
+    // Also part of the same session
+    return createSummary(results);
+}
+```
+</CodeGroup>
+
 ### User Journey Tracking
 
 Track a complete user journey across multiple interactions:
 
-```python
+<CodeGroup>
+```python Python
 class UserSession:
     def __init__(self, user_id):
         self.session = {
@@ -148,11 +253,66 @@ class UserSession:
         return process_checkout()
 ```
 
+```typescript TypeScript
+class UserSession {
+    private session: { id: string; name: string };
+    
+    constructor(userId: string) {
+        this.session = {
+            id: `user-${userId}-${randomUUID()}`,
+            name: `User Journey - ${userId}`
+        };
+    }
+    
+    @ze.span({ 
+        name: "login",
+        sessionId: function(this: UserSession) { return this.session.id; },
+        sessionName: function(this: UserSession) { return this.session.name; }
+    })
+    login(credentials: any) {
+        // Track login attempt
+        return authenticate(credentials);
+    }
+    
+    @ze.span({ 
+        name: "browse_products",
+        sessionId: function(this: UserSession) { return this.session.id; },
+        sessionName: function(this: UserSession) { return this.session.name; }
+    })
+    browse(category: string) {
+        // Track browsing behavior
+        return fetchProducts(category);
+    }
+    
+    @ze.span({ 
+        name: "add_to_cart",
+        sessionId: function(this: UserSession) { return this.session.id; },
+        sessionName: function(this: UserSession) { return this.session.name; }
+    })
+    addToCart(productId: string) {
+        // Track cart interactions
+        return updateCart(productId);
+    }
+    
+    @ze.span({ 
+        name: "checkout",
+        sessionId: function(this: UserSession) { return this.session.id; },
+        sessionName: function(this: UserSession) { return this.session.name; }
+    })
+    checkout() {
+        // Track purchase completion
+        return processCheckout();
+    }
+}
+```
+</CodeGroup>
+
 ### Batch Processing Sessions
 
 Group operations when processing multiple items:
 
-```python
+<CodeGroup>
+```python Python
 def process_batch(items, batch_name):
     session = {
         "id": f"batch-{uuid.uuid4()}",
@@ -183,11 +343,61 @@ def process_batch(items, batch_name):
     return run_batch()
 ```
 
+```typescript TypeScript
+function processBatch(items: any[], batchName: string) {
+    const session = {
+        id: `batch-${randomUUID()}`,
+        name: `Batch Processing - ${batchName}`
+    };
+    
+    return ze.withSpan({
+        name: "batch_processor",
+        sessionId: session.id,
+        sessionName: session.name
+    }, () => {
+        const results = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            // Each item processing is part of the batch session
+            ze.withSpan({
+                name: `process_item_${i}`,
+                sessionId: session.id,
+                sessionName: session.name
+            }, () => {
+                try {
+                    const result = processSingleItem(item);
+                    const span = ze.getCurrentSpan();
+                    if (span) {
+                        span.setIO(
+                            `Item: ${item}`,
+                            `Result: ${result}`
+                        );
+                    }
+                    results.push(result);
+                } catch (e: any) {
+                    const span = ze.getCurrentSpan();
+                    if (span) {
+                        span.setError({
+                            code: e.constructor.name,
+                            message: e.message
+                        });
+                    }
+                }
+            });
+        }
+        
+        return results;
+    });
+}
+```
+</CodeGroup>
+
 ## Context Manager Sessions
 
 You can also use sessions with the context manager pattern:
 
-```python
+<CodeGroup>
+```python Python
 session_info = {
     "id": str(uuid.uuid4()),
     "name": "Data Pipeline Run"
@@ -213,11 +423,58 @@ with ze.span(name="etl_pipeline", session=session_info) as pipeline_span:
         load_span.set_io(output_data=f"Loaded to {result['location']}")
 ```
 
+```typescript TypeScript
+const sessionInfo = {
+    id: randomUUID(),
+    name: "Data Pipeline Run"
+};
+
+await ze.withSpan({
+    name: "etl_pipeline",
+    sessionId: sessionInfo.id,
+    sessionName: sessionInfo.name
+}, async () => {
+    // Extract phase
+    const rawData = await ze.withSpan({ name: "extract_data" }, async () => {
+        const data = await fetchFromSource();
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(undefined, `Extracted ${data.length} records`);
+        }
+        return data;
+    });
+    
+    // Transform phase
+    const cleanData = await ze.withSpan({ name: "transform_data" }, async () => {
+        const data = transformRecords(rawData);
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(
+                `${rawData.length} raw records`,
+                `${data.length} clean records`
+            );
+        }
+        return data;
+    });
+    
+    // Load phase
+    await ze.withSpan({ name: "load_data" }, async () => {
+        const result = await saveToDestination(cleanData);
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(undefined, `Loaded to ${result.location}`);
+        }
+    });
+});
+```
+</CodeGroup>
+
 ## Best Practices
 
 ### 1. Use Descriptive Session Names
 
-```python
+<CodeGroup>
+```python Python
 # ❌ Poor: Generic name
 session = {"id": "123", "name": "Session"}
 
@@ -228,9 +485,22 @@ session = {
 }
 ```
 
+```typescript TypeScript
+// ❌ Poor: Generic name
+const session = { id: "123", name: "Session" };
+
+// ✅ Good: Descriptive and searchable
+const session = {
+    id: `support-${ticketId}-${timestamp}`,
+    name: `Support Ticket #${ticketId} - ${customerName}`
+};
+```
+</CodeGroup>
+
 ### 2. Include Relevant Context
 
-```python
+<CodeGroup>
+```python Python
 session = {
     "id": str(uuid.uuid4()),
     "name": f"API Request - {endpoint} - {user_id}"
@@ -251,9 +521,34 @@ def handle_api_request(request):
     return process_request(request)
 ```
 
+```typescript TypeScript
+const session = {
+    id: randomUUID(),
+    name: `API Request - ${endpoint} - ${userId}`
+};
+
+@ze.span({
+    name: "api_handler",
+    sessionId: session.id,
+    sessionName: session.name,
+    attributes: {
+        endpoint: endpoint,
+        method: request.method,
+        user_id: userId,
+        api_version: "v2"
+    }
+})
+function handleApiRequest(request: any) {
+    // Attributes help filter sessions in the dashboard
+    return processRequest(request);
+}
+```
+</CodeGroup>
+
 ### 3. Consistent Session Lifecycle
 
-```python
+<CodeGroup>
+```python Python
 class SessionManager:
     def __init__(self):
         self.sessions = {}
@@ -281,11 +576,48 @@ def handle_user_action(user_id, action):
     return process_action(action)
 ```
 
+```typescript TypeScript
+class SessionManager {
+    private sessions: Map<string, { id: string; name: string }> = new Map();
+    
+    getOrCreateSession(key: string, nameTemplate: string): { id: string; name: string } {
+        if (!this.sessions.has(key)) {
+            this.sessions.set(key, {
+                id: randomUUID(),
+                name: nameTemplate.replace("{key}", key)
+            });
+        }
+        return this.sessions.get(key)!;
+    }
+    
+    clearSession(key: string): void {
+        this.sessions.delete(key);
+    }
+}
+
+// Usage
+const sessionMgr = new SessionManager();
+
+function handleUserAction(userId: string, action: any) {
+    const session = sessionMgr.getOrCreateSession(userId, "User Session - {key}");
+    
+    return ze.withSpan({
+        name: "user_action",
+        sessionId: session.id,
+        sessionName: session.name
+    }, () => {
+        return processAction(action);
+    });
+}
+```
+</CodeGroup>
+
 ### 4. Session Metadata in Attributes
 
 Enhance session tracking with additional metadata:
 
-```python
+<CodeGroup>
+```python Python
 @ze.span(
     name="ml_inference",
     session={
@@ -303,3 +635,22 @@ Enhance session tracking with additional metadata:
 def run_inference(input_data):
     return model.predict(input_data)
 ```
+
+```typescript TypeScript
+@ze.span({
+    name: "ml_inference",
+    sessionId: experimentId,
+    sessionName: `ML Experiment - ${modelName}`,
+    attributes: {
+        model_name: modelName,
+        model_version: modelVersion,
+        experiment_type: "A/B test",
+        cohort: "treatment",
+        timestamp: new Date().toISOString()
+    }
+})
+function runInference(inputData: any) {
+    return model.predict(inputData);
+}
+```
+</CodeGroup>

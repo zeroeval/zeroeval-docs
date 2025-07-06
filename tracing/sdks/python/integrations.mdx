@@ -3,18 +3,13 @@ title: Integrations
 description: Automatic instrumentation for popular AI/ML frameworks
 ---
 
-ZeroEval automatically instruments popular AI/ML frameworks. Initialize ZeroEval before importing frameworks you want to trace.
-
-```python
-import zeroeval as ze
-ze.init(api_key="YOUR_API_KEY")
-```
+The ZeroEval Python SDK automatically traces intruments the supported integrations, meaning the only thing to do is to initialize the SDK before importing the frameworks you want to trace.
 
 ## OpenAI
 
 ```python
 import zeroeval as ze
-ze.init()  # Initialize first
+ze.init()
 
 import openai
 client = openai.OpenAI()

@@ -163,38 +163,6 @@ ze.withSpan({ name: 'process' }, () => {
 ```
 </CodeGroup>
 
-## Configuration
-
-Both SDKs support similar configuration options:
-
-<CodeGroup>
-```python Python
-ze.init(
-  api_key="YOUR_API_KEY",
-  # Additional options
-)
-
-# Fine-tune tracer
-from zeroeval.observability.tracer import tracer
-tracer.configure(
-  flush_interval=5.0,
-  max_spans=200
-)
-```
-
-```typescript TypeScript
-ze.init({
-  apiKey: 'YOUR_API_KEY',
-  flushInterval: 5,
-  maxSpans: 200,
-  integrations: {
-    openai: true,
-    langchain: true
-  }
-});
-```
-</CodeGroup>
-
 <Note>
   Need help? Check out our [API reference](/api-reference) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
 </Note>

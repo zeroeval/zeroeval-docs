@@ -18,7 +18,8 @@ You can attach signals to:
 
 ### With the Python SDK
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 # Initialize the tracer
@@ -35,9 +36,27 @@ with ze.trace("user_query") as span:
     ze.set_signal("task_completed", "success")
 ```
 
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+// Initialize the tracer
+ze.init({ apiKey: "your-api-key" });
+
+// Start a span
+ze.withSpan({ name: "user_query" }, async () => {
+    // Your AI logic here
+    const response = await processUserQuery(query);
+
+    // Note: Signals are not yet available in the TypeScript SDK
+    // Use the API endpoint directly for now (see API section below)
+});
+```
+</CodeGroup>
+
 ### Setting signals on different targets
 
-```python
+<CodeGroup>
+```python Python
 # On the current span
 ze.set_signal("helpful", True)
 
@@ -51,6 +70,30 @@ ze.set_trace_signal("conversion", True)
 # On the current session
 ze.set_session_signal("user_engaged", True)
 ```
+
+```typescript TypeScript
+// Note: Signal methods are not yet available in the TypeScript SDK
+// Use the API endpoint directly for now:
+
+const spanId = ze.getCurrentSpan()?.spanId;
+const traceId = ze.getCurrentTrace();
+const sessionId = ze.getCurrentSession();
+
+// Make API calls to set signals
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        span_id: spanId,
+        name: "helpful",
+        value: true
+    })
+});
+```
+</CodeGroup>
 
 ## API endpoint
 
@@ -96,6 +139,26 @@ ze.set_signal("thumbs_up", True)
 ze.set_signal(span, {"helpful": False})
 ```
 
+```typescript TypeScript SDK
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const spanId = ze.getCurrentSpan()?.spanId;
+
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        span_id: spanId,
+        name: "thumbs_up",
+        value: true  // or false
+    })
+});
+```
+
 ```python API
 import requests
 
@@ -119,6 +182,26 @@ requests.post(
 
 ```python Python SDK
 ze.set_signal("star_rating", 4)
+```
+
+```typescript TypeScript SDK
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const traceId = ze.getCurrentTrace();
+
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        trace_id: traceId,
+        name: "star_rating",
+        value: 4  // any integer 1-5
+    })
+});
 ```
 
 ```js JavaScript API
@@ -153,6 +236,27 @@ ze.set_signal("time_on_task_sec", 12.85)
 ze.set_signal("accuracy", 0.94)
 ```
 
+```typescript TypeScript SDK
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const sessionId = ze.getCurrentSession();
+
+// Response time
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        session_id: sessionId,
+        name: "response_time_ms",
+        value: 1250.5
+    })
+});
+```
+
 ```python API
 payload = {
     "session_id": session.id,
@@ -173,6 +277,26 @@ ze.set_signal("error_type", "timeout")
 ze.set_signal("user_intent", "purchase")
 ```
 
+```typescript TypeScript SDK
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const completionId = completion.id;  // from OpenAI response
+
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        completion_id: completionId,
+        name: "task_status",
+        value: "success"  // could also be "retry" / "fail"
+    })
+});
+```
+
 ```js JavaScript API
 {
   completion_id: completion.id,
@@ -185,21 +309,67 @@ ze.set_signal("user_intent", "purchase")
 
 ### 5. Session-level signals
 
-```python
+<CodeGroup>
+```python Python
 # Track user engagement across an entire session
 ze.set_session_signal("pages_visited", 5)
 ze.set_session_signal("converted", True)
 ze.set_session_signal("user_tier", "premium")
 ```
 
+```typescript TypeScript
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const sessionId = ze.getCurrentSession();
+
+// Track user engagement across an entire session
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        session_id: sessionId,
+        name: "pages_visited",
+        value: 5
+    })
+});
+```
+</CodeGroup>
+
 ### 6. Trace-level signals
 
-```python
+<CodeGroup>
+```python Python
 # Track outcomes for an entire request flow
 ze.set_trace_signal("request_successful", True)
 ze.set_trace_signal("total_cost", 0.045)
 ze.set_trace_signal("model_used", "gpt-4o")
 ```
+
+```typescript TypeScript
+// Signal methods coming soon to TypeScript SDK
+// For now, use the API directly:
+
+const traceId = ze.getCurrentTrace();
+
+// Track outcomes for an entire request flow
+await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        trace_id: traceId,
+        name: "request_successful",
+        value: true
+    })
+});
+```
+</CodeGroup>
 
 ## Best practices
 
@@ -220,7 +390,8 @@ Signals are automatically categorized based on their values:
 
 ## Putting it all together
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 # Initialize tracing
@@ -247,5 +418,58 @@ with ze.trace("user_chat_session", session_name="Customer Support") as session:
     # Signal on the entire trace
     ze.set_trace_signal("interaction_complete", True)
 ```
+
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+// Initialize tracing
+ze.init({ apiKey: "your-api-key" });
+
+// Start a session for user interaction
+await ze.withSpan({ 
+    name: "user_chat_session", 
+    sessionName: "Customer Support" 
+}, async () => {
+    
+    // Process user query
+    await ze.withSpan({ name: "process_query" }, async () => {
+        const response = await llmClient.chat.completions.create(...);
+        
+        // Signal on the LLM completion (using API for now)
+        const spanId = ze.getCurrentSpan()?.spanId;
+        await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                span_id: spanId,
+                name: "response_generated",
+                value: true
+            })
+        });
+    });
+    
+    // Capture user feedback
+    const userRating = await getUserFeedback();  // Your feedback collection logic
+    
+    // Signal on the session (using API for now)
+    const sessionId = ze.getCurrentSession();
+    await fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            name: "user_rating",
+            value: userRating
+        })
+    });
+});
+```
+</CodeGroup>
 
 That's it! Your signals will appear in the ZeroEval dashboard, helping you understand how your AI system performs in real-world scenarios.
