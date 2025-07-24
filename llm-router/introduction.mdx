@@ -27,20 +27,18 @@ Replace your OpenAI base URL with ZeroEval's gateway and use model names directl
 from openai import OpenAI
 
 # Initialize the client with ZeroEval API
-
 client = OpenAI(
-api_key="YOUR_API_KEY",
-base_url="https://api.zeroeval.com/v1",
+    api_key="YOUR_API_KEY",
+    base_url="https://api.zeroeval.com/v1",
 )
 
 # Make a completion request
-
 response = client.chat.completions.create(
-model="gpt-4o", # Just the model name, no provider prefix
-messages=[
-{"role": "system", "content": "You are a helpful assistant."},
-{"role": "user", "content": "Hello, how are you?"},
-],
+    model="gpt-4o", # Just the model name, no provider prefix
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello, how are you?"},
+    ],
 )
 
 print(response.choices[0].message.content)

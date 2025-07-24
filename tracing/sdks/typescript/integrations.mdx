@@ -9,7 +9,6 @@ description: Tracing integrations with popular libraries
 import { OpenAI } from 'openai';
 import * as ze from 'zeroeval';
 
-// Wrap the OpenAI client
 const openai = ze.wrap(new OpenAI());
 
 const completion = await openai.chat.completions.create({
@@ -35,7 +34,6 @@ import * as ai from 'ai';
 import { openai } from '@ai-sdk/openai';
 import * as ze from 'zeroeval';
 
-// Wrap the AI SDK module
 const wrappedAI = ze.wrap(ai);
 
 // Text generation

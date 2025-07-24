@@ -43,11 +43,7 @@
           },
           {
             "group": "Evaluations",
-            "pages": [
-              "evaluations/datasets",
-              "evaluations/experiments",
-              "evaluations/ab-tests"
-            ]
+            "pages": ["evaluations/datasets", "evaluations/experiments"]
           },
           {
             "group": "LLM Router",

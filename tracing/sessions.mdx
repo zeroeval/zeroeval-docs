@@ -12,7 +12,6 @@ Sessions are logical groupings of spans that belong to the same context or workf
 - **User Sessions**: Track all operations performed during a single user interaction
 - **Batch Processing**: Group spans from processing multiple items in a batch
 - **Multi-Agent Workflows**: Track interactions across multiple AI agents
-- **Request Lifecycles**: Follow a request through multiple services or components
 
 ## Creating Sessions
 
@@ -143,237 +142,215 @@ function chargePayment(orderId: string) {
 
 ## Advanced Session Patterns
 
-### Multi-Agent Workflows
+### Multi-Agent RAG System
 
-Track complex workflows involving multiple AI agents:
+Track complex retrieval-augmented generation workflows with multiple specialized agents:
 
 <CodeGroup>
 ```python Python
 session = {
     "id": str(uuid.uuid4()),
-    "name": "Research Assistant Workflow"
+    "name": "Multi-Agent RAG Pipeline"
 }
 
-@ze.span(name="research_coordinator", session=session)
-async def coordinate_research(topic):
-    # Coordinator agent
-    tasks = plan_research_tasks(topic)
+@ze.span(name="rag_coordinator", session=session)
+async def process_query(query):
+    # Retrieval
+    docs = await retrieval_agent(query)
     
-    # Each researcher works in the same session
-    results = []
-    for task in tasks:
-        result = await research_agent(task)
-        results.append(result)
+    # Reranking  
+    ranked = await reranking_agent(query, docs)
     
-    # Synthesizer also in the same session
-    return await synthesize_findings(results)
+    # Generation
+    response = await generation_agent(query, ranked)
+    
+    return response
 
-@ze.span(name="research_agent")
-async def research_agent(task):
-    # Automatically inherits session from parent
-    return await perform_research(task)
+@ze.span(name="retrieval_agent")
+async def retrieval_agent(query):
+    # Inherits session from parent
+    embeddings = await embed(query)
+    return await vector_search(embeddings)
 
-@ze.span(name="synthesis_agent")
-async def synthesize_findings(results):
-    # Also part of the same session
-    return create_summary(results)
+@ze.span(name="generation_agent")
+async def generation_agent(query, context):
+    return await llm.generate(query, context)
 ```
 
 ```typescript TypeScript
 const session = {
     id: randomUUID(),
-    name: "Research Assistant Workflow"
+    name: "Multi-Agent RAG Pipeline"
 };
 
 @ze.span({ 
-    name: "research_coordinator", 
+    name: "rag_coordinator", 
     sessionId: session.id,
     sessionName: session.name
 })
-async function coordinateResearch(topic: string) {
-    // Coordinator agent
-    const tasks = planResearchTasks(topic);
+async function processQuery(query: string) {
+    // Retrieval
+    const docs = await retrievalAgent(query);
     
-    // Each researcher works in the same session
-    const results = [];
-    for (const task of tasks) {
-        const result = await researchAgent(task);
-        results.push(result);
-    }
+    // Reranking
+    const ranked = await rerankingAgent(query, docs);
     
-    // Synthesizer also in the same session
-    return await synthesizeFindings(results);
+    // Generation
+    const response = await generationAgent(query, ranked);
+    
+    return response;
 }
 
-@ze.span({ name: "research_agent" })
-async function researchAgent(task: any) {
-    // Automatically inherits session from parent
-    return await performResearch(task);
+@ze.span({ name: "retrieval_agent" })
+async function retrievalAgent(query: string) {
+    // Inherits session from parent
+    const embeddings = await embed(query);
+    return await vectorSearch(embeddings);
 }
 
-@ze.span({ name: "synthesis_agent" })
-async function synthesizeFindings(results: any[]) {
-    // Also part of the same session
-    return createSummary(results);
+@ze.span({ name: "generation_agent" })
+async function generationAgent(query: string, context: any) {
+    return await llm.generate(query, context);
 }
 ```
 </CodeGroup>
 
-### User Journey Tracking
+### Conversational AI Session
 
-Track a complete user journey across multiple interactions:
+Track a complete conversation with an AI assistant:
 
 <CodeGroup>
 ```python Python
-class UserSession:
+class ChatSession:
     def __init__(self, user_id):
         self.session = {
-            "id": f"user-{user_id}-{uuid.uuid4()}",
-            "name": f"User Journey - {user_id}"
+            "id": f"chat-{user_id}-{uuid.uuid4()}",
+            "name": f"AI Chat - User {user_id}"
         }
+        self.history = []
     
-    @ze.span(name="login", session=lambda self: self.session)
-    def login(self, credentials):
-        # Track login attempt
-        return authenticate(credentials)
+    @ze.span(name="process_message", session=lambda self: self.session)
+    async def process_message(self, message):
+        # Add to history
+        self.history.append({"role": "user", "content": message})
+        
+        # Generate response
+        response = await self.generate_response()
+        self.history.append({"role": "assistant", "content": response})
+        
+        return response
     
-    @ze.span(name="browse_products", session=lambda self: self.session)
-    def browse(self, category):
-        # Track browsing behavior
-        return fetch_products(category)
-    
-    @ze.span(name="add_to_cart", session=lambda self: self.session)
-    def add_to_cart(self, product_id):
-        # Track cart interactions
-        return update_cart(product_id)
-    
-    @ze.span(name="checkout", session=lambda self: self.session)
-    def checkout(self):
-        # Track purchase completion
-        return process_checkout()
+    @ze.span(name="generate_response", session=lambda self: self.session)
+    async def generate_response(self):
+        return await llm.chat(self.history)
 ```
 
 ```typescript TypeScript
-class UserSession {
+class ChatSession {
     private session: { id: string; name: string };
+    private history: any[] = [];
     
     constructor(userId: string) {
         this.session = {
-            id: `user-${userId}-${randomUUID()}`,
-            name: `User Journey - ${userId}`
+            id: `chat-${userId}-${randomUUID()}`,
+            name: `AI Chat - User ${userId}`
         };
     }
     
     @ze.span({ 
-        name: "login",
-        sessionId: function(this: UserSession) { return this.session.id; },
-        sessionName: function(this: UserSession) { return this.session.name; }
+        name: "process_message",
+        sessionId: function(this: ChatSession) { return this.session.id; },
+        sessionName: function(this: ChatSession) { return this.session.name; }
     })
-    login(credentials: any) {
-        // Track login attempt
-        return authenticate(credentials);
+    async processMessage(message: string) {
+        // Add to history
+        this.history.push({ role: "user", content: message });
+        
+        // Generate response
+        const response = await this.generateResponse();
+        this.history.push({ role: "assistant", content: response });
+        
+        return response;
     }
     
     @ze.span({ 
-        name: "browse_products",
-        sessionId: function(this: UserSession) { return this.session.id; },
-        sessionName: function(this: UserSession) { return this.session.name; }
+        name: "generate_response",
+        sessionId: function(this: ChatSession) { return this.session.id; },
+        sessionName: function(this: ChatSession) { return this.session.name; }
     })
-    browse(category: string) {
-        // Track browsing behavior
-        return fetchProducts(category);
-    }
-    
-    @ze.span({ 
-        name: "add_to_cart",
-        sessionId: function(this: UserSession) { return this.session.id; },
-        sessionName: function(this: UserSession) { return this.session.name; }
-    })
-    addToCart(productId: string) {
-        // Track cart interactions
-        return updateCart(productId);
-    }
-    
-    @ze.span({ 
-        name: "checkout",
-        sessionId: function(this: UserSession) { return this.session.id; },
-        sessionName: function(this: UserSession) { return this.session.name; }
-    })
-    checkout() {
-        // Track purchase completion
-        return processCheckout();
+    async generateResponse() {
+        return await llm.chat(this.history);
     }
 }
 ```
 </CodeGroup>
 
-### Batch Processing Sessions
+### Batch LLM Processing
 
-Group operations when processing multiple items:
+Process multiple documents with LLMs in a single session:
 
 <CodeGroup>
 ```python Python
-def process_batch(items, batch_name):
+async def batch_summarize(documents):
     session = {
         "id": f"batch-{uuid.uuid4()}",
-        "name": f"Batch Processing - {batch_name}"
+        "name": f"Batch Summarization - {len(documents)} docs"
     }
     
     @ze.span(name="batch_processor", session=session)
-    def run_batch():
-        results = []
-        for i, item in enumerate(items):
-            # Each item processing is part of the batch session
-            with ze.span(name=f"process_item_{i}", session=session) as item_span:
+    async def process():
+        summaries = []
+        
+        for i, doc in enumerate(documents):
+            with ze.span(name=f"summarize_doc_{i}", session=session) as span:
                 try:
-                    result = process_single_item(item)
-                    item_span.set_io(
-                        input_data=f"Item: {item}",
-                        output_data=f"Result: {result}"
+                    summary = await llm.summarize(doc)
+                    span.set_io(
+                        input_data=f"Doc: {doc['title']}",
+                        output_data=summary[:100]
                     )
-                    results.append(result)
+                    summaries.append(summary)
                 except Exception as e:
-                    item_span.set_error(
+                    span.set_error(
                         code=type(e).__name__,
                         message=str(e)
                     )
         
-        return results
+        return summaries
     
-    return run_batch()
+    return await process()
 ```
 
 ```typescript TypeScript
-function processBatch(items: any[], batchName: string) {
+async function batchSummarize(documents: any[]) {
     const session = {
         id: `batch-${randomUUID()}`,
-        name: `Batch Processing - ${batchName}`
+        name: `Batch Summarization - ${documents.length} docs`
     };
     
     return ze.withSpan({
         name: "batch_processor",
         sessionId: session.id,
         sessionName: session.name
-    }, () => {
-        const results = [];
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            // Each item processing is part of the batch session
-            ze.withSpan({
-                name: `process_item_${i}`,
+    }, async () => {
+        const summaries = [];
+        
+        for (let i = 0; i < documents.length; i++) {
+            await ze.withSpan({
+                name: `summarize_doc_${i}`,
                 sessionId: session.id,
                 sessionName: session.name
-            }, () => {
+            }, async () => {
                 try {
-                    const result = processSingleItem(item);
+                    const summary = await llm.summarize(documents[i]);
                     const span = ze.getCurrentSpan();
                     if (span) {
                         span.setIO(
-                            `Item: ${item}`,
-                            `Result: ${result}`
+                            `Doc: ${documents[i].title}`,
+                            summary.substring(0, 100)
                         );
                     }
-                    results.push(result);
+                    summaries.push(summary);
                 } catch (e: any) {
                     const span = ze.getCurrentSpan();
                     if (span) {
@@ -386,7 +363,7 @@ function processBatch(items: any[], batchName: string) {
             });
         }
         
-        return results;
+        return summaries;
     });
 }
 ```
@@ -466,191 +443,5 @@ await ze.withSpan({
         }
     });
 });
-```
-</CodeGroup>
-
-## Best Practices
-
-### 1. Use Descriptive Session Names
-
-<CodeGroup>
-```python Python
-# ❌ Poor: Generic name
-session = {"id": "123", "name": "Session"}
-
-# ✅ Good: Descriptive and searchable
-session = {
-    "id": f"support-{ticket_id}-{timestamp}",
-    "name": f"Support Ticket #{ticket_id} - {customer_name}"
-}
-```
-
-```typescript TypeScript
-// ❌ Poor: Generic name
-const session = { id: "123", name: "Session" };
-
-// ✅ Good: Descriptive and searchable
-const session = {
-    id: `support-${ticketId}-${timestamp}`,
-    name: `Support Ticket #${ticketId} - ${customerName}`
-};
-```
-</CodeGroup>
-
-### 2. Include Relevant Context
-
-<CodeGroup>
-```python Python
-session = {
-    "id": str(uuid.uuid4()),
-    "name": f"API Request - {endpoint} - {user_id}"
-}
-
-@ze.span(
-    name="api_handler",
-    session=session,
-    attributes={
-        "endpoint": endpoint,
-        "method": request.method,
-        "user_id": user_id,
-        "api_version": "v2"
-    }
-)
-def handle_api_request(request):
-    # Attributes help filter sessions in the dashboard
-    return process_request(request)
-```
-
-```typescript TypeScript
-const session = {
-    id: randomUUID(),
-    name: `API Request - ${endpoint} - ${userId}`
-};
-
-@ze.span({
-    name: "api_handler",
-    sessionId: session.id,
-    sessionName: session.name,
-    attributes: {
-        endpoint: endpoint,
-        method: request.method,
-        user_id: userId,
-        api_version: "v2"
-    }
-})
-function handleApiRequest(request: any) {
-    // Attributes help filter sessions in the dashboard
-    return processRequest(request);
-}
-```
-</CodeGroup>
-
-### 3. Consistent Session Lifecycle
-
-<CodeGroup>
-```python Python
-class SessionManager:
-    def __init__(self):
-        self.sessions = {}
-    
-    def get_or_create_session(self, key, name_template):
-        if key not in self.sessions:
-            self.sessions[key] = {
-                "id": str(uuid.uuid4()),
-                "name": name_template.format(key=key)
-            }
-        return self.sessions[key]
-    
-    def clear_session(self, key):
-        if key in self.sessions:
-            del self.sessions[key]
-
-# Usage
-session_mgr = SessionManager()
-
-@ze.span(name="user_action", session=lambda: session_mgr.get_or_create_session(
-    user_id, 
-    "User Session - {key}"
-))
-def handle_user_action(user_id, action):
-    return process_action(action)
-```
-
-```typescript TypeScript
-class SessionManager {
-    private sessions: Map<string, { id: string; name: string }> = new Map();
-    
-    getOrCreateSession(key: string, nameTemplate: string): { id: string; name: string } {
-        if (!this.sessions.has(key)) {
-            this.sessions.set(key, {
-                id: randomUUID(),
-                name: nameTemplate.replace("{key}", key)
-            });
-        }
-        return this.sessions.get(key)!;
-    }
-    
-    clearSession(key: string): void {
-        this.sessions.delete(key);
-    }
-}
-
-// Usage
-const sessionMgr = new SessionManager();
-
-function handleUserAction(userId: string, action: any) {
-    const session = sessionMgr.getOrCreateSession(userId, "User Session - {key}");
-    
-    return ze.withSpan({
-        name: "user_action",
-        sessionId: session.id,
-        sessionName: session.name
-    }, () => {
-        return processAction(action);
-    });
-}
-```
-</CodeGroup>
-
-### 4. Session Metadata in Attributes
-
-Enhance session tracking with additional metadata:
-
-<CodeGroup>
-```python Python
-@ze.span(
-    name="ml_inference",
-    session={
-        "id": experiment_id,
-        "name": f"ML Experiment - {model_name}"
-    },
-    attributes={
-        "model_name": model_name,
-        "model_version": model_version,
-        "experiment_type": "A/B test",
-        "cohort": "treatment",
-        "timestamp": datetime.now().isoformat()
-    }
-)
-def run_inference(input_data):
-    return model.predict(input_data)
-```
-
-```typescript TypeScript
-@ze.span({
-    name: "ml_inference",
-    sessionId: experimentId,
-    sessionName: `ML Experiment - ${modelName}`,
-    attributes: {
-        model_name: modelName,
-        model_version: modelVersion,
-        experiment_type: "A/B test",
-        cohort: "treatment",
-        timestamp: new Date().toISOString()
-    }
-})
-function runInference(inputData: any) {
-    return model.predict(inputData);
-}
 ```
 </CodeGroup>

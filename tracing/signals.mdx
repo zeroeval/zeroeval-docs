@@ -36,24 +36,49 @@ with ze.trace("user_query") as span:
     ze.set_signal("task_completed", "success")
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-// Initialise the tracer
+// Initialize the tracer
 ze.init({ apiKey: "your-api-key" });
 
 // Start a span and add signals
 await ze.withSpan({ name: "user_query" }, async () => {
     const response = await processUserQuery(query);
 
-    // --- Add signals on the current span ---
+    // Add signals on the current span
     await ze.sendSpanSignal("user_satisfaction", true);
     await ze.sendSpanSignal("response_quality", 4.5);
 
-    // --- Attach to the whole trace / session ---
+    // Attach to the whole trace / session
     await ze.sendTraceSignal("task_completed", "success");
     await ze.sendSessionSignal("vip_user", true);
 });
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+// Initialize the tracer
+ze.init({ apiKey: "your-api-key" });
+
+class UserService {
+    @span({ name: "user_query" })
+    async processQuery(query: string) {
+        const response = await this.processUserQuery(query);
+
+        // Add signals on the current span
+        await ze.sendSpanSignal("user_satisfaction", true);
+        await ze.sendSpanSignal("response_quality", 4.5);
+
+        // Attach to the whole trace / session
+        await ze.sendTraceSignal("task_completed", "success");
+        await ze.sendSessionSignal("vip_user", true);
+
+        return response;
+    }
+}
 ```
 </CodeGroup>
 
@@ -75,22 +100,49 @@ ze.set_trace_signal("conversion", True)
 ze.set_session_signal("user_engaged", True)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-// On the current span
-await ze.sendSpanSignal("helpful", true);
+// Within a withSpan context
+await ze.withSpan({ name: "some_operation" }, async () => {
+    // On the current span
+    await ze.sendSpanSignal("helpful", true);
 
-// On a specific span object
-const span = ze.getCurrentSpan();
-span?.addSignal("rating", 5);
-span?.addSignal("category", "excellent");
+    // On a specific span object
+    const span = ze.getCurrentSpan();
+    span?.addSignal("rating", 5);
+    span?.addSignal("category", "excellent");
 
-// On the current trace
-await ze.sendTraceSignal("conversion", true);
+    // On the current trace
+    await ze.sendTraceSignal("conversion", true);
 
-// On the current session
-await ze.sendSessionSignal("user_engaged", true);
+    // On the current session
+    await ze.sendSessionSignal("user_engaged", true);
+});
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class MyService {
+    @span({ name: "some_operation" })
+    async performOperation() {
+        // On the current span
+        await ze.sendSpanSignal("helpful", true);
+
+        // On a specific span object
+        const span = ze.getCurrentSpan();
+        span?.addSignal("rating", 5);
+        span?.addSignal("category", "excellent");
+
+        // On the current trace
+        await ze.sendTraceSignal("conversion", true);
+
+        // On the current session
+        await ze.sendSessionSignal("user_engaged", true);
+    }
+}
 ```
 </CodeGroup>
 
@@ -138,14 +190,29 @@ ze.set_signal("thumbs_up", True)
 ze.set_signal(span, {"helpful": False})
 ```
 
-```typescript TypeScript SDK
+```typescript TypeScript SDK (Basic)
 import * as ze from 'zeroeval';
 
-// Thumbs-up on the current span
-await ze.sendSpanSignal("thumbs_up", true);
+await ze.withSpan({ name: "user_interaction" }, async () => {
+    // Thumbs-up on the current span
+    await ze.sendSpanSignal("thumbs_up", true);
 
-// Thumbs-down
-await ze.sendSpanSignal("thumbs_up", false);
+    // Thumbs-down
+    await ze.sendSpanSignal("thumbs_up", false);
+});
+```
+
+```typescript TypeScript SDK (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class FeedbackService {
+    @span({ name: "user_interaction" })
+    async collectFeedback(isPositive: boolean) {
+        // Thumbs-up or down on the current span
+        await ze.sendSpanSignal("thumbs_up", isPositive);
+    }
+}
 ```
 
 ```python API
@@ -173,11 +240,26 @@ requests.post(
 ze.set_signal("star_rating", 4)
 ```
 
-```typescript TypeScript SDK
+```typescript TypeScript SDK (Basic)
 import * as ze from 'zeroeval';
 
-// Star rating (1–5) on the current trace
-await ze.sendTraceSignal("star_rating", 4);
+await ze.withSpan({ name: "rate_experience" }, async () => {
+    // Star rating (1–5) on the current trace
+    await ze.sendTraceSignal("star_rating", 4);
+});
+```
+
+```typescript TypeScript SDK (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class RatingService {
+    @span({ name: "rate_experience" })
+    async submitRating(stars: number) {
+        // Star rating (1–5) on the current trace
+        await ze.sendTraceSignal("star_rating", stars);
+    }
+}
 ```
 
 ```js JavaScript API
@@ -212,14 +294,32 @@ ze.set_signal("time_on_task_sec", 12.85)
 ze.set_signal("accuracy", 0.94)
 ```
 
-```typescript TypeScript SDK
+```typescript TypeScript SDK (Basic)
 import * as ze from 'zeroeval';
 
-// Response time on the current session
-await ze.sendSessionSignal("response_time_ms", 1250.5);
+await ze.withSpan({ name: "measure_performance" }, async () => {
+    // Response time on the current session
+    await ze.sendSessionSignal("response_time_ms", 1250.5);
 
-// Accuracy score on current span
-await ze.sendSpanSignal("accuracy", 0.94);
+    // Accuracy score on current span
+    await ze.sendSpanSignal("accuracy", 0.94);
+});
+```
+
+```typescript TypeScript SDK (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class MetricsService {
+    @span({ name: "measure_performance" })
+    async trackMetrics(responseTime: number, accuracy: number) {
+        // Response time on the current session
+        await ze.sendSessionSignal("response_time_ms", responseTime);
+
+        // Accuracy score on current span
+        await ze.sendSpanSignal("accuracy", accuracy);
+    }
+}
 ```
 
 ```python API
@@ -242,11 +342,31 @@ ze.set_signal("error_type", "timeout")
 ze.set_signal("user_intent", "purchase")
 ```
 
-```typescript TypeScript SDK
+```typescript TypeScript SDK (Basic)
 import * as ze from 'zeroeval';
 
-// Task status on current span
-await ze.sendSpanSignal("task_status", "success");
+await ze.withSpan({ name: "task_execution" }, async () => {
+    // Task status on current span
+    await ze.sendSpanSignal("task_status", "success");
+});
+```
+
+```typescript TypeScript SDK (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class TaskService {
+    @span({ name: "task_execution" })
+    async executeTask() {
+        try {
+            // Your task logic
+            await ze.sendSpanSignal("task_status", "success");
+        } catch (error) {
+            await ze.sendSpanSignal("task_status", "fail");
+            await ze.sendSpanSignal("error_type", error.name);
+        }
+    }
+}
 ```
 
 ```js JavaScript API
@@ -269,13 +389,37 @@ ze.set_session_signal("converted", True)
 ze.set_session_signal("user_tier", "premium")
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-// Track user engagement across the session
-await ze.sendSessionSignal("pages_visited", 5);
-await ze.sendSessionSignal("converted", true);
-await ze.sendSessionSignal("user_tier", "premium");
+// Within a session context
+await ze.withSpan({ 
+    name: "user_session",
+    sessionName: "User Journey"
+}, async () => {
+    // Track user engagement across the session
+    await ze.sendSessionSignal("pages_visited", 5);
+    await ze.sendSessionSignal("converted", true);
+    await ze.sendSessionSignal("user_tier", "premium");
+});
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class SessionTracker {
+    @span({ 
+        name: "user_session",
+        sessionName: "User Journey"
+    })
+    async trackUserActivity(pagesVisited: number, didConvert: boolean, tier: string) {
+        // Track user engagement across the session
+        await ze.sendSessionSignal("pages_visited", pagesVisited);
+        await ze.sendSessionSignal("converted", didConvert);
+        await ze.sendSessionSignal("user_tier", tier);
+    }
+}
 ```
 </CodeGroup>
 
@@ -289,24 +433,37 @@ ze.set_trace_signal("total_cost", 0.045)
 ze.set_trace_signal("model_used", "gpt-4o")
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-// Trace-level outcomes
-await ze.sendTraceSignal("request_successful", true);
-await ze.sendTraceSignal("total_cost", 0.045);
-await ze.sendTraceSignal("model_used", "gpt-4o");
+await ze.withSpan({ name: "api_request" }, async () => {
+    // Trace-level outcomes
+    await ze.sendTraceSignal("request_successful", true);
+    await ze.sendTraceSignal("total_cost", 0.045);
+    await ze.sendTraceSignal("model_used", "gpt-4o");
+});
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class APIService {
+    @span({ name: "api_request" })
+    async makeRequest() {
+        // Your request logic
+        const success = true;
+        const cost = 0.045;
+        const model = "gpt-4o";
+
+        // Trace-level outcomes
+        await ze.sendTraceSignal("request_successful", success);
+        await ze.sendTraceSignal("total_cost", cost);
+        await ze.sendTraceSignal("model_used", model);
+    }
+}
 ```
 </CodeGroup>
-
-## Best practices
-
-• **Send signals as they happen** – latency isn't an issue, we process them async  
-• **Re-use the same `name` consistently** – that's how we aggregate and analyze  
-• **One target can have multiple signals** (different names)  
-• **Overwrite behavior** – if you POST the same `(target_id, name)` twice, we'll overwrite the previous value  
-• **Use meaningful names** – `user_satisfaction` is better than `signal1`  
-• **Choose appropriate targets** – completion signals for LLM responses, session signals for user behavior
 
 ## Signal types
 
@@ -347,7 +504,7 @@ with ze.trace("user_chat_session", session_name="Customer Support") as session:
     ze.set_trace_signal("interaction_complete", True)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
 ze.init({ apiKey: "your-api-key" });
@@ -377,6 +534,45 @@ await ze.withSpan({
   // Trace-level signal
   await ze.sendTraceSignal("interaction_complete", true);
 });
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+ze.init({ apiKey: "your-api-key" });
+
+class SupportService {
+  @span({
+    name: "user_chat_session",
+    sessionName: "Customer Support"
+  })
+  async handleChatSession() {
+    // Process user query
+    await this.processQuery();
+
+    // Capture user feedback
+    const userRating = await this.getUserFeedback();
+
+    // Session-level signals
+    await ze.sendSessionSignal("user_rating", userRating);
+    await ze.sendSessionSignal("issue_resolved", userRating >= 4);
+
+    // Trace-level signal
+    await ze.sendTraceSignal("interaction_complete", true);
+  }
+
+  @span({ name: "process_query" })
+  async processQuery() {
+    const response = await llmClient.chat.completions.create(...);
+
+    // Signal on the LLM completion
+    await ze.sendSpanSignal("response_generated", true);
+    await ze.sendSpanSignal("response_length", response.choices[0].message.content.length);
+    
+    return response;
+  }
+}
 ```
 </CodeGroup>
 

@@ -43,21 +43,23 @@ ze.init({
 
 ## Patterns
 
-### Function Wrapping
+The SDK offers two ways to add tracing to your TypeScript/JavaScript code:
 
-The primary pattern for adding spans in TypeScript/JavaScript:
+### Basic Usage
 
-```ts
+<CodeGroup>
+
+```ts Function Wrapping
 import * as ze from 'zeroeval';
 
-// Synchronous function
+// Wrap synchronous functions
 const fetchData = (userId: string) =>
   ze.withSpan({ name: 'fetch_data' }, () => ({
     userId,
     name: 'John Doe'
   }));
 
-// Async function
+// Wrap async functions
 const processData = async (data: { name: string }) =>
   ze.withSpan(
     {
@@ -69,30 +71,20 @@ const processData = async (data: { name: string }) =>
       return `Welcome, ${result.name}!`;
     }
   );
-```
 
-### Complex Workflows
-
-Handle nested spans and complex workflows:
-
-```ts
-import * as ze from 'zeroeval';
-
+// Complex workflows with nested spans
 async function complexWorkflow() {
   return ze.withSpan({ name: 'data_pipeline' }, async () => {
-    // Fetch stage
     const data = await ze.withSpan(
       { name: 'fetch_stage' },
       fetchExternalData
     );
 
-    // Process stage
     const processed = await ze.withSpan(
       { name: 'process_stage' },
       () => transformData(data)
     );
 
-    // Save stage
     const result = await ze.withSpan(
       { name: 'save_stage' },
       () => saveToDatabase(processed)
@@ -103,6 +95,48 @@ async function complexWorkflow() {
 }
 ```
 
+```ts Decorators
+import { span } from 'zeroeval';
+
+class DataService {
+  @span({
+    name: 'fetch_user_data',
+    tags: { service: 'user_api' }
+  })
+  async fetchUser(userId: string) {
+    const response = await fetch(`/api/users/${userId}`);
+    return response.json();
+  }
+
+  @span({
+    name: 'process_order',
+    attributes: { version: '2.0' }
+  })
+  processOrder(orderId: string, items: string[]) {
+    return { orderId, processed: true };
+  }
+}
+
+// TypeScript Configuration Required:
+// Add to your tsconfig.json:
+// {
+//   "compilerOptions": {
+//     "experimentalDecorators": true,
+//     "emitDecoratorMetadata": true
+//   }
+// }
+
+// When using tsx or ts-node:
+// tsx --experimental-decorators your-file.ts
+// ts-node --experimental-decorators your-file.ts
+```
+
+</CodeGroup>
+
+<Note>
+**Decorators require TypeScript configuration**: Enable `experimentalDecorators` and `emitDecoratorMetadata` in your `tsconfig.json`. When using runtime tools like `tsx` or `ts-node`, pass the `--experimental-decorators` flag.
+</Note>
+
 ### Sessions
 
 Group related spans into sessions:
@@ -112,7 +146,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const sessionId = uuidv4();
 
-// All spans within will belong to this session
 async function userJourney(userId: string) {
   return ze.withSpan(
     {
@@ -129,32 +162,7 @@ async function userJourney(userId: string) {
 }
 ```
 
-## TS Types
-
-The SDK is fully typed. Key interfaces:
-
-```ts
-interface SpanOptions {
-  name: string;
-  sessionId?: string;
-  sessionName?: string;
-  tags?: Record<string, string>;
-  attributes?: Record<string, unknown>;
-  inputData?: unknown;
-  outputData?: unknown;
-}
-
-interface InitOptions {
-  apiKey?: string;
-  apiUrl?: string;
-  flushInterval?: number;
-  maxSpans?: number;
-  collectCodeDetails?: boolean;
-  integrations?: Record<string, boolean>;
-}
-```
-
-## Helper Functions
+## Context
 
 Access current context information:
 
@@ -170,8 +178,5 @@ function myFunction() {
   
   // Get current session ID
   const sessionId = getCurrentSession();
-  
-  // Use them as needed
-  console.log({ span, traceId, sessionId });
 }
 ```

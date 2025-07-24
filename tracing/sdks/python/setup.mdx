@@ -98,19 +98,19 @@ tracer.configure(
 )
 ```
 
-## Helper Functions
+## Context
 
 Access current context information:
 
 ```python
 # Get the current span
-current_span = ze.span.get_current()
+current_span = ze.get_current_span()
 
 # Get the current trace ID
-trace_id = ze.get_current_trace_id()
+trace_id = ze.get_current_trace()
 
 # Get the current session ID
-session_id = ze.get_current_session_id()
+session_id = ze.get_current_session()
 ```
 
 ## CLI Tooling
