@@ -34,21 +34,22 @@ def handle_request():
         ...
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-@ze.span({
-    name: "handle_request",
-    tags: {
-        user_id: "42",           // who triggered the request
-        tenant: "acme-corp",     // multi-tenant identifier
-        plan: "enterprise"       // commercial plan
-    }
-})
 function handleRequest() {
-    authenticate();
-    fetchData();
-    process();
+    ze.withSpan({
+        name: "handle_request",
+        tags: {
+            user_id: "42",           // who triggered the request
+            tenant: "acme-corp",     // multi-tenant identifier
+            plan: "enterprise"       // commercial plan
+        }
+    }, () => {
+        authenticate();
+        fetchData();
+        process();
+    });
 }
 
 // Two nested child spans – they automatically inherit *all* the tags
@@ -65,6 +66,44 @@ function process() {
     }, () => {
         // ...
     });
+}
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+
+class RequestHandler {
+    @span({
+        name: "handle_request",
+        tags: {
+            user_id: "42",           // who triggered the request
+            tenant: "acme-corp",     // multi-tenant identifier
+            plan: "enterprise"       // commercial plan
+        }
+    })
+    handleRequest() {
+        this.authenticate();
+        this.fetchData();
+        this.process();
+    }
+
+    // Two nested child spans – they automatically inherit *all* the tags
+    @span({ name: "fetch_data" })
+    fetchData() {
+        // ...
+    }
+
+    @span({ 
+        name: "process", 
+        tags: { stage: "post" }
+    })
+    process() {
+        // ...
+    }
+
+    authenticate() {
+        // Not traced
+    }
 }
 ```
 </CodeGroup>
@@ -90,23 +129,51 @@ def top_level():
         render_template()
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import * as ze from 'zeroeval';
 
-@ze.span({ name: "top_level" })
 function topLevel() {
-    // Child span with its own tags – *not* inherited by siblings
-    ze.withSpan({
+    ze.withSpan({ name: "top_level" }, () => {
+        // Child span with its own tags – *not* inherited by siblings
+        ze.withSpan({
+            name: "db_call",
+            tags: { table: "customers", operation: "SELECT" }
+        }, () => {
+            queryDatabase();
+        });
+
+        // Another child span without tags – it has no knowledge of the db_call tags
+        ze.withSpan({ name: "render" }, () => {
+            renderTemplate();
+        });
+    });
+}
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+
+class DataService {
+    @span({ name: "top_level" })
+    topLevel() {
+        this.performDbCall();
+        this.renderOutput();
+    }
+
+    @span({
         name: "db_call",
         tags: { table: "customers", operation: "SELECT" }
-    }, () => {
+    })
+    performDbCall() {
+        // Child span with its own tags – *not* inherited by siblings
         queryDatabase();
-    });
+    }
 
-    // Another child span without tags – it has no knowledge of the db_call tags
-    ze.withSpan({ name: "render" }, () => {
+    @span({ name: "render" })
+    renderOutput() {
+        // Another child span without tags – it has no knowledge of the db_call tags
         renderTemplate();
-    });
+    }
 }
 ```
 </CodeGroup>
@@ -148,7 +215,7 @@ with ze.span(
     result = app.invoke({"messages": [HumanMessage(content="hello")], "count": 0})
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import { randomUUID } from 'crypto';
 import { HumanMessage } from '@langchain/core/messages';
 import * as ze from 'zeroeval';
@@ -187,6 +254,56 @@ ze.withSpan({
         count: 0 
     });
 });
+```
+
+```typescript TypeScript (Decorators)
+import { randomUUID } from 'crypto';
+import { HumanMessage } from '@langchain/core/messages';
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+const DEMO_TAGS = { example: "langgraph_tags_demo", project: "zeroeval" };
+
+class TaggingDemo {
+    private sessionId = randomUUID();
+    private sessionInfo = { 
+        id: this.sessionId, 
+        name: "Tags Demo Session" 
+    };
+
+    @span({
+        name: "demo.root_invoke",
+        sessionId: function(this: TaggingDemo) { return this.sessionInfo.id; },
+        sessionName: function(this: TaggingDemo) { return this.sessionInfo.name; },
+        tags: { ...DEMO_TAGS, run: "invoke" }
+    })
+    async rootInvoke() {
+        // 1️⃣ Tag the *current* span only
+        const currentSpan = ze.getCurrentSpan();
+        if (currentSpan) {
+            ze.setTag(currentSpan, { phase: "pre-run" });
+        }
+
+        // 2️⃣ Tag the whole trace – root + all children (past *and* future)
+        const currentTrace = ze.getCurrentTrace();
+        if (currentTrace) {
+            ze.setTag(currentTrace, { run_mode: "invoke" });
+        }
+
+        // 3️⃣ Tag the entire session
+        const currentSession = ze.getCurrentSession();
+        if (currentSession) {
+            ze.setTag(currentSession, { env: "local" });
+        }
+
+        const result = await app.invoke({ 
+            messages: [new HumanMessage("hello")], 
+            count: 0 
+        });
+        
+        return result;
+    }
+}
 ```
 </CodeGroup>
 

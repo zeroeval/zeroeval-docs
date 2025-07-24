@@ -33,17 +33,37 @@ def process_request(data):
     return transform_data(data)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 import { randomUUID } from 'crypto';
 import * as ze from 'zeroeval';
 
 // Generate a unique session ID
 const sessionId = randomUUID();
 
-@ze.span({ name: "process_request", sessionId })
 function processRequest(data: any) {
-    // This span belongs to the session
-    return transformData(data);
+    return ze.withSpan({ 
+        name: "process_request", 
+        sessionId 
+    }, () => {
+        // This span belongs to the session
+        return transformData(data);
+    });
+}
+```
+
+```typescript TypeScript (Decorators)
+import { randomUUID } from 'crypto';
+import { span } from 'zeroeval';
+
+// Generate a unique session ID
+const sessionId = randomUUID();
+
+class RequestProcessor {
+    @span({ name: "process_request", sessionId })
+    processRequest(data: any) {
+        // This span belongs to the session
+        return transformData(data);
+    }
 }
 ```
 </CodeGroup>
@@ -66,15 +86,30 @@ def handle_support_chat(user_id, message):
     return generate_response(message)
 ```
 
-```typescript TypeScript
-@ze.span({
-    name: "user_interaction",
-    sessionId: sessionId,
-    sessionName: "Customer Support Chat - User #12345"
-})
+```typescript TypeScript (Basic)
 function handleSupportChat(userId: string, message: string) {
-    // Process the support request
-    return generateResponse(message);
+    return ze.withSpan({
+        name: "user_interaction",
+        sessionId: sessionId,
+        sessionName: "Customer Support Chat - User #12345"
+    }, () => {
+        // Process the support request
+        return generateResponse(message);
+    });
+}
+```
+
+```typescript TypeScript (Decorators)
+class SupportHandler {
+    @span({
+        name: "user_interaction",
+        sessionId: sessionId,
+        sessionName: "Customer Support Chat - User #12345"
+    })
+    handleSupportChat(userId: string, message: string) {
+        // Process the support request
+        return generateResponse(message);
+    }
 }
 ```
 </CodeGroup>
@@ -108,34 +143,75 @@ def charge_payment(order_id):
     return process_payment(order_id)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 const sessionInfo = {
     id: randomUUID(),
     name: "Order Processing Pipeline"
 };
 
-@ze.span({ 
-    name: "process_order", 
-    sessionId: sessionInfo.id,
-    sessionName: sessionInfo.name
-})
 function processOrder(orderId: string) {
-    // These nested calls automatically belong to the same session
-    validateOrder(orderId);
-    chargePayment(orderId);
-    fulfillOrder(orderId);
+    return ze.withSpan({ 
+        name: "process_order", 
+        sessionId: sessionInfo.id,
+        sessionName: sessionInfo.name
+    }, () => {
+        // These nested calls automatically belong to the same session
+        validateOrder(orderId);
+        chargePayment(orderId);
+        fulfillOrder(orderId);
+    });
 }
 
-@ze.span({ name: "validate_order" })
 function validateOrder(orderId: string) {
-    // Automatically part of the parent's session
-    return checkInventory(orderId);
+    return ze.withSpan({ name: "validate_order" }, () => {
+        // Automatically part of the parent's session
+        return checkInventory(orderId);
+    });
 }
 
-@ze.span({ name: "charge_payment" })
 function chargePayment(orderId: string) {
-    // Also inherits the session
-    return processPayment(orderId);
+    return ze.withSpan({ name: "charge_payment" }, () => {
+        // Also inherits the session
+        return processPayment(orderId);
+    });
+}
+```
+
+```typescript TypeScript (Decorators)
+const sessionInfo = {
+    id: randomUUID(),
+    name: "Order Processing Pipeline"
+};
+
+class OrderProcessor {
+    @span({ 
+        name: "process_order", 
+        sessionId: sessionInfo.id,
+        sessionName: sessionInfo.name
+    })
+    processOrder(orderId: string) {
+        // These nested calls automatically belong to the same session
+        this.validateOrder(orderId);
+        this.chargePayment(orderId);
+        this.fulfillOrder(orderId);
+    }
+
+    @span({ name: "validate_order" })
+    validateOrder(orderId: string) {
+        // Automatically part of the parent's session
+        return checkInventory(orderId);
+    }
+
+    @span({ name: "charge_payment" })
+    chargePayment(orderId: string) {
+        // Also inherits the session
+        return processPayment(orderId);
+    }
+
+    fulfillOrder(orderId: string) {
+        // Not traced
+        return fulfillOrder(orderId);
+    }
 }
 ```
 </CodeGroup>
@@ -177,40 +253,87 @@ async def generation_agent(query, context):
     return await llm.generate(query, context)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 const session = {
     id: randomUUID(),
     name: "Multi-Agent RAG Pipeline"
 };
 
-@ze.span({ 
-    name: "rag_coordinator", 
-    sessionId: session.id,
-    sessionName: session.name
-})
 async function processQuery(query: string) {
-    // Retrieval
-    const docs = await retrievalAgent(query);
-    
-    // Reranking
-    const ranked = await rerankingAgent(query, docs);
-    
-    // Generation
-    const response = await generationAgent(query, ranked);
-    
-    return response;
+    return ze.withSpan({ 
+        name: "rag_coordinator", 
+        sessionId: session.id,
+        sessionName: session.name
+    }, async () => {
+        // Retrieval
+        const docs = await retrievalAgent(query);
+        
+        // Reranking
+        const ranked = await rerankingAgent(query, docs);
+        
+        // Generation
+        const response = await generationAgent(query, ranked);
+        
+        return response;
+    });
 }
 
-@ze.span({ name: "retrieval_agent" })
 async function retrievalAgent(query: string) {
-    // Inherits session from parent
-    const embeddings = await embed(query);
-    return await vectorSearch(embeddings);
+    return ze.withSpan({ name: "retrieval_agent" }, async () => {
+        // Inherits session from parent
+        const embeddings = await embed(query);
+        return await vectorSearch(embeddings);
+    });
 }
 
-@ze.span({ name: "generation_agent" })
 async function generationAgent(query: string, context: any) {
-    return await llm.generate(query, context);
+    return ze.withSpan({ name: "generation_agent" }, async () => {
+        return await llm.generate(query, context);
+    });
+}
+```
+
+```typescript TypeScript (Decorators)
+const session = {
+    id: randomUUID(),
+    name: "Multi-Agent RAG Pipeline"
+};
+
+class RAGPipeline {
+    @span({ 
+        name: "rag_coordinator", 
+        sessionId: session.id,
+        sessionName: session.name
+    })
+    async processQuery(query: string) {
+        // Retrieval
+        const docs = await this.retrievalAgent(query);
+        
+        // Reranking
+        const ranked = await this.rerankingAgent(query, docs);
+        
+        // Generation
+        const response = await this.generationAgent(query, ranked);
+        
+        return response;
+    }
+
+    @span({ name: "retrieval_agent" })
+    async retrievalAgent(query: string) {
+        // Inherits session from parent
+        const embeddings = await embed(query);
+        return await vectorSearch(embeddings);
+    }
+
+    @span({ name: "generation_agent" })
+    async generationAgent(query: string, context: any) {
+        return await llm.generate(query, context);
+    }
+
+    async rerankingAgent(query: string, docs: any[]) {
+        // Not traced
+        return await rerank(query, docs);
+    }
 }
 ```
 </CodeGroup>
@@ -245,7 +368,7 @@ class ChatSession:
         return await llm.chat(self.history)
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 class ChatSession {
     private session: { id: string; name: string };
     private history: any[] = [];
@@ -257,7 +380,50 @@ class ChatSession {
         };
     }
     
-    @ze.span({ 
+    async processMessage(message: string) {
+        return ze.withSpan({ 
+            name: "process_message",
+            sessionId: this.session.id,
+            sessionName: this.session.name
+        }, async () => {
+            // Add to history
+            this.history.push({ role: "user", content: message });
+            
+            // Generate response
+            const response = await this.generateResponse();
+            this.history.push({ role: "assistant", content: response });
+            
+            return response;
+        });
+    }
+    
+    async generateResponse() {
+        return ze.withSpan({ 
+            name: "generate_response",
+            sessionId: this.session.id,
+            sessionName: this.session.name
+        }, async () => {
+            return await llm.chat(this.history);
+        });
+    }
+}
+```
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+
+class ChatSession {
+    private session: { id: string; name: string };
+    private history: any[] = [];
+    
+    constructor(userId: string) {
+        this.session = {
+            id: `chat-${userId}-${randomUUID()}`,
+            name: `AI Chat - User ${userId}`
+        };
+    }
+    
+    @span({ 
         name: "process_message",
         sessionId: function(this: ChatSession) { return this.session.id; },
         sessionName: function(this: ChatSession) { return this.session.name; }
@@ -273,7 +439,7 @@ class ChatSession {
         return response;
     }
     
-    @ze.span({ 
+    @span({ 
         name: "generate_response",
         sessionId: function(this: ChatSession) { return this.session.id; },
         sessionName: function(this: ChatSession) { return this.session.name; }
@@ -321,7 +487,7 @@ async def batch_summarize(documents):
     return await process()
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 async function batchSummarize(documents: any[]) {
     const session = {
         id: `batch-${randomUUID()}`,
@@ -367,6 +533,63 @@ async function batchSummarize(documents: any[]) {
     });
 }
 ```
+
+```typescript TypeScript (Decorators)
+class BatchProcessor {
+    private session = {
+        id: `batch-${randomUUID()}`,
+        name: `Batch Summarization`
+    };
+
+    @span({
+        name: "batch_processor",
+        sessionId: function(this: BatchProcessor) { return this.session.id; },
+        sessionName: function(this: BatchProcessor) { return `${this.session.name} - ${this.documents.length} docs`; }
+    })
+    async batchSummarize(documents: any[]) {
+        const summaries = [];
+        
+        for (let i = 0; i < documents.length; i++) {
+            const summary = await this.summarizeDoc(documents[i], i);
+            if (summary) {
+                summaries.push(summary);
+            }
+        }
+        
+        return summaries;
+    }
+
+    @span({
+        name: function(this: BatchProcessor, _doc: any, index: number) { return `summarize_doc_${index}`; },
+        sessionId: function(this: BatchProcessor) { return this.session.id; },
+        sessionName: function(this: BatchProcessor) { return this.session.name; }
+    })
+    async summarizeDoc(doc: any, index: number) {
+        try {
+            const summary = await llm.summarize(doc);
+            const span = ze.getCurrentSpan();
+            if (span) {
+                span.setIO(
+                    `Doc: ${doc.title}`,
+                    summary.substring(0, 100)
+                );
+            }
+            return summary;
+        } catch (e: any) {
+            const span = ze.getCurrentSpan();
+            if (span) {
+                span.setError({
+                    code: e.constructor.name,
+                    message: e.message
+                });
+            }
+            return null;
+        }
+    }
+
+    private documents: any[] = [];
+}
+```
 </CodeGroup>
 
 ## Context Manager Sessions
@@ -400,7 +623,7 @@ with ze.span(name="etl_pipeline", session=session_info) as pipeline_span:
         load_span.set_io(output_data=f"Loaded to {result['location']}")
 ```
 
-```typescript TypeScript
+```typescript TypeScript (Basic)
 const sessionInfo = {
     id: randomUUID(),
     name: "Data Pipeline Run"
@@ -444,4 +667,64 @@ await ze.withSpan({
     });
 });
 ```
-</CodeGroup>
+
+```typescript TypeScript (Decorators)
+import { span } from 'zeroeval';
+import * as ze from 'zeroeval';
+
+class ETLPipeline {
+    private sessionInfo = {
+        id: randomUUID(),
+        name: "Data Pipeline Run"
+    };
+
+    @span({
+        name: "etl_pipeline",
+        sessionId: function(this: ETLPipeline) { return this.sessionInfo.id; },
+        sessionName: function(this: ETLPipeline) { return this.sessionInfo.name; }
+    })
+    async runPipeline() {
+        // Extract phase
+        const rawData = await this.extractData();
+        
+        // Transform phase
+        const cleanData = await this.transformData(rawData);
+        
+        // Load phase
+        await this.loadData(cleanData);
+    }
+
+    @span({ name: "extract_data" })
+    async extractData() {
+        const data = await fetchFromSource();
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(undefined, `Extracted ${data.length} records`);
+        }
+        return data;
+    }
+
+    @span({ name: "transform_data" })
+    transformData(rawData: any[]) {
+        const data = transformRecords(rawData);
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(
+                `${rawData.length} raw records`,
+                `${data.length} clean records`
+            );
+        }
+        return data;
+    }
+
+    @span({ name: "load_data" })
+    async loadData(cleanData: any[]) {
+        const result = await saveToDestination(cleanData);
+        const span = ze.getCurrentSpan();
+        if (span) {
+            span.setIO(undefined, `Loaded to ${result.location}`);
+        }
+    }
+}
+```
+</CodeGroup> 
