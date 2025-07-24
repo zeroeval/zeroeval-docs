@@ -1,0 +1,616 @@
+---
+title: 'Reference'
+description: 'Complete API reference for the Python SDK'
+---
+
+## Installation
+
+```bash
+pip install zeroeval
+```
+
+## Core Functions
+
+### `init()`
+
+Initializes the ZeroEval SDK. Must be called before using any other SDK features.
+
+```python
+def init(
+    api_key: str = None, 
+    workspace_name: str = "Personal Workspace",
+    debug: bool = False,
+    api_url: str = "https://api.zeroeval.com"
+) -> None
+```
+
+**Parameters:**
+- `api_key` (str, optional): Your ZeroEval API key. If not provided, uses `ZEROEVAL_API_KEY` environment variable
+- `workspace_name` (str, optional): The name of your workspace. Defaults to `"Personal Workspace"`
+- `debug` (bool, optional): If True, enables detailed logging for debugging. Can also be enabled by setting `ZEROEVAL_DEBUG=true` environment variable
+- `api_url` (str, optional): The URL of the ZeroEval API. Defaults to `"https://api.zeroeval.com"`
+
+**Example:**
+```python
+import zeroeval as ze
+
+ze.init(
+    api_key="your-api-key",
+    workspace_name="My Workspace",
+    debug=True
+)
+```
+
+## Decorators
+
+### `@span`
+
+Decorator and context manager for creating spans around code blocks.
+
+```python
+@span(
+    name: str,
+    session_id: Optional[str] = None,
+    session: Optional[Union[str, dict[str, str]]] = None,
+    attributes: Optional[dict[str, Any]] = None,
+    input_data: Optional[str] = None,
+    output_data: Optional[str] = None,
+    tags: Optional[dict[str, str]] = None
+)
+```
+
+**Parameters:**
+- `name` (str): Name of the span
+- `session_id` (str, optional): **Deprecated** - Use `session` parameter instead
+- `session` (Union[str, dict], optional): Session information. Can be:
+  - A string containing the session ID
+  - A dict with `{"id": "...", "name": "..."}`
+- `attributes` (dict, optional): Additional attributes to attach to the span
+- `input_data` (str, optional): Manual input data override
+- `output_data` (str, optional): Manual output data override
+- `tags` (dict, optional): Tags to attach to the span
+
+**Usage as Decorator:**
+```python
+import zeroeval as ze
+
+@ze.span(name="calculate_sum")
+def add_numbers(a: int, b: int) -> int:
+    return a + b  # Parameters and return value automatically captured
+
+# With manual I/O
+@ze.span(name="process_data", input_data="manual input", output_data="manual output")
+def process():
+    # Process logic here
+    pass
+
+# With session
+@ze.span(name="user_action", session={"id": "123", "name": "John's Session"})
+def user_action():
+    pass
+```
+
+**Usage as Context Manager:**
+```python
+import zeroeval as ze
+
+with ze.span(name="data_processing") as current_span:
+    result = process_data()
+    current_span.set_io(input_data="input", output_data=str(result))
+```
+
+### `@experiment`
+
+Decorator that attaches dataset and model information to a function.
+
+```python
+@experiment(
+    dataset: Optional[Dataset] = None,
+    model: Optional[str] = None
+)
+```
+
+**Parameters:**
+- `dataset` (Dataset, optional): Dataset to use for the experiment
+- `model` (str, optional): Model identifier
+
+**Example:**
+```python
+import zeroeval as ze
+
+dataset = ze.Dataset.pull("my-dataset")
+
+@ze.experiment(dataset=dataset, model="gpt-4")
+def my_experiment():
+    # Experiment logic
+    pass
+```
+
+## Classes
+
+### `Dataset`
+
+A class to represent a named collection of dictionary records.
+
+#### Constructor
+
+```python
+Dataset(
+    name: str,
+    data: list[dict[str, Any]],
+    description: Optional[str] = None
+)
+```
+
+**Parameters:**
+- `name` (str): The name of the dataset
+- `data` (list[dict]): A list of dictionaries containing the data
+- `description` (str, optional): A description of the dataset
+
+**Example:**
+```python
+dataset = Dataset(
+    name="Capitals",
+    description="Country to capital mapping",
+    data=[
+        {"input": "France", "output": "Paris"},
+        {"input": "Germany", "output": "Berlin"}
+    ]
+)
+```
+
+#### Methods
+
+##### `push()`
+
+Push the dataset to the backend, creating a new version if it already exists.
+
+```python
+def push(self, create_new_version: bool = False) -> Dataset
+```
+
+**Parameters:**
+- `self`: The Dataset instance
+- `create_new_version` (bool, optional): For backward compatibility. This parameter is no longer needed as new versions are automatically created when a dataset name already exists. Defaults to False
+
+**Returns:** Returns self for method chaining
+
+##### `pull()`
+
+Static method to pull a dataset from the backend.
+
+```python
+@classmethod
+def pull(
+    cls,
+    dataset_name: str,
+    version_number: Optional[int] = None
+) -> Dataset
+```
+
+**Parameters:**
+- `cls`: The Dataset class itself (automatically provided when using `@classmethod`)
+- `dataset_name` (str): The name of the dataset to pull from the backend
+- `version_number` (int, optional): Specific version number to pull. If not provided, pulls the latest version
+
+**Returns:** A new Dataset instance populated with data from the backend
+
+##### `add_rows()`
+
+Add new rows to the dataset.
+
+```python
+def add_rows(self, new_rows: list[dict[str, Any]]) -> None
+```
+
+**Parameters:**
+- `self`: The Dataset instance
+- `new_rows` (list[dict]): A list of dictionaries representing the rows to add
+
+##### `add_image()`
+
+Add an image to a specific row.
+
+```python
+def add_image(
+    self,
+    row_index: int,
+    column_name: str,
+    image_path: str
+) -> None
+```
+
+**Parameters:**
+- `self`: The Dataset instance
+- `row_index` (int): Index of the row to update (0-based)
+- `column_name` (str): Name of the column to add the image to
+- `image_path` (str): Path to the image file to add
+
+##### `add_audio()`
+
+Add audio to a specific row.
+
+```python
+def add_audio(
+    self,
+    row_index: int,
+    column_name: str,
+    audio_path: str
+) -> None
+```
+
+**Parameters:**
+- `self`: The Dataset instance
+- `row_index` (int): Index of the row to update (0-based)
+- `column_name` (str): Name of the column to add the audio to
+- `audio_path` (str): Path to the audio file to add
+
+##### `add_media_url()`
+
+Add a media URL to a specific row.
+
+```python
+def add_media_url(
+    self,
+    row_index: int,
+    column_name: str,
+    media_url: str,
+    media_type: str = "image"
+) -> None
+```
+
+**Parameters:**
+- `self`: The Dataset instance
+- `row_index` (int): Index of the row to update (0-based)
+- `column_name` (str): Name of the column to add the media URL to
+- `media_url` (str): URL pointing to the media file
+- `media_type` (str, optional): Type of media - "image", "audio", or "video". Defaults to "image"
+
+#### Properties
+
+- `name` (str): The name of the dataset
+- `description` (str): The description of the dataset
+- `columns` (list[str]): List of all unique column names
+- `data` (list[dict]): List of the data portion for each row
+- `backend_id` (str): The ID in the backend (after pushing)
+- `version_id` (str): The version ID in the backend
+- `version_number` (int): The version number in the backend
+
+#### Example
+
+```python
+import zeroeval as ze
+
+# Create a dataset
+dataset = ze.Dataset(
+    name="Capitals",
+    description="Country to capital mapping",
+    data=[
+        {"input": "France", "output": "Paris"},
+        {"input": "Germany", "output": "Berlin"}
+    ]
+)
+
+# Push to backend
+dataset.push()
+
+# Pull from backend
+dataset = ze.Dataset.pull("Capitals", version_number=1)
+
+# Add rows
+dataset.add_rows([{"input": "Italy", "output": "Rome"}])
+
+# Add multimodal data
+dataset.add_image(0, "flag", "flags/france.png")
+dataset.add_audio(0, "anthem", "anthems/france.mp3")
+dataset.add_media_url(0, "video_url", "https://example.com/video.mp4", "video")
+```
+
+### `Experiment`
+
+Represents an experiment that runs a task on a dataset with optional evaluators.
+
+#### Constructor
+
+```python
+Experiment(
+    dataset: Dataset,
+    task: Callable[[Any], Any],
+    evaluators: Optional[list[Callable[[Any, Any], Any]]] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None
+)
+```
+
+**Parameters:**
+- `dataset` (Dataset): The dataset to run the experiment on
+- `task` (Callable): Function that processes each row and returns output
+- `evaluators` (list[Callable], optional): List of evaluator functions that take (row, output) and return evaluation result
+- `name` (str, optional): Name of the experiment. Defaults to task function name
+- `description` (str, optional): Description of the experiment. Defaults to task function's docstring
+
+**Example:**
+```python
+import zeroeval as ze
+
+ze.init()
+
+# Pull dataset
+dataset = ze.Dataset.pull("Capitals")
+
+# Define task
+def capitalize_task(row):
+    return row["input"].upper()
+
+# Define evaluator
+def exact_match(row, output):
+    return row["output"].upper() == output
+
+# Create and run experiment
+exp = ze.Experiment(
+    dataset=dataset,
+    task=capitalize_task,
+    evaluators=[exact_match],
+    name="Capital Uppercase Test"
+)
+
+results = exp.run()
+
+# Or run task and evaluators separately
+results = exp.run_task()
+exp.run_evaluators([exact_match], results)
+```
+
+#### Methods
+
+##### `run()`
+
+Run the complete experiment (task + evaluators).
+
+```python
+def run(
+    self,
+    subset: Optional[list[dict]] = None
+) -> list[ExperimentResult]
+```
+
+**Parameters:**
+- `self`: The Experiment instance
+- `subset` (list[dict], optional): Subset of dataset rows to run the experiment on. If None, runs on entire dataset
+
+**Returns:** List of experiment results for each row
+
+##### `run_task()`
+
+Run only the task without evaluators.
+
+```python
+def run_task(
+    self,
+    subset: Optional[list[dict]] = None,
+    raise_on_error: bool = False
+) -> list[ExperimentResult]
+```
+
+**Parameters:**
+- `self`: The Experiment instance
+- `subset` (list[dict], optional): Subset of dataset rows to run the task on. If None, runs on entire dataset
+- `raise_on_error` (bool, optional): If True, raises exceptions encountered during task execution. If False, captures errors. Defaults to False
+
+**Returns:** List of experiment results for each row
+
+##### `run_evaluators()`
+
+Run evaluators on existing results.
+
+```python
+def run_evaluators(
+    self,
+    evaluators: Optional[list[Callable[[Any, Any], Any]]] = None,
+    results: Optional[list[ExperimentResult]] = None
+) -> list[ExperimentResult]
+```
+
+**Parameters:**
+- `self`: The Experiment instance
+- `evaluators` (list[Callable], optional): List of evaluator functions to run. If None, uses evaluators from the Experiment instance
+- `results` (list[ExperimentResult], optional): List of results to evaluate. If None, uses results from the Experiment instance
+
+**Returns:** The evaluated results
+
+### `Span`
+
+Represents a span in the tracing system. Usually created via the `@span` decorator.
+
+#### Methods
+
+##### `set_io()`
+
+Set input and output data for the span.
+
+```python
+def set_io(
+    self,
+    input_data: Optional[str] = None,
+    output_data: Optional[str] = None
+) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `input_data` (str, optional): Input data to attach to the span. Will be converted to string if not already
+- `output_data` (str, optional): Output data to attach to the span. Will be converted to string if not already
+
+##### `set_tags()`
+
+Set tags on the span.
+
+```python
+def set_tags(self, tags: dict[str, str]) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `tags` (dict[str, str]): Dictionary of tags to set on the span
+
+##### `set_attributes()`
+
+Set attributes on the span.
+
+```python
+def set_attributes(self, attributes: dict[str, Any]) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `attributes` (dict[str, Any]): Dictionary of attributes to set on the span
+
+##### `set_error()`
+
+Set error information for the span.
+
+```python
+def set_error(
+    self,
+    code: str,
+    message: str,
+    stack: Optional[str] = None
+) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `code` (str): Error code or exception class name
+- `message` (str): Error message
+- `stack` (str, optional): Stack trace information
+
+## Context Functions
+
+### `get_current_span()`
+
+Returns the currently active span, if any.
+
+```python
+def get_current_span() -> Optional[Span]
+```
+
+**Returns:** The currently active Span instance, or None if no span is active
+
+### `get_current_trace()`
+
+Returns the current trace ID.
+
+```python
+def get_current_trace() -> Optional[str]
+```
+
+**Returns:** The current trace ID, or None if no trace is active
+
+### `get_current_session()`
+
+Returns the current session ID.
+
+```python
+def get_current_session() -> Optional[str]
+```
+
+**Returns:** The current session ID, or None if no session is active
+
+### `set_tag()`
+
+Sets tags on a span, trace, or session.
+
+```python
+def set_tag(
+    target: Union[Span, str],
+    tags: dict[str, str]
+) -> None
+```
+
+**Parameters:**
+- `target`: The target to set tags on
+  - `Span`: Sets tags on the specific span
+  - `str`: Sets tags on the trace (if valid trace ID) or session (if valid session ID)
+- `tags` (dict[str, str]): Dictionary of tags to set
+
+**Example:**
+```python
+import zeroeval as ze
+
+# Set tags on current span
+current_span = ze.get_current_span()
+if current_span:
+    ze.set_tag(current_span, {"user_id": "12345", "environment": "production"})
+
+# Set tags on trace
+trace_id = ze.get_current_trace()
+if trace_id:
+    ze.set_tag(trace_id, {"version": "1.5"})
+```
+
+### `set_signal()`
+
+Send a signal to a span, trace, or session.
+
+```python
+def set_signal(
+    target: Union[Span, str],
+    signals: dict[str, Union[str, bool, int, float]]
+) -> bool
+```
+
+**Parameters:**
+- `target`: The entity to attach signals to
+  - `Span`: Sends signals to the specific span
+  - `str`: Sends signals to the trace (if active trace ID) or session
+- `signals` (dict): Dictionary of signal names to values
+
+**Returns:** True if signals were sent successfully, False otherwise
+
+**Example:**
+```python
+import zeroeval as ze
+
+# Send signals to current span
+current_span = ze.get_current_span()
+if current_span:
+    ze.set_signal(current_span, {
+        "accuracy": 0.95,
+        "is_successful": True,
+        "error_count": 0
+    })
+
+# Send signals to trace
+trace_id = ze.get_current_trace()
+if trace_id:
+    ze.set_signal(trace_id, {"model_score": 0.85})
+```
+
+## CLI Commands
+
+The ZeroEval SDK includes a CLI tool for running experiments and setup.
+
+### `zeroeval run`
+
+Run a Python script containing ZeroEval experiments.
+
+```bash
+zeroeval run script.py
+```
+
+### `zeroeval setup`
+
+Interactive setup to configure API credentials.
+
+```bash
+zeroeval setup
+```
+
+## Environment Variables
+
+The SDK uses the following environment variables:
+
+- `ZEROEVAL_API_KEY`: Your ZeroEval API key
+- `ZEROEVAL_API_URL`: API endpoint URL (defaults to `https://api.zeroeval.com`)
+- `ZEROEVAL_DEBUG`: Set to `true` to enable debug logging
+- `ZEROEVAL_DISABLED_INTEGRATIONS`: Comma-separated list of integrations to disable

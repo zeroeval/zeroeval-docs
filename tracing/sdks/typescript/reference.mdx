@@ -1,0 +1,428 @@
+---
+title: 'Reference'
+description: 'Complete API reference for the TypeScript SDK'
+---
+
+## Installation
+
+```bash
+npm install zeroeval
+```
+
+## Core Functions
+
+### `init()`
+
+Initializes the ZeroEval SDK. Must be called before using any other SDK features.
+
+```typescript
+function init(opts?: InitOptions): void
+```
+
+#### Parameters
+
+- `opts` (optional): `InitOptions`
+  - `apiKey` (optional): `string` - Your ZeroEval API key. If not provided, uses `ZEROEVAL_API_KEY` environment variable
+  - `apiUrl` (optional): `string` - Custom API URL. Defaults to `https://api.zeroeval.com`
+  - `flushInterval` (optional): `number` - Interval in milliseconds to flush spans
+  - `maxSpans` (optional): `number` - Maximum number of spans to buffer before flushing
+  - `collectCodeDetails` (optional): `boolean` - Whether to collect code location details
+  - `integrations` (optional): `Record<string, boolean>` - Enable/disable specific integrations
+  - `debug` (optional): `boolean` - Enable debug logging
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+ze.init({
+  apiKey: 'your-api-key',
+  debug: true
+});
+```
+
+## Wrapper Functions
+
+### `wrap()`
+
+Wraps a supported AI client to automatically trace all API calls.
+
+```typescript
+function wrap<T extends object>(client: T): WrappedClient<T>
+```
+
+#### Supported Clients
+
+- OpenAI SDK (`openai` package)
+- Vercel AI SDK (`ai` package)
+
+#### Examples
+
+```typescript
+// OpenAI
+import { OpenAI } from 'openai';
+import * as ze from 'zeroeval';
+
+const openai = ze.wrap(new OpenAI());
+
+// Vercel AI SDK
+import * as ai from 'ai';
+import * as ze from 'zeroeval';
+
+const wrappedAI = ze.wrap(ai);
+```
+
+## Context Functions
+
+### `getCurrentSpan()`
+
+Returns the currently active span, if any.
+
+```typescript
+function getCurrentSpan(): Span | undefined
+```
+
+### `getCurrentTrace()`
+
+Returns the current trace ID.
+
+```typescript
+function getCurrentTrace(): string | undefined
+```
+
+### `getCurrentSession()`
+
+Returns the current session ID.
+
+```typescript
+function getCurrentSession(): string | undefined
+```
+
+### `setTag()`
+
+Sets tags on a span, trace, or session.
+
+```typescript
+function setTag(
+  target: Span | string | undefined,
+  tags: Record<string, string>
+): void
+```
+
+#### Parameters
+
+- `target`: The target to set tags on
+  - `Span`: Sets tags on the specific span
+  - `string`: Sets tags on the trace (if valid trace ID) or session (if valid session ID)
+  - `undefined`: Sets tags on the current span
+- `tags`: Object containing key-value pairs of tags
+
+#### Example
+
+```typescript
+// Set tags on current span
+ze.setTag(undefined, { user_id: '12345', environment: 'production' });
+
+// Set tags on specific trace
+const traceId = ze.getCurrentTrace();
+if (traceId) {
+  ze.setTag(traceId, { feature: 'checkout' });
+}
+
+// Set tags on a span object
+const span = ze.getCurrentSpan();
+if (span) {
+  ze.setTag(span, { action: 'process_payment' });
+}
+```
+
+## Spans API
+
+There are two main ways to create spans in the TypeScript SDK:
+
+### `withSpan()`
+
+Wraps a function execution in a span, automatically capturing input/output and timing.
+
+```typescript
+function withSpan<T>(
+  opts: SpanOptions,
+  fn: () => Promise<T> | T
+): Promise<T> | T
+```
+
+**Parameters:**
+- `opts` (SpanOptions): Configuration for the span
+  - `name` (string): Name of the span
+  - `sessionId` (string, optional): Session ID to associate with the span
+  - `sessionName` (string, optional): Human-readable session name
+  - `tags` (object, optional): Tags to attach to the span
+  - `attributes` (object, optional): Additional attributes
+  - `inputData` (any, optional): Manual input data override
+  - `outputData` (any, optional): Manual output data override
+- `fn` (Function): The function to execute within the span
+
+**Example:**
+```typescript
+import * as ze from 'zeroeval';
+
+// Basic usage
+const result = await ze.withSpan(
+  { name: 'fetch-user-data' },
+  async () => {
+    const user = await fetchUser(userId);
+    return user;
+  }
+);
+
+// With session and tags
+const data = ze.withSpan(
+  {
+    name: 'process-payment',
+    sessionId: sessionId,
+    tags: { environment: 'production', version: '1.0' }
+  },
+  () => processPayment(amount)
+);
+```
+
+### `@span` Decorator
+
+Decorator for class methods to automatically create spans. Requires TypeScript with experimental decorators enabled.
+
+```typescript
+span(opts: SpanOptions): MethodDecorator
+```
+
+**Parameters:**
+- `opts` (SpanOptions): Same configuration options as `withSpan()`
+
+**Example:**
+```typescript
+import * as ze from 'zeroeval';
+
+class UserService {
+  @ze.span({ name: 'get-user' })
+  async getUser(id: string): Promise<User> {
+    // Method implementation
+    // Input (id) and output (User) are automatically captured
+    return await db.users.findById(id);
+  }
+
+  @ze.span({ 
+    name: 'update-user',
+    tags: { operation: 'update' }
+  })
+  async updateUser(id: string, data: Partial<User>): Promise<User> {
+    return await db.users.update(id, data);
+  }
+}
+```
+
+**Note:** To use decorators, ensure your `tsconfig.json` includes:
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true
+  }
+}
+```
+
+## Signals API
+
+### `sendSignal()`
+
+Send a signal to a specific entity.
+
+```typescript
+async function sendSignal(
+  entityType: 'session' | 'trace' | 'span' | 'completion',
+  entityId: string,
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): Promise<void>
+```
+
+#### Parameters
+
+- `entityType`: Type of entity to attach the signal to
+- `entityId`: UUID of the entity
+- `name`: Name of the signal
+- `value`: Signal value (string, boolean, or number)
+- `signalType` (optional): Signal type, auto-detected if not provided
+
+### `sendTraceSignal()`
+
+Send a signal to the current trace.
+
+```typescript
+function sendTraceSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `sendSessionSignal()`
+
+Send a signal to the current session.
+
+```typescript
+function sendSessionSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `sendSpanSignal()`
+
+Send a signal to the current span.
+
+```typescript
+function sendSpanSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `getEntitySignals()`
+
+Retrieve signals for a specific entity.
+
+```typescript
+async function getEntitySignals(
+  entityType: 'session' | 'trace' | 'span' | 'completion',
+  entityId: string
+): Promise<Signal[]>
+```
+
+## LangChain Integration
+
+### `ZeroEvalCallbackHandler`
+
+A callback handler for integrating with LangChain.
+
+```typescript
+class ZeroEvalCallbackHandler extends BaseCallbackHandler
+```
+
+#### Constructor
+
+```typescript
+constructor(options?: ZeroEvalCallbackHandlerOptions)
+```
+
+#### Options
+
+- `debug` (optional): `boolean` - Enable debug logging
+- `excludeMetadataProps` (optional): `RegExp` - Pattern for metadata properties to exclude
+- `maxConcurrentSpans` (optional): `number` - Maximum concurrent spans. Defaults to 1000
+- `spanCleanupIntervalMs` (optional): `number` - Cleanup interval in milliseconds. Defaults to 60000
+
+#### Example
+
+```typescript
+import { ZeroEvalCallbackHandler } from 'zeroeval/langchain';
+
+const handler = new ZeroEvalCallbackHandler({
+  debug: true,
+  maxConcurrentSpans: 500
+});
+
+// Use with LangChain
+const chain = new ConversationChain({
+  callbacks: [handler]
+});
+```
+
+### `setGlobalCallbackHandler()`
+
+Sets a global callback handler for LangChain.
+
+```typescript
+function setGlobalCallbackHandler(handler: ZeroEvalCallbackHandler): void
+```
+
+### `getGlobalHandler()`
+
+Gets the current global callback handler.
+
+```typescript
+function getGlobalHandler(): BaseCallbackHandler | undefined
+```
+
+### `clearGlobalHandler()`
+
+Clears the global callback handler.
+
+```typescript
+function clearGlobalHandler(): void
+```
+
+## Types
+
+### `InitOptions`
+
+Configuration options for SDK initialization.
+
+```typescript
+interface InitOptions {
+  apiKey?: string;
+  apiUrl?: string;
+  workspaceName?: string;
+  flushInterval?: number;
+  maxSpans?: number;
+  collectCodeDetails?: boolean;
+  integrations?: Record<string, boolean>;
+  debug?: boolean;
+}
+```
+
+### `SignalCreate`
+
+Structure for creating a new signal.
+
+```typescript
+interface SignalCreate {
+  entity_type: 'session' | 'trace' | 'span' | 'completion';
+  entity_id: string;
+  name: string;
+  value: string | boolean | number;
+  signal_type?: 'boolean' | 'numerical';
+}
+```
+
+### `Signal`
+
+Structure representing a signal.
+
+```typescript
+interface Signal {
+  value: string | boolean | number;
+  type: 'boolean' | 'numerical';
+}
+```
+
+### `ZeroEvalCallbackHandlerOptions`
+
+Options for the LangChain callback handler.
+
+```typescript
+interface ZeroEvalCallbackHandlerOptions {
+  debug?: boolean;
+  excludeMetadataProps?: RegExp;
+  maxConcurrentSpans?: number;
+  spanCleanupIntervalMs?: number;
+}
+```
+
+## Environment Variables
+
+The SDK uses the following environment variables:
+
+- `ZEROEVAL_API_KEY`: Your ZeroEval API key
+- `ZEROEVAL_API_URL`: API endpoint URL (defaults to `https://api.zeroeval.com`)
+- `ZEROEVAL_DEBUG`: Set to `true` to enable debug logging
