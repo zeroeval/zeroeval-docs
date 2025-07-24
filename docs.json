@@ -48,8 +48,8 @@
             "pages": ["evaluations/datasets", "evaluations/experiments"]
           },
           {
-            "group": "LLM Router",
-            "pages": ["llm-router/introduction"]
+            "group": "LLM Gateway",
+            "pages": ["llm-gateway/introduction"]
           }
         ]
       }

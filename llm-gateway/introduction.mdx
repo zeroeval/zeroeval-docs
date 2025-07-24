@@ -5,18 +5,11 @@ description: "A unified interface to seamlessly access and switch between variou
 
 The LLM Gateway is a unified API that lets you access multiple Large Language Models through a single endpoint. Switch between models from different providers with just a parameter change.
 
-## Benefits
-
-- **Single API**: One endpoint for all your models
-- **OpenAI Compatible**: Works with any OpenAI-compatible client
-- **Easy Model Switching**: Change models without changing code
-- **Unified Billing**: Track usage across all providers in one place
-
 ## Getting Started
 
 ### 1. Get Your API Key
 
-Create an API key from your [Settings → API Keys](https://app.zeroeval.com/settings) page.
+Create an API key from your [Settings → API Keys](https://app.zeroeval.com/settings?section=api-keys) page.
 
 ### 2. Use the API
 
@@ -100,14 +93,3 @@ curl -X GET "https://api.zeroeval.com/v1/models" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-Popular models include:
-
-- `gpt-4o` - OpenAI's GPT-4 Omni
-- `claude-3-5-sonnet-20240620` - Anthropic's Claude 3.5 Sonnet
-- `gemini-1.5-flash-latest` - Google's Gemini 1.5 Flash
-- `gpt-4o-mini` - OpenAI's GPT-4 Mini
-
-<Note>
-  Get your API key from the [Settings → API
-  Keys](https://app.zeroeval.com/settings) page.
-</Note>
