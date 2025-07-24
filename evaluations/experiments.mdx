@@ -70,9 +70,3 @@ def task(row):
 Experiments work with datasets that contain images/audio/video exactly the same way – simply pass those fields to your model API and write the right evaluator.
 
 Full multimodal example lives in `zeroeval-sdk/examples/experiments.2.multimodal.py`.
-
-## Tips
-
-• Use multiple evaluators – they all run in one pass.  
-• Pass `raise_on_error=True` to `.run_task()` while debugging.  
-• Results stream live to the dashboard; no need to wait synchronously.
