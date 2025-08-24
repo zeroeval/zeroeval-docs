@@ -1,0 +1,28 @@
+---
+title: "Tuning"
+description: "Running autotune experiments"
+---
+
+# Tuning
+
+Once you have your prompts instrumented with ZeroEval, you can start tuning them to improve performance.
+
+<video
+  autoPlay
+  muted
+  loop
+  playsInline
+  className="w-full aspect-video rounded-xl"
+  src="/videos/humapreference.mp4"
+></video>
+
+## How Tuning Works
+
+The tuning process is interactive and allows you to evaluate different prompt variations in real-time:
+
+- **Vote and Replay**: You can vote and replay at any point in your LLM calls with different models
+- **Human Feedback**: Vote for which answers were good or not to provide training signal
+- **Statistical Significance**: After 20 samples, you get a statistically significant score
+- **TrueSkill Algorithm**: We use TrueSkill for computing the scores over time, ensuring accurate ranking of prompt variations
+
+The system will automatically track performance and help you identify the best-performing prompt variations for your use case.

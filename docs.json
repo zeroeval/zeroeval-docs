@@ -49,6 +49,10 @@
             "pages": ["evaluations/datasets", "evaluations/experiments"]
           },
           {
+            "group": "Autotune",
+            "pages": ["autotune/setup", "autotune/tuning"]
+          },
+          {
             "group": "LLM Gateway",
             "pages": ["llm-gateway/introduction"]
           }

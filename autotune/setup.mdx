@@ -1,0 +1,50 @@
+---
+title: "Setup"
+description: "Getting started with autotune"
+---
+
+# Setup
+
+To start using autotune, you need to instrument your code with ZeroEval. The setup is simple and requires just two steps:
+
+## 1. Initialize ZeroEval
+
+First, initialize ZeroEval in your application:
+
+```python
+import zeroeval as ze
+
+ze.init()
+```
+
+## 2. Wrap System Prompts with ze.prompt()
+
+For any LLM calls you want to tune, wrap your system prompts with `ze.prompt()`:
+
+```python
+system_message = {
+    "role": "system",
+    "content": ze.prompt(
+        name="custom-bot-5",
+        content="You are an assistant that helps users with {{task}}. Be {{tone}} in your responses.",
+        variables={
+            "task": "coding questions",
+            "tone": "helpful and concise"
+        }
+    )
+}
+```
+
+## Key Points
+
+- **Name your prompts**: Each prompt needs a unique `name` for tracking and tuning
+- **Use variables**: Define variables with `{{variable_name}}` syntax in your prompt content
+- **Automatic interpolation**: Variables inside `{{}}` are automatically interpolated with their values and don't add anything to your context
+- **Automatic tracking**: ZeroEval will automatically track conversations and performance
+- **No additional changes needed**: Your existing LLM calls work as-is once the prompt is wrapped
+
+That's it! ZeroEval will now automatically track your conversations and enable autotune capabilities.
+
+<img src="/images/setup-tuning.png" alt="Setup" />
+
+When you're ready to tune your prompts, you can use the [Tuning UI](/autotune/tuning) to create a tuning task.
