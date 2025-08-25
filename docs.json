@@ -41,7 +41,8 @@
                   }
                 ]
               },
-              "tracing/manual-instrumentation"
+              "tracing/manual-instrumentation",
+              "tracing/additional-configuration"
             ]
           },
           {
