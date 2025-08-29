@@ -23,15 +23,15 @@ print(p.content)
 ```python
 p = ze.get_prompt(
     "support-triage",
-    version=None,            # int | None - if set, overrides tag
-    tag=None,                # str | None - e.g. "production", "staging", "latest"
-    fallback=None,           # str | None - local content if fetch fails / 404
-    variables=None,          # dict | None - {name: value} for {{name}} templating
-    task_name=None,          # str | None - associate content with a tuning task
-    render=True,             # bool - render template with variables
-    missing="error",        # "error" | "leave" - behavior for missing variables
-    use_cache=True,          # bool - in-process TTL cache for server results
-    timeout=None,            # float | None - per-request timeout (seconds)
+    version=None,            # default: None (int | None) - if set, overrides tag
+    tag=None,                # default: None (str | None) → SDK default tag ("production" in prod else "latest")
+    fallback=None,           # default: None (str | None) - local content if fetch fails / 404
+    variables=None,          # default: None (dict | None) - {name: value} for {{name}} templating
+    task_name=None,          # default: None (str | None) - associate content with a tuning task
+    render=True,             # default: True (bool) - render template with variables
+    missing="error",        # default: "error" ("error" | "leave") - behavior for missing variables
+    use_cache=True,          # default: True (bool) - in-process TTL cache for server results
+    timeout=None,            # default: None (float | None) → uses client default timeout (10.0s)
 )
 
 # Returned object
@@ -63,7 +63,6 @@ Pass `task_name` to decorate `p.content` so downstream LLM calls are traced to t
 ```python
 p = ze.get_prompt(
     "support-triage",
-    tag="production",
     variables={"customer": "Acme"},
     task_name="support-triage",
 )
@@ -78,7 +77,7 @@ messages = [
 Provide `fallback` to ensure resiliency if the prompt is missing or the network fails. The returned `Prompt.source` will be `"fallback"` in that case.
 
 ```python
-p = ze.get_prompt("support-triage", tag="staging", fallback="You are a helpful assistant.")
+p = ze.get_prompt("support-triage", fallback="You are a helpful assistant.")
 ```
 
 ### Namespace helper
@@ -92,11 +91,10 @@ p = ze.get_prompt("support-triage", tag="staging", fallback="You are a helpful a
 p = ze.get_prompt("support-triage")
 ```
 
-- Pin to a tag or a specific version:
+- Pin to a specific version:
 
 ```python
-ze.get_prompt("support-triage", tag="staging")
-ze.get_prompt("support-triage", version=12)
+ze.get_prompt("support-triage", version=3)
 ```
 
 - Render variables:
@@ -104,7 +102,6 @@ ze.get_prompt("support-triage", version=12)
 ```python
 p = ze.get_prompt(
     "events-create",
-    tag="production",
     variables={"event_name": "ZeroEval Launch"},
 )
 print(p.content)
@@ -115,13 +112,5 @@ print(p.content)
 ```python
 p = ze.get_prompt("support-triage", task_name="support-triage")
 ```
-
-## Configuration
-
-- Required: `ZEROEVAL_API_KEY`.
-- Optional:
-  - `ZEROEVAL_BASE_URL` or `ZEROEVAL_API_URL`
-  - `ZEROEVAL_PROMPT_TAG`
-  - `ZEROEVAL_ENV` (controls default tag)
 
 
