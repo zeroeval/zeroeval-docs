@@ -47,7 +47,11 @@
           },
           {
             "group": "Evaluations",
-            "pages": ["evaluations/datasets", "evaluations/experiments"]
+            "pages": [
+              "evaluations/datasets",
+              "evaluations/experiments",
+              "evaluations/prompt-management"
+            ]
           },
           {
             "group": "Autotune",

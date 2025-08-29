@@ -17,27 +17,27 @@ import zeroeval as ze
 ze.init()
 ```
 
-## 2. Wrap System Prompts with ze.prompt()
+## 2. Use managed prompts with ze.get_prompt()
 
-For any LLM calls you want to tune, wrap your system prompts with `ze.prompt()`:
+For LLM calls you want to tune, fetch your managed prompt and associate it with the task using `task_name`:
 
 ```python
 system_message = {
     "role": "system",
-    "content": ze.prompt(
-        name="custom-bot-5",
-        content="You are an assistant that helps users with {{task}}. Be {{tone}} in your responses.",
+    "content": ze.get_prompt(
+        "custom-bot-5",
         variables={
             "task": "coding questions",
             "tone": "helpful and concise"
-        }
-    )
+        },
+        task_name="custom-bot-5"
+    ).content
 }
 ```
 
 ## Key Points
 
-- **Name your prompts**: Each prompt needs a unique `name` for tracking and tuning
+- **Name your prompts**: Each prompt needs a unique `slug` (task name) for tracking and tuning
 - **Use variables**: Define variables with `{{variable_name}}` syntax in your prompt content
 - **Automatic interpolation**: Variables inside `{{}}` are automatically interpolated with their values and don't add anything to your context
 - **Automatic tracking**: ZeroEval will automatically track conversations and performance
