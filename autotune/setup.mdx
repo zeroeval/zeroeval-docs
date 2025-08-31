@@ -5,7 +5,27 @@ description: "Getting started with autotune"
 
 # Setup
 
-To start using autotune, you need to instrument your code with ZeroEval. The setup is simple and requires just two steps:
+ZeroEval's autotune feature allows you to continuously improve your prompts and automatically deploy the best-performing models. The setup is simple and powerful.
+
+## How Autotune Works
+
+<Steps>
+  <Step title="Instrument your code">
+    Replace hardcoded prompts with `ze.prompt()` calls
+  </Step>
+  <Step title="Every change creates a version">
+    Each time you modify your prompt content, a new version is automatically created and tracked
+  </Step>
+  <Step title="Collect performance data">
+    ZeroEval automatically tracks all LLM interactions and their outcomes
+  </Step>
+  <Step title="Tune and evaluate">
+    Use the UI to run experiments, vote on outputs, and identify the best prompt/model combinations
+  </Step>
+  <Step title="Deploy over-the-air">
+    Winning configurations are automatically deployed to your application without code changes
+  </Step>
+</Steps>
 
 ## 1. Initialize ZeroEval
 
@@ -14,37 +34,110 @@ First, initialize ZeroEval in your application:
 ```python
 import zeroeval as ze
 
-ze.init()
+ze.init()  # Picks up ZEROEVAL_API_KEY from environment
 ```
 
-## 2. Use managed prompts with ze.get_prompt()
+## 2. Use Version-Aware Prompts
 
-For LLM calls you want to tune, fetch your managed prompt and associate it with the task using `task_name`:
+Replace your hardcoded prompts with `ze.prompt()`. This powerful function handles versioning, tracking, and automatic model deployment:
 
 ```python
-system_message = {
-    "role": "system",
-    "content": ze.get_prompt(
-        "custom-bot-5",
-        variables={
-            "task": "coding questions",
-            "tone": "helpful and concise"
-        },
-        task_name="custom-bot-5"
-    ).content
-}
+# Instead of hardcoding:
+# prompt = "You are a helpful assistant..."
+
+# Use ze.prompt with content (creates/ensures a version):
+prompt = ze.prompt(
+    name="customer-support",  # Task name for tracking
+    content="""You are a helpful customer support agent.
+    You help users with {{product}} questions in a {{tone}} manner.""",
+    variables={
+        "product": "ZeroEval",
+        "tone": "friendly and professional"
+    }
+)
+
+# The prompt is automatically versioned and decorated with metadata
+messages = [
+    {"role": "system", "content": prompt},
+    {"role": "user", "content": "How do I get started?"}
+]
+
+# When you call OpenAI, the model is automatically patched if configured
+response = client.chat.completions.create(
+    model="gpt-4",  # This gets overridden by tuned model if available!
+    messages=messages
+)
 ```
 
-## Key Points
+## 3. Understanding Prompt Versions
 
-- **Name your prompts**: Each prompt needs a unique `slug` (task name) for tracking and tuning
-- **Use variables**: Define variables with `{{variable_name}}` syntax in your prompt content
-- **Automatic interpolation**: Variables inside `{{}}` are automatically interpolated with their values and don't add anything to your context
-- **Automatic tracking**: ZeroEval will automatically track conversations and performance
-- **No additional changes needed**: Your existing LLM calls work as-is once the prompt is wrapped
+Every time you change your prompt content, a new version is created:
 
-That's it! ZeroEval will now automatically track your conversations and enable autotune capabilities.
+```python
+# Version 1 - Initial prompt
+prompt_v1 = ze.prompt(
+    name="customer-support",
+    content="You are a helpful assistant."
+)
+
+# Version 2 - Updated prompt (automatically creates new version)
+prompt_v2 = ze.prompt(
+    name="customer-support", 
+    content="You are a helpful customer support assistant."  # Changed!
+)
+
+# Fetch specific versions by hash
+latest_prompt = ze.prompt(
+    name="customer-support",
+    from_="latest"  # Always get the latest tuned version
+)
+
+# Or fetch a specific version by its content hash
+specific_prompt = ze.prompt(
+    name="customer-support",
+    from_="a1b2c3d4..."  # 64-character SHA-256 hash
+)
+```
+
+## 4. Automatic Model Patching
+
+The magic happens behind the scenes. When you use `ze.prompt()`, ZeroEval:
+
+1. **Decorates your prompt** with metadata including version info
+2. **Intercepts OpenAI calls** to detect the decorated prompt
+3. **Patches the model** with the tuned model for that prompt version
+4. **Tracks performance** for continuous improvement
+
+```python
+# Your code doesn't change - just use ze.prompt()
+prompt = ze.prompt(name="analyzer", content="Analyze this text...")
+
+# Model patching happens automatically
+response = client.chat.completions.create(
+    model="gpt-4",  # ← Gets replaced with tuned model!
+    messages=[{"role": "system", "content": prompt}]
+)
+```
+
+## Key Features
+
+- **Content-based versioning**: Each unique prompt content gets its own version via SHA-256 hashing
+- **Variable templating**: Use `{{variable}}` syntax for dynamic content
+- **Automatic tracking**: All interactions are traced for analysis
+- **Zero-downtime deployment**: Models update instantly without code changes
+- **Environment-aware**: Different versions can be deployed to staging vs production
+
+## Best Practices
+
+<Note>
+Always use descriptive task names that clearly identify the purpose of your prompt. This makes it easier to manage and analyze performance across different use cases.
+</Note>
+
+- **Start simple**: Begin with basic prompts and iterate based on performance data
+- **Use meaningful task names**: Choose names like `customer-support`, `code-reviewer`, `email-writer`
+- **Test locally first**: Use `from_="latest"` to test the latest tuned versions
+- **Monitor performance**: Check the ZeroEval dashboard to see how your prompts perform
 
 <img src="/images/setup-tuning.png" alt="Setup" />
 
-When you're ready to tune your prompts, you can use the [Tuning UI](/autotune/tuning) to create a tuning task.
+Ready to start tuning? Head to the [Tuning Guide](/autotune/tuning) to learn how to run experiments and optimize your prompts.

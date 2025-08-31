@@ -55,7 +55,11 @@
           },
           {
             "group": "Autotune",
-            "pages": ["autotune/setup", "autotune/tuning"]
+            "pages": [
+              "autotune/introduction",
+              "autotune/setup",
+              "autotune/tuning"
+            ]
           },
           {
             "group": "LLM Gateway",
