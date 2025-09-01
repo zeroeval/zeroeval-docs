@@ -58,7 +58,15 @@
               {
                 "group": "Tuning",
                 "pages": ["autotune/tuning/models", "autotune/tuning/prompts"]
-              }
+              },
+              "autotune/reference"
+            ]
+          },
+          {
+            "group": "Calibrated Judges",
+            "pages": [
+              "calibrated-judges/introduction",
+              "calibrated-judges/setup"
             ]
           },
           {
