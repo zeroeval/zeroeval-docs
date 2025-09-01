@@ -17,9 +17,15 @@
             "group": "Tracing",
             "pages": [
               "tracing/quickstart",
-              "tracing/sessions",
-              "tracing/tagging",
-              "tracing/signals",
+              {
+                "group": "Telemetry",
+                "pages": [
+                  "tracing/sessions",
+                  "tracing/tagging",
+                  "tracing/signals",
+                  "tracing/manual-instrumentation"
+                ]
+              },
               {
                 "group": "SDKs",
                 "pages": [
@@ -41,16 +47,7 @@
                   }
                 ]
               },
-              "tracing/manual-instrumentation",
-              "tracing/additional-configuration"
-            ]
-          },
-          {
-            "group": "Evaluations",
-            "pages": [
-              "evaluations/datasets",
-              "evaluations/experiments",
-              "evaluations/prompt-management"
+              "tracing/reference"
             ]
           },
           {
@@ -58,7 +55,10 @@
             "pages": [
               "autotune/introduction",
               "autotune/setup",
-              "autotune/tuning"
+              {
+                "group": "Tuning",
+                "pages": ["autotune/tuning/models", "autotune/tuning/prompts"]
+              }
             ]
           },
           {

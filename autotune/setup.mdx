@@ -3,73 +3,75 @@ title: "Setup"
 description: "Getting started with autotune"
 ---
 
-# Setup
-
 ZeroEval's autotune feature allows you to continuously improve your prompts and automatically deploy the best-performing models. The setup is simple and powerful.
 
-## How Autotune Works
+<img src="/images/setup-tuning.png" alt="Setup" />
 
-<Steps>
-  <Step title="Instrument your code">
-    Replace hardcoded prompts with `ze.prompt()` calls
-  </Step>
-  <Step title="Every change creates a version">
-    Each time you modify your prompt content, a new version is automatically created and tracked
-  </Step>
-  <Step title="Collect performance data">
-    ZeroEval automatically tracks all LLM interactions and their outcomes
-  </Step>
-  <Step title="Tune and evaluate">
-    Use the UI to run experiments, vote on outputs, and identify the best prompt/model combinations
-  </Step>
-  <Step title="Deploy over-the-air">
-    Winning configurations are automatically deployed to your application without code changes
-  </Step>
-</Steps>
+## Getting started (&lt;5 mins)
 
-## 1. Initialize ZeroEval
 
-First, initialize ZeroEval in your application:
+Replace hardcoded prompts with `ze.prompt()` and include the name of the specific part of your agent that you want to tune.
+
+```python
+# Before
+prompt = "You are a helpful assistant"
+
+# After - with autotune
+prompt = ze.prompt(
+    name="assistant",
+    content="You are a helpful assistant"
+)
+```
+
+That's it! You'll start seeing production traces in your dashboard for this specific task at [`ZeroEval › Tuning › [task_name]`](https://app.zeroeval.com).
+
+## Pushing models to production
+
+Once you see a model that performs well, you can send it to production with a single click, as seen below.
+
+
+<img src="/images/model-deployment.png" alt="Model deployment" style={{width: "50%", margin: "0 auto"}} />
+
+Your specified model gets replaced automatically any time you use the prompt from `ze.prompt()`, as seen below.
+
+```python
+# You write this
+response = client.chat.completions.create(
+    model="gpt-4",  # ← Gets replaced!
+    messages=[{"role": "system", "content": prompt}]
+)
+```
+
+## Example
+
+Here's autotune in action for a simple customer support bot:
 
 ```python
 import zeroeval as ze
+from openai import OpenAI
 
-ze.init()  # Picks up ZEROEVAL_API_KEY from environment
-```
+ze.init()
+client = OpenAI()
 
-## 2. Use Version-Aware Prompts
-
-Replace your hardcoded prompts with `ze.prompt()`. This powerful function handles versioning, tracking, and automatic model deployment:
-
-```python
-# Instead of hardcoding:
-# prompt = "You are a helpful assistant..."
-
-# Use ze.prompt with content (creates/ensures a version):
-prompt = ze.prompt(
-    name="customer-support",  # Task name for tracking
-    content="""You are a helpful customer support agent.
-    You help users with {{product}} questions in a {{tone}} manner.""",
-    variables={
-        "product": "ZeroEval",
-        "tone": "friendly and professional"
-    }
+# Define your prompt with version tracking
+system_prompt = ze.prompt(
+    name="support-bot",
+    content="""You are a customer support agent for {{company}}.
+    Be helpful, concise, and professional.""",
+    variables={"company": "TechCorp"}
 )
 
-# The prompt is automatically versioned and decorated with metadata
-messages = [
-    {"role": "system", "content": prompt},
-    {"role": "user", "content": "How do I get started?"}
-]
-
-# When you call OpenAI, the model is automatically patched if configured
+# Use it normally - model gets patched automatically
 response = client.chat.completions.create(
-    model="gpt-4",  # This gets overridden by tuned model if available!
-    messages=messages
+    model="gpt-4",  # This might run claude-3-sonnet in production!
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "I need help with my order"}
+    ]
 )
 ```
 
-## 3. Understanding Prompt Versions
+## Understanding Prompt Versions
 
 Every time you change your prompt content, a new version is created:
 
@@ -89,55 +91,14 @@ prompt_v2 = ze.prompt(
 # Fetch specific versions by hash
 latest_prompt = ze.prompt(
     name="customer-support",
-    from_="latest"  # Always get the latest tuned version
+    from="latest"  # Always get the latest tuned version
 )
 
 # Or fetch a specific version by its content hash
 specific_prompt = ze.prompt(
     name="customer-support",
-    from_="a1b2c3d4..."  # 64-character SHA-256 hash
+    from="a1b2c3d4..."  # 64-character SHA-256 hash
 )
 ```
 
-## 4. Automatic Model Patching
 
-The magic happens behind the scenes. When you use `ze.prompt()`, ZeroEval:
-
-1. **Decorates your prompt** with metadata including version info
-2. **Intercepts OpenAI calls** to detect the decorated prompt
-3. **Patches the model** with the tuned model for that prompt version
-4. **Tracks performance** for continuous improvement
-
-```python
-# Your code doesn't change - just use ze.prompt()
-prompt = ze.prompt(name="analyzer", content="Analyze this text...")
-
-# Model patching happens automatically
-response = client.chat.completions.create(
-    model="gpt-4",  # ← Gets replaced with tuned model!
-    messages=[{"role": "system", "content": prompt}]
-)
-```
-
-## Key Features
-
-- **Content-based versioning**: Each unique prompt content gets its own version via SHA-256 hashing
-- **Variable templating**: Use `{{variable}}` syntax for dynamic content
-- **Automatic tracking**: All interactions are traced for analysis
-- **Zero-downtime deployment**: Models update instantly without code changes
-- **Environment-aware**: Different versions can be deployed to staging vs production
-
-## Best Practices
-
-<Note>
-Always use descriptive task names that clearly identify the purpose of your prompt. This makes it easier to manage and analyze performance across different use cases.
-</Note>
-
-- **Start simple**: Begin with basic prompts and iterate based on performance data
-- **Use meaningful task names**: Choose names like `customer-support`, `code-reviewer`, `email-writer`
-- **Test locally first**: Use `from_="latest"` to test the latest tuned versions
-- **Monitor performance**: Check the ZeroEval dashboard to see how your prompts perform
-
-<img src="/images/setup-tuning.png" alt="Setup" />
-
-Ready to start tuning? Head to the [Tuning Guide](/autotune/tuning) to learn how to run experiments and optimize your prompts.
