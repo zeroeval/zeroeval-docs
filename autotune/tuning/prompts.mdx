@@ -5,5 +5,14 @@ description: "Use feedback on production traces to generate and validate better 
 
 <video src="/videos/prompt-optimization.mp4" alt="Prompt optimizations" controls muted playsInline loop preload="metadata" />
 
-ZeroEval derives prompt optimization suggestions directly from feedback on your production traces. By capturing preferences and correctness signals, the system proposes concrete prompt edits you can test and deploy.
+ZeroEval derives prompt optimization suggestions directly from feedback on your production traces. By capturing preferences and correctness signals, we provide concrete prompt edits you can test and use for your agents.
 
+## Prompt optimizations from feedback
+
+Once you've given a good amount of feedback on the incoming traffic for a given task, you can generate prompt optimizations using that feedback by clicking on the "Optimize Prompt" button in the "Suggestions" tab for the task.
+
+<video src="/videos/auto-tuning-2.mp4" alt="Prompt optimizations with feedback" controls muted playsInline loop preload="metadata" />
+
+Once you've generated a new prompt, you can test it with various models and see how it performs against the feedback you've already given.
+
+<video src="/videos/auto-tuning-model-leaderboard.mp4" alt="Model leaderboard" controls muted playsInline loop preload="metadata" />
