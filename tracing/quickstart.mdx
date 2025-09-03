@@ -3,15 +3,6 @@ title: Quickstart
 description: Get started with tracing and observability in ZeroEval
 ---
 
-ZeroEval provides comprehensive tracing capabilities to help you monitor, debug, and optimize your AI applications. This guide introduces the core concepts and helps you get started.
-
-Tracing allows you to monitor and debug your AI applications by capturing detailed information about each operation:
-
-- **Spans**: Individual units of work (e.g., an API call, a function execution)
-- **Traces**: Complete request flows composed of multiple spans
-- **Sessions**: Groups of related traces (e.g., a user conversation)
-- **Attributes**: Metadata attached to spans for filtering and analysis
-
 ## Getting Started (in 5 minutes)
 
 ### Get your API key
@@ -23,23 +14,15 @@ Create an API key from your [Settings → API Keys](https://app.zeroeval.com/set
 Choose your SDK to begin integrating ZeroEval:
 
 <CardGroup cols={2}>
-  <Card 
-    title="Python SDK" 
-    icon="python" 
-    href="/tracing/sdks/python/setup"
-  >
+  <Card title="Python SDK" icon="python" href="/tracing/sdks/python/setup">
     For Python applications using frameworks like FastAPI, Django, or Flask
   </Card>
-  
-  <Card 
-    title="TypeScript/JavaScript SDK" 
-    icon="js" 
+
+  <Card
+    title="TypeScript/JavaScript SDK"
+    icon="js"
     href="/tracing/sdks/typescript/setup"
   >
     For Node.js, Next.js, and browser-based applications
   </Card>
 </CardGroup>
-
-<Note>
-  Need help? Check out our [API reference](/api-reference) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
-</Note>

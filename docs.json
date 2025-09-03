@@ -15,17 +15,9 @@
         "groups": [
           {
             "group": "Tracing",
+            "icon": "magnifying-glass",
             "pages": [
               "tracing/quickstart",
-              {
-                "group": "Telemetry",
-                "pages": [
-                  "tracing/sessions",
-                  "tracing/tagging",
-                  "tracing/signals",
-                  "tracing/manual-instrumentation"
-                ]
-              },
               {
                 "group": "SDKs",
                 "pages": [
@@ -47,11 +39,21 @@
                   }
                 ]
               },
+              {
+                "group": "Advanced",
+                "pages": [
+                  "tracing/sessions",
+                  "tracing/tagging",
+                  "tracing/signals",
+                  "tracing/manual-instrumentation"
+                ]
+              },
               "tracing/reference"
             ]
           },
           {
             "group": "Autotune",
+            "icon": "wrench",
             "pages": [
               "autotune/introduction",
               "autotune/setup",
@@ -64,27 +66,25 @@
           },
           {
             "group": "Calibrated Judges",
+            "icon": "gavel",
             "pages": [
               "calibrated-judges/introduction",
               "calibrated-judges/setup"
             ]
           },
           {
+            "group": "Experiments",
+            "icon": "flask",
+            "pages": ["evaluations/experiments", "evaluations/datasets"]
+          },
+          {
             "group": "LLM Gateway",
+            "icon": "network-wired",
             "pages": ["llm-gateway/introduction"]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Community & Support",
-          "href": "https://discord.gg/MuExkGMNVz",
-          "icon": "discord"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light-logo.svg",
