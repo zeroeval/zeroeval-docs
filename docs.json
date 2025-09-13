@@ -45,7 +45,8 @@
                   "tracing/sessions",
                   "tracing/tagging",
                   "tracing/signals",
-                  "tracing/manual-instrumentation"
+                  "tracing/manual-instrumentation",
+                  "tracing/opentelemetry"
                 ]
               },
               "tracing/reference"

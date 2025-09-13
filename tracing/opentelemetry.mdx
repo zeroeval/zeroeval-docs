@@ -1,0 +1,283 @@
+---
+title: OpenTelemetry
+description: Send traces to ZeroEval using the OpenTelemetry collector
+---
+
+ZeroEval provides native support for the OpenTelemetry Protocol (OTLP), allowing you to send traces from any OpenTelemetry-instrumented application directly to ZeroEval's API. This guide shows you how to configure the OpenTelemetry collector to export traces to ZeroEval.
+
+
+## Prerequisites
+
+- A ZeroEval API key (get one from your [workspace settings](https://app.zeroeval.com/settings/api-keys))
+- OpenTelemetry collector installed ([installation guide](https://opentelemetry.io/docs/collector/getting-started/))
+
+## Configuration
+
+Create a collector configuration file (`otel-collector-config.yaml`):
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  # ZeroEval-specific attributes
+  attributes:
+    actions:
+      - key: deployment.environment
+        value: "production"  # or staging, development, etc.
+        action: upsert
+
+exporters:
+  otlphttp:
+    endpoint: https://api.zeroeval.com
+    headers:
+      Authorization: "Bearer YOUR_ZEROEVAL_API_KEY"
+    traces_endpoint: https://api.zeroeval.com/v1/traces
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, attributes]
+      exporters: [otlphttp]
+```
+
+## Docker Deployment
+
+For containerized deployments, use this Docker Compose configuration:
+
+```yaml
+version: '3.8'
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics
+    environment:
+      - ZEROEVAL_API_KEY=${ZEROEVAL_API_KEY}
+    restart: unless-stopped
+```
+
+## Environment-based Configuration
+
+To avoid hardcoding sensitive information, use environment variables:
+
+```yaml
+exporters:
+  otlphttp:
+    endpoint: https://api.zeroeval.com
+    headers:
+      Authorization: "Bearer ${env:ZEROEVAL_API_KEY}"
+    traces_endpoint: https://api.zeroeval.com/v1/traces
+```
+
+Then set the environment variable:
+
+```bash
+export ZEROEVAL_API_KEY="your-api-key-here"
+```
+
+## Advanced Configuration
+
+### Custom Session Management
+
+ZeroEval automatically creates sessions based on service attributes. You can customize this behavior by adding specific attributes:
+
+```yaml
+processors:
+  attributes:
+    actions:
+      # Custom session ID
+      - key: zeroeval.session.id
+        value: "custom-session-uuid"
+        action: upsert
+      # Custom session name
+      - key: zeroeval.session.name
+        value: "User Journey - Checkout Flow"
+        action: upsert
+```
+
+### Filtering and Sampling
+
+To reduce data volume, configure sampling:
+
+```yaml
+processors:
+  probabilistic_sampler:
+    sampling_percentage: 10  # Sample 10% of traces
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, attributes, probabilistic_sampler]
+      exporters: [otlphttp]
+```
+
+### Resource Detection
+
+Automatically detect and add resource attributes:
+
+```yaml
+processors:
+  resourcedetection:
+    detectors: [env, system, docker, k8s_node]
+    system:
+      hostname_sources: ["os"]
+    
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [resourcedetection, batch, attributes]
+      exporters: [otlphttp]
+```
+
+## Kubernetes Deployment
+
+For Kubernetes environments, use this ConfigMap and Deployment:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    processors:
+      batch:
+        timeout: 1s
+      
+      k8sattributes:
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.pod.name
+    
+    exporters:
+      otlphttp:
+        endpoint: https://api.zeroeval.com
+        headers:
+          Authorization: "Bearer ${env:ZEROEVAL_API_KEY}"
+        traces_endpoint: https://api.zeroeval.com/v1/traces
+    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, k8sattributes]
+          exporters: [otlphttp]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:latest
+        args: ["--config=/etc/otel-collector-config.yaml"]
+        env:
+        - name: ZEROEVAL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: zeroeval-secret
+              key: api-key
+        ports:
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+      volumes:
+      - name: config
+        configMap:
+          name: otel-collector-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - name: otlp-http
+    port: 4318
+    targetPort: 4318
+```
+
+## Verifying Your Setup
+
+Once configured, verify that traces are being sent to ZeroEval:
+
+1. **Check Collector Logs**:
+   ```bash
+   docker logs otel-collector
+   # or for Kubernetes
+   kubectl logs -l app=otel-collector
+   ```
+
+2. **Monitor Collector Metrics**:
+   Access the Prometheus metrics endpoint at `http://localhost:8888/metrics` to see export statistics.
+
+3. **View Traces in ZeroEval**:
+   Navigate to your [ZeroEval dashboard](https://app.zeroeval.com) to see incoming traces.
+
+## Troubleshooting
+
+### Authentication Errors
+
+If you see 401 errors, verify:
+- Your API key is valid and active
+- The `Authorization` header format is exactly: `Bearer YOUR_API_KEY`
+- The API key has the necessary permissions
+
+### Connection Issues
+
+For connection problems:
+- Ensure the endpoint is `https://api.zeroeval.com/v1/traces`
+- Check network connectivity and firewall rules
+- Verify TLS/SSL certificates if behind a proxy
