@@ -74,6 +74,16 @@
             ]
           },
           {
+            "group": "Experiments",
+            "icon": "flask",
+            "pages": [
+              "evaluations/datasets",
+              "evaluations/experiments",
+              "evaluations/ab-tests",
+              "evaluations/prompt-management"
+            ]
+          },
+          {
             "group": "LLM Gateway",
             "icon": "network-wired",
             "pages": ["llm-gateway/introduction"]
