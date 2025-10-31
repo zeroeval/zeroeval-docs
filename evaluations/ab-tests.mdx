@@ -1,34 +1,83 @@
 ---
 title: "A/B Tests"
-description: "Run A/B tests on your models."
+description: "Run weighted A/B tests on models, prompts, or any variants in your code."
 ---
 
-## TL;DR
+## Overview
 
-1. Pull (or create) a dataset
-2. Write a **task** – any Python function that maps a row ➜ model output
-3. Optionally write **evaluators** – functions that score `(row, output)`
-4. Wrap them in `ze.Experiment` and call `.run()`
+`ze.choose()` enables A/B testing by making weighted random selections between different variants (models, prompts, parameters, etc.) and automatically tracking which variant was chosen for each execution.
 
-## Minimal example
+**Key features:**
+- Weighted random selection between variants
+- Automatic tracking of choices within spans, traces, or sessions
+- Consistency caching — same entity always gets the same variant
+- Built-in validation of weights and variant keys
+
+## Basic Usage
 
 ```python
 import zeroeval as ze
 
 ze.init()
-dataset = ze.Dataset.pull("Capitals")
 
-def task(row):
-    # imagine calling an LLM here
-    return row["input"].upper()
-
-def exact_match(row, output):
-    return row["output"].upper() == output
-
-exp = ze.Experiment(
-    dataset=dataset,
-    task=task,
-    evaluators=[exact_match],
-    name="Capitals-baseline"
-)
+# Must be called within a span, trace, or session context
+with ze.span("my_operation"):
+    # Choose between two models with 70/30 split
+    model = ze.choose(
+        "model_selection",
+        variants={"fast": "gpt-4o-mini", "powerful": "gpt-4o"},
+        weights={"fast": 0.7, "powerful": 0.3}
+    )
+    
+    # Use the selected model
+    # model will be either "gpt-4o-mini" (70% chance) or "gpt-4o" (30% chance)
 ```
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `str` | Yes | Name of the A/B test (e.g., "model_selection", "prompt_variant") |
+| `variants` | `Dict[str, Any]` | Yes | Dictionary mapping variant keys to their values |
+| `weights` | `Dict[str, float]` | Yes | Dictionary mapping variant keys to selection probabilities (must sum to ~1.0) |
+
+## Returns
+
+Returns the **value** from the selected variant (not the key).
+
+## Complete Example
+
+```python
+import zeroeval as ze
+import openai
+
+ze.init()
+client = openai.OpenAI()
+
+with ze.span("model_ab_test", tags={"feature": "model_comparison"}):
+    # A/B test between two models
+    selected_model = ze.choose(
+        "model_selection",
+        variants={
+            "mini": "gpt-4o-mini",
+            "full": "gpt-4o"
+        },
+        weights={
+            "mini": 0.7,  # 70% traffic
+            "full": 0.3   # 30% traffic
+        }
+    )
+    
+    # The selected model is automatically tracked
+    response = client.chat.completions.create(
+        model=selected_model,
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+```
+
+## Important Notes
+
+- **Context Required**: Must be called within an active `ze.span()`, trace, or session
+- **Consistency**: Same entity (span/trace/session) always receives the same variant
+- **Weight Validation**: Weights should sum to 1.0 (warns if not within 0.95-1.05)
+- **Key Matching**: Variant keys and weight keys must match exactly
