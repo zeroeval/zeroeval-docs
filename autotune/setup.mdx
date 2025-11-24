@@ -27,6 +27,15 @@ That's it! You'll start seeing production traces in your dashboard for this spec
 
 <Note>
 **Auto-tune behavior:** When you provide `content`, ZeroEval automatically uses the latest optimized version from your dashboard if one exists. The `content` parameter serves as a fallback for when no optimized versions are available yet. This means you can hardcode a default prompt in your code, but ZeroEval will seamlessly swap in tuned versions without any code changes.
+
+To explicitly use the hardcoded content and bypass auto-optimization, use `from_="explicit"`:
+```python
+prompt = ze.prompt(
+    name="assistant",
+    from_="explicit",
+    content="You are a helpful assistant"
+)
+```
 </Note>
 
 ## Pushing models to production
@@ -96,13 +105,20 @@ prompt = ze.prompt(
 
 ### Explicit version control
 
-If you need more control over which version to use, you can explicitly specify versions:
+If you need more control over which version to use:
 
 ```python
 # Always use the latest optimized version (fails if none exists)
 prompt = ze.prompt(
     name="customer-support",
     from_="latest"
+)
+
+# Always use the hardcoded content (bypass auto-optimization)
+prompt = ze.prompt(
+    name="customer-support",
+    from_="explicit",
+    content="You are a helpful assistant."
 )
 
 # Use a specific version by its content hash
@@ -112,8 +128,17 @@ prompt = ze.prompt(
 )
 ```
 
+### When to use each mode
+
+| Mode | Use Case | Behavior |
+|------|----------|----------|
+| `content` only | **Recommended for most cases** | Auto-optimization with fallback |
+| `from_="explicit"` | Testing, debugging, or A/B testing specific prompts | Always use hardcoded content |
+| `from_="latest"` | Production where optimization is required | Fail if no optimized version exists |
+| `from_="<hash>"` | Pinning to specific tested versions | Use exact version by hash |
+
 <Tip>
-**Best practice**: Use `content` parameter for local development and testing. ZeroEval will automatically use optimized versions in production without any code changes. Only use `from_="latest"` if you want to explicitly require an optimized version to exist.
+**Best practice**: Use `content` parameter alone for local development and production. ZeroEval will automatically use optimized versions when available. Only use `from_="explicit"` when you specifically need to test or debug the hardcoded content.
 </Tip>
 
 

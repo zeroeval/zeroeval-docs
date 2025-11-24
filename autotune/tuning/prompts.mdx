@@ -93,6 +93,16 @@ ze.send_feedback(
 
 <Note>
 **Auto-optimization**: When you use `ze.prompt()` with `content`, ZeroEval automatically fetches the latest optimized version from your dashboard if one exists. Your `content` serves as a fallback for initial setup. This means your prompts improve automatically as you tune them, without any code changes.
+
+If you need to test the hardcoded content specifically (e.g., for debugging or A/B testing), use `from_="explicit"`:
+```python
+# Bypass auto-optimization and always use this exact content
+prompt = ze.prompt(
+    name="support-bot",
+    from_="explicit",
+    content="You are a helpful customer support agent."
+)
+```
 </Note>
 
 ### Feedback through the API
