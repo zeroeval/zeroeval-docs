@@ -7,6 +7,189 @@ description: "Use feedback on production traces to generate and validate better 
 
 ZeroEval derives prompt optimization suggestions directly from feedback on your production traces. By capturing preferences and correctness signals, we provide concrete prompt edits you can test and use for your agents.
 
+## Submitting Feedback
+
+Feedback is the foundation of prompt optimization. You can submit feedback for completions through the ZeroEval dashboard, the Python SDK, or the public API. Feedback helps ZeroEval understand what good and bad outputs look like for your specific use case.
+
+### Feedback through the dashboard
+
+The easiest way to provide feedback is through the ZeroEval dashboard. Navigate to your task's "Suggestions" tab, review incoming completions, and provide thumbs up/down feedback with optional reasons and expected outputs.
+
+### Feedback through the SDK
+
+For programmatic feedback submission, use the Python SDK. This is useful when you have automated evaluation systems or want to collect feedback from your application in production.
+
+```python
+import zeroeval as ze
+
+ze.init()
+
+# Send feedback for a specific completion
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id="550e8400-e29b-41d4-a716-446655440000",
+    thumbs_up=False,
+    reason="Response was too verbose",
+    expected_output="A concise 2-3 sentence response"
+)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `prompt_slug` | `str` | Yes | The slug/name of your prompt (same as used in `ze.prompt()`) |
+| `completion_id` | `str` | Yes | The UUID of the completion to provide feedback on |
+| `thumbs_up` | `bool` | Yes | `True` for positive feedback, `False` for negative feedback |
+| `reason` | `str` | No | Optional explanation of why you gave this feedback |
+| `expected_output` | `str` | No | Optional description of what the expected output should be |
+| `metadata` | `dict` | No | Optional additional metadata to attach to the feedback |
+
+<Note>
+The `completion_id` is automatically tracked when you use `ze.prompt()` with automatic tracing enabled. You can access it from the OpenAI response object's `id` field, or retrieve it from your traces in the dashboard.
+</Note>
+
+#### Complete example with feedback
+
+```python
+import zeroeval as ze
+from openai import OpenAI
+
+ze.init()
+client = OpenAI()
+
+# Define your prompt
+system_prompt = ze.prompt(
+    name="support-bot",
+    content="You are a helpful customer support agent."
+)
+
+# Make a completion
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "How do I reset my password?"}
+    ]
+)
+
+# Get the completion ID and text
+completion_id = response.id
+completion_text = response.choices[0].message.content
+
+# Evaluate the response (manually or automatically)
+is_good_response = evaluate_response(completion_text)
+
+# Send feedback based on evaluation
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id=completion_id,
+    thumbs_up=is_good_response,
+    reason="Clear step-by-step instructions" if is_good_response else "Missing link to reset page",
+    expected_output=None if is_good_response else "Should include direct link: https://app.example.com/reset"
+)
+```
+
+### Feedback through the API
+
+For integration with non-Python systems or direct API access, you can submit feedback using the public HTTP API.
+
+#### Endpoint
+
+```
+POST /v1/prompts/{prompt_slug}/completions/{completion_id}/feedback
+```
+
+#### Authentication
+
+Requires API key authentication via the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+#### Request body
+
+```json
+{
+  "thumbs_up": false,
+  "reason": "Response was inaccurate",
+  "expected_output": "The correct answer should mention X, Y, and Z",
+  "metadata": {
+    "evaluated_by": "automated_system",
+    "evaluation_score": 0.45
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "fb123e45-67f8-90ab-cdef-1234567890ab",
+  "completion_id": "550e8400-e29b-41d4-a716-446655440000",
+  "prompt_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "prompt_version_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "project_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "thumbs_up": false,
+  "reason": "Response was inaccurate",
+  "expected_output": "The correct answer should mention X, Y, and Z",
+  "metadata": {
+    "evaluated_by": "automated_system",
+    "evaluation_score": 0.45
+  },
+  "created_by": "user_id",
+  "created_at": "2025-11-22T10:30:00Z",
+  "updated_at": "2025-11-22T10:30:00Z"
+}
+```
+
+#### Example with cURL
+
+```bash
+curl -X POST https://api.zeroeval.com/v1/prompts/support-bot/completions/550e8400-e29b-41d4-a716-446655440000/feedback \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thumbs_up": false,
+    "reason": "Response was too vague",
+    "expected_output": "Should provide specific steps",
+    "metadata": {
+      "user_satisfaction": "low"
+    }
+  }'
+```
+
+#### Example with JavaScript/TypeScript
+
+```typescript
+const response = await fetch(
+  'https://api.zeroeval.com/v1/prompts/support-bot/completions/550e8400-e29b-41d4-a716-446655440000/feedback',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      thumbs_up: false,
+      reason: 'Response was too vague',
+      expected_output: 'Should provide specific steps',
+      metadata: {
+        user_satisfaction: 'low'
+      }
+    })
+  }
+);
+
+const feedback = await response.json();
+console.log('Feedback submitted:', feedback);
+```
+
+<Warning>
+If feedback already exists for the same completion from the same user, it will be updated with the new values. This allows you to correct or refine feedback as needed.
+</Warning>
+
 ## Prompt optimizations from feedback
 
 Once you've given a good amount of feedback on the incoming traffic for a given task, you can generate prompt optimizations using that feedback by clicking on the "Optimize Prompt" button in the "Suggestions" tab for the task.
@@ -16,3 +199,7 @@ Once you've given a good amount of feedback on the incoming traffic for a given 
 Once you've generated a new prompt, you can test it with various models and see how it performs against the feedback you've already given.
 
 <video src="/videos/auto-tuning-model-leaderboard.mp4" alt="Model leaderboard" controls muted playsInline loop preload="metadata" />
+
+## Integration with span feedback
+
+When you submit feedback for a completion that has an associated span (from automatic tracing), the feedback is automatically mirrored to the span. This enables integration with tuning datasets and advanced optimization workflows, ensuring your feedback is available wherever you need it.
