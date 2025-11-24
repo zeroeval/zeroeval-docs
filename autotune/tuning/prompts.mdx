@@ -58,7 +58,8 @@ from openai import OpenAI
 ze.init()
 client = OpenAI()
 
-# Define your prompt
+# Define your prompt - ZeroEval will automatically use the latest optimized
+# version from your dashboard if one exists, falling back to this content
 system_prompt = ze.prompt(
     name="support-bot",
     content="You are a helpful customer support agent."
@@ -89,6 +90,10 @@ ze.send_feedback(
     expected_output=None if is_good_response else "Should include direct link: https://app.example.com/reset"
 )
 ```
+
+<Note>
+**Auto-optimization**: When you use `ze.prompt()` with `content`, ZeroEval automatically fetches the latest optimized version from your dashboard if one exists. Your `content` serves as a fallback for initial setup. This means your prompts improve automatically as you tune them, without any code changes.
+</Note>
 
 ### Feedback through the API
 

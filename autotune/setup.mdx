@@ -25,6 +25,10 @@ prompt = ze.prompt(
 
 That's it! You'll start seeing production traces in your dashboard for this specific task at [`ZeroEval › Tuning › [task_name]`](https://app.zeroeval.com).
 
+<Note>
+**Auto-tune behavior:** When you provide `content`, ZeroEval automatically uses the latest optimized version from your dashboard if one exists. The `content` parameter serves as a fallback for when no optimized versions are available yet. This means you can hardcode a default prompt in your code, but ZeroEval will seamlessly swap in tuned versions without any code changes.
+</Note>
+
 ## Pushing models to production
 
 Once you see a model that performs well, you can send it to production with a single click, as seen below.
@@ -73,32 +77,43 @@ response = client.chat.completions.create(
 
 ## Understanding Prompt Versions
 
-Every time you change your prompt content, a new version is created:
+ZeroEval automatically manages prompt versions for you. When you use `ze.prompt()` with `content`, the SDK will:
+
+1. **Check for optimized versions**: First, it tries to fetch the latest optimized version from your dashboard
+2. **Fall back to your content**: If no optimized versions exist yet, it uses the `content` you provided
+3. **Create a version**: Your provided content is stored as the initial version for this task
+
+This means you get the best of both worlds: hardcoded fallback prompts in your code, with automatic optimization in production.
 
 ```python
-# Version 1 - Initial prompt
-prompt_v1 = ze.prompt(
+# This will use the latest optimized version if one exists in your dashboard
+# Otherwise, it uses the content you provide here
+prompt = ze.prompt(
     name="customer-support",
     content="You are a helpful assistant."
 )
+```
 
-# Version 2 - Updated prompt (automatically creates new version)
-prompt_v2 = ze.prompt(
-    name="customer-support", 
-    content="You are a helpful customer support assistant."  # Changed!
+### Explicit version control
+
+If you need more control over which version to use, you can explicitly specify versions:
+
+```python
+# Always use the latest optimized version (fails if none exists)
+prompt = ze.prompt(
+    name="customer-support",
+    from_="latest"
 )
 
-# Fetch specific versions by hash
-latest_prompt = ze.prompt(
+# Use a specific version by its content hash
+prompt = ze.prompt(
     name="customer-support",
-    from="latest"  # Always get the latest tuned version
-)
-
-# Or fetch a specific version by its content hash
-specific_prompt = ze.prompt(
-    name="customer-support",
-    from="a1b2c3d4..."  # 64-character SHA-256 hash
+    from_="a1b2c3d4..."  # 64-character SHA-256 hash
 )
 ```
+
+<Tip>
+**Best practice**: Use `content` parameter for local development and testing. ZeroEval will automatically use optimized versions in production without any code changes. Only use `from_="latest"` if you want to explicitly require an optimized version to exist.
+</Tip>
 
 
