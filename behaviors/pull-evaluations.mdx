@@ -1,0 +1,168 @@
+---
+title: "Pulling Evaluations"
+description: "Retrieve judge evaluations via SDK or REST API"
+---
+
+Retrieve judge evaluations programmatically for reporting, analysis, or integration into your own workflows.
+
+## Finding your IDs
+
+Before making API calls, you'll need these identifiers:
+
+| ID | Where to find it |
+|---|---|
+| **Project ID** | Settings → Project, or in any URL after `/projects/` |
+| **Judge ID** | Click a judge in the dashboard; the ID is in the URL (`/judges/{judge_id}`) |
+| **Span ID** | In trace details, or returned by your instrumentation code |
+
+## Python SDK
+
+### Get evaluations by judge
+
+Fetch all evaluations for a specific judge with pagination and optional filters.
+
+```python
+import zeroeval as ze
+
+ze.init(api_key="YOUR_API_KEY")
+
+response = ze.get_behavior_evaluations(
+    project_id="your-project-id",
+    judge_id="your-judge-id",
+    limit=100,
+    offset=0,
+)
+
+print(f"Total: {response['total']}")
+for eval in response["evaluations"]:
+    print(f"Span: {eval['span_id']}")
+    print(f"Result: {'PASS' if eval['evaluation_result'] else 'FAIL'}")
+    print(f"Score: {eval.get('score')}")  # For scored judges
+    print(f"Reason: {eval['evaluation_reason']}")
+```
+
+**Optional filters:**
+
+```python
+response = ze.get_behavior_evaluations(
+    project_id="your-project-id",
+    judge_id="your-judge-id",
+    limit=100,
+    offset=0,
+    start_date="2025-01-01T00:00:00Z",
+    end_date="2025-01-31T23:59:59Z",
+    evaluation_result=True,  # Only passing evaluations
+    feedback_state="with_user_feedback",  # Only calibrated items
+)
+```
+
+### Get evaluations by span
+
+Fetch all judge evaluations for a specific span (useful when a span has been evaluated by multiple judges).
+
+```python
+response = ze.get_span_evaluations(
+    project_id="your-project-id",
+    span_id="your-span-id",
+)
+
+for eval in response["evaluations"]:
+    print(f"Judge: {eval['judge_name']}")
+    print(f"Result: {'PASS' if eval['evaluation_result'] else 'FAIL'}")
+    if eval.get('evaluation_type') == 'scored':
+        print(f"Score: {eval['score']} / {eval['score_max']}")
+```
+
+## REST API
+
+Use these endpoints directly with your API key in the `Authorization` header.
+
+### Get evaluations by judge
+
+```bash
+curl -X GET "https://api.zeroeval.com/projects/{project_id}/judges/{judge_id}/evaluations?limit=100&offset=0" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
+
+**Query parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `limit` | int | Results per page (1-500, default 100) |
+| `offset` | int | Pagination offset (default 0) |
+| `start_date` | string | Filter by date (ISO 8601) |
+| `end_date` | string | Filter by date (ISO 8601) |
+| `evaluation_result` | bool | `true` for passing, `false` for failing |
+| `feedback_state` | string | `with_user_feedback` or `without_user_feedback` |
+
+### Get evaluations by span
+
+```bash
+curl -X GET "https://api.zeroeval.com/projects/{project_id}/spans/{span_id}/evaluations" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
+
+## Response format
+
+### Judge evaluations response
+
+```json
+{
+  "evaluations": [...],
+  "total": 142,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+### Span evaluations response
+
+```json
+{
+  "span_id": "abc-123",
+  "evaluations": [...]
+}
+```
+
+### Evaluation object
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique evaluation ID |
+| `span_id` | string | The evaluated span |
+| `evaluation_result` | bool | Pass (`true`) or fail (`false`) |
+| `evaluation_reason` | string | Judge's reasoning |
+| `confidence_score` | float | Model confidence (0-1) |
+| `score` | float \| null | Numeric score (scored judges only) |
+| `score_min` | float \| null | Minimum possible score |
+| `score_max` | float \| null | Maximum possible score |
+| `pass_threshold` | float \| null | Score required to pass |
+| `model_used` | string | LLM model that ran the evaluation |
+| `created_at` | string | ISO 8601 timestamp |
+
+## Pagination example
+
+For large result sets, paginate through all evaluations:
+
+```python
+all_evaluations = []
+offset = 0
+limit = 100
+
+while True:
+    response = ze.get_behavior_evaluations(
+        project_id="your-project-id",
+        judge_id="your-judge-id",
+        limit=limit,
+        offset=offset,
+    )
+    
+    all_evaluations.extend(response["evaluations"])
+    
+    if len(response["evaluations"]) < limit:
+        break
+    
+    offset += limit
+
+print(f"Fetched {len(all_evaluations)} total evaluations")
+```

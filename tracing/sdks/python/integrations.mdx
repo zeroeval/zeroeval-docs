@@ -80,6 +80,50 @@ for chunk in app.stream({"messages": [HumanMessage(content="Hello")]}):
     print(chunk)
 ```
 
+## PydanticAI
+
+PydanticAI agents are automatically traced, including multi-turn conversations. The SDK ensures that all LLM calls within an agent execution share the same trace, and consecutive conversation turns share the same trace ID when using shared message history.
+
+```python
+import zeroeval as ze
+ze.init()
+
+from pydantic_ai import Agent
+from pydantic import BaseModel
+
+class Response(BaseModel):
+    message: str
+    sentiment: str
+
+# Create an agent with structured output
+agent = Agent(
+    model="openai:gpt-4o-mini",
+    output_type=Response,
+    system_prompt="You are a helpful assistant."
+)
+
+# Single execution - automatically traced
+result = await agent.run("Hello!")
+
+# Multi-turn conversation - all turns share the same trace
+message_history = []
+
+async with agent.iter("First message", message_history=message_history) as run:
+    async for node in run:
+        pass
+    message_history = run.result.all_messages()
+
+# Second turn reuses the same trace_id
+async with agent.iter("Follow-up message", message_history=message_history) as run:
+    async for node in run:
+        pass
+    message_history = run.result.all_messages()
+```
+
+<Info>
+When you pass the same `message_history` list across multiple agent runs, ZeroEval automatically groups all runs under a single trace. This provides a unified view of the entire conversation.
+</Info>
+
 ## LiveKit
 
 The SDK automatically creates traces for LiveKit agents, including events from the following plugins:

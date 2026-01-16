@@ -66,19 +66,18 @@
             ]
           },
           {
-            "group": "Calibrated Judges",
+            "group": "Behaviors",
             "icon": "gavel",
             "pages": [
-              "calibrated-judges/introduction",
-              "calibrated-judges/setup"
+              "behaviors/introduction",
+              "behaviors/setup",
+              "behaviors/pull-evaluations"
             ]
           },
           {
             "group": "Experiments",
             "icon": "flask",
             "pages": [
-              "evaluations/datasets",
-              "evaluations/experiments",
               "evaluations/ab-tests",
               "evaluations/prompt-management"
             ]
