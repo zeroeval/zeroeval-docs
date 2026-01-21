@@ -66,12 +66,12 @@
             ]
           },
           {
-            "group": "Behaviors",
+            "group": "Judges",
             "icon": "gavel",
             "pages": [
-              "behaviors/introduction",
-              "behaviors/setup",
-              "behaviors/pull-evaluations"
+              "judges/introduction",
+              "judges/setup",
+              "judges/pull-evaluations"
             ]
           },
           {
