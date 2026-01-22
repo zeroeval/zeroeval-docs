@@ -26,7 +26,7 @@ import zeroeval as ze
 
 ze.init(api_key="YOUR_API_KEY")
 
-response = ze.get_behavior_evaluations(
+response = ze.get_judge_evaluations(
     project_id="your-project-id",
     judge_id="your-judge-id",
     limit=100,
@@ -44,7 +44,7 @@ for eval in response["evaluations"]:
 **Optional filters:**
 
 ```python
-response = ze.get_behavior_evaluations(
+response = ze.get_judge_evaluations(
     project_id="your-project-id",
     judge_id="your-judge-id",
     limit=100,
@@ -150,7 +150,7 @@ offset = 0
 limit = 100
 
 while True:
-    response = ze.get_behavior_evaluations(
+    response = ze.get_judge_evaluations(
         project_id="your-project-id",
         judge_id="your-judge-id",
         limit=limit,
@@ -166,3 +166,7 @@ while True:
 
 print(f"Fetched {len(all_evaluations)} total evaluations")
 ```
+
+## Related
+
+- [Submitting Feedback](/judges/submit-feedback) - Programmatically submit feedback for judge evaluations

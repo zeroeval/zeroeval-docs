@@ -1,0 +1,119 @@
+---
+title: "Submitting Feedback"
+description: "Programmatically submit feedback for judge evaluations via SDK"
+---
+
+## Overview
+
+When calibrating judges, you can submit feedback programmatically using the SDK.
+This is useful for:
+
+- Bulk feedback submission from automated pipelines
+- Integration with custom review workflows
+- Syncing feedback from external labeling tools
+
+## Important: Using the Correct IDs
+
+Judge evaluations involve two related spans:
+
+| ID | Description |
+|---|---|
+| **Source Span ID** | The original LLM call that was evaluated |
+| **Judge Call Span ID** | The span created when the judge ran its evaluation |
+
+When submitting feedback, always include the `judge_id` parameter to ensure
+feedback is correctly associated with the judge evaluation.
+
+## Python SDK
+
+### From the UI (Recommended)
+
+The easiest way to get the correct IDs is from the Judge Evaluation modal:
+
+1. Open a judge evaluation in the dashboard
+2. Expand the "SDK Integration" section
+3. Click "Copy" to copy the pre-filled Python code
+4. Paste and customize the generated code
+
+### Manual Submission
+
+```python
+from zeroeval import ZeroEval
+
+client = ZeroEval()
+
+# Submit feedback for a judge evaluation
+client.send_feedback(
+    prompt_slug="your-judge-task-slug",  # The task/prompt associated with the judge
+    completion_id="span-id-here",         # The span ID from the evaluation
+    thumbs_up=True,                        # True = correct, False = incorrect
+    reason="Optional explanation",
+    judge_id="automation-id-here",         # Required for judge feedback
+)
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `prompt_slug` | str | Yes | The task slug associated with the judge |
+| `completion_id` | str | Yes | The span ID being evaluated |
+| `thumbs_up` | bool | Yes | `True` if judge was correct, `False` if wrong |
+| `reason` | str | No | Explanation of the feedback |
+| `judge_id` | str | Yes* | The judge automation ID (*required for judge feedback) |
+
+## REST API
+
+```bash
+curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_id}/feedback" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thumbs_up": true,
+    "reason": "Judge correctly identified the issue",
+    "judge_id": "automation-uuid-here"
+  }'
+```
+
+## Finding Your IDs
+
+| ID | Where to Find It |
+|---|---|
+| **Task Slug** | In the judge settings, or the URL when editing the judge's prompt |
+| **Span ID** | In the evaluation modal, or via `get_judge_evaluations()` response |
+| **Judge ID** | In the URL when viewing a judge (`/judges/{judge_id}`) |
+
+## Bulk Feedback Submission
+
+For submitting feedback on multiple evaluations, you can iterate through evaluations:
+
+```python
+from zeroeval import ZeroEval
+
+client = ZeroEval()
+
+# Get evaluations to review
+evaluations = client.get_judge_evaluations(
+    project_id="your-project-id",
+    judge_id="your-judge-id",
+    limit=100,
+)
+
+# Submit feedback for each
+for eval in evaluations["evaluations"]:
+    # Your logic to determine if the evaluation was correct
+    is_correct = your_review_logic(eval)
+    
+    client.send_feedback(
+        prompt_slug="your-judge-task-slug",
+        completion_id=eval["span_id"],
+        thumbs_up=is_correct,
+        reason="Automated review",
+        judge_id="your-judge-id",
+    )
+```
+
+## Related
+
+- [Pulling Evaluations](/judges/pull-evaluations) - Retrieve judge evaluations programmatically
+- [Judge Setup](/judges/setup) - Configure and deploy judges
