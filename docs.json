@@ -71,6 +71,7 @@
             "pages": [
               "judges/introduction",
               "judges/setup",
+              "judges/submit-feedback",
               "judges/pull-evaluations"
             ]
           },
