@@ -61,8 +61,40 @@ client.send_feedback(
 | `thumbs_up` | bool | Yes | `True` if judge was correct, `False` if wrong |
 | `reason` | str | No | Explanation of the feedback |
 | `judge_id` | str | Yes* | The judge automation ID (*required for judge feedback) |
+| `expected_score` | float | No | For scored judges: the expected score value |
+| `score_direction` | str | No | For scored judges: `"too_high"` or `"too_low"` |
+
+<Note>
+  `expected_score` and `score_direction` are only valid for scored judges 
+  (judges with `evaluation_type: "scored"`). The API will return a 400 error 
+  if these fields are provided for binary judges.
+</Note>
+
+### Score-Based Feedback
+
+For judges using scored rubrics (not binary pass/fail), you can provide additional
+feedback about the expected score:
+
+```python
+from zeroeval import ZeroEval
+
+client = ZeroEval()
+
+# Submit feedback for a scored judge evaluation
+client.send_feedback(
+    prompt_slug="quality-scorer",
+    completion_id="span-id-here",
+    thumbs_up=False,                       # The judge was incorrect
+    judge_id="automation-id-here",
+    expected_score=3.5,                    # What the score should have been
+    score_direction="too_high",            # The judge scored too high
+    reason="Score should have been lower due to grammar issues",
+)
+```
 
 ## REST API
+
+### Binary Judge Feedback
 
 ```bash
 curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_id}/feedback" \
@@ -72,6 +104,23 @@ curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_
     "thumbs_up": true,
     "reason": "Judge correctly identified the issue",
     "judge_id": "automation-uuid-here"
+  }'
+```
+
+### Scored Judge Feedback
+
+For scored judges, include `expected_score` and `score_direction`:
+
+```bash
+curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_id}/feedback" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thumbs_up": false,
+    "reason": "Score should have been lower",
+    "judge_id": "automation-uuid-here",
+    "expected_score": 3.5,
+    "score_direction": "too_high"
   }'
 ```
 
