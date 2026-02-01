@@ -59,8 +59,8 @@
               "autotune/introduction",
               "autotune/setup",
               {
-                "group": "Tuning",
-                "pages": ["autotune/tuning/models", "autotune/tuning/prompts"]
+                "group": "Prompts",
+                "pages": ["autotune/prompts/models", "autotune/prompts/prompts"]
               },
               "autotune/reference"
             ]

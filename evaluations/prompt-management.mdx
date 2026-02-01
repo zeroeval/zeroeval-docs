@@ -3,7 +3,7 @@ title: "Prompt Library"
 description: "Fetch versioned prompts by slug with tags, variables, fallback, and task association."
 ---
 
-Use `ze.get_prompt` to fetch team-managed prompts by `slug`, pinned by `version` or movable `tag`. You can template variables, specify fallbacks, and associate results with a tuning task for observability.
+Use `ze.get_prompt` to fetch team-managed prompts by `slug`, pinned by `version` or movable `tag`. You can template variables, specify fallbacks, and associate results with a Prompts task for observability.
 
 ## Quick start
 
@@ -27,7 +27,7 @@ p = ze.get_prompt(
     tag=None,                # default: None (str | None) → SDK default tag ("production" in prod else "latest")
     fallback=None,           # default: None (str | None) - local content if fetch fails / 404
     variables=None,          # default: None (dict | None) - {name: value} for {{name}} templating
-    task_name=None,          # default: None (str | None) - associate content with a tuning task
+    task_name=None,          # default: None (str | None) - associate content with a Prompts task
     render=True,             # default: True (bool) - render template with variables
     missing="error",        # default: "error" ("error" | "leave") - behavior for missing variables
     use_cache=True,          # default: True (bool) - in-process TTL cache for server results
