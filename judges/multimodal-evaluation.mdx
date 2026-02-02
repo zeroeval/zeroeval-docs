@@ -1,0 +1,155 @@
+---
+title: "Multimodal Evaluation"
+description: "Evaluate screenshots and images with LLM judges"
+---
+
+LLM judges can evaluate spans that contain images alongside text. This is useful for browser agents, UI testing, visual QA, and any workflow where you need to assess visual output.
+
+## How it works
+
+1. **Attach images to spans** using the SDK's `add_screenshot()` or `add_image()` methods
+2. **Images are stored in S3** during span ingestion (base64 data is stripped from the span)
+3. **Judges fetch images** when evaluating the span and send them to a vision-capable LLM
+4. **Evaluation results** appear in the dashboard like any other judge evaluation
+
+The LLM sees both the span's text data (input/output) and any attached images, giving it full context for evaluation.
+
+## Attaching images to spans
+
+### Screenshots with viewport context
+
+For browser agents or responsive testing, use `add_screenshot()` to capture different viewports:
+
+```python
+import zeroeval as ze
+
+with ze.span(name="homepage_test", tags={"test_type": "visual"}) as span:
+    # Desktop viewport
+    span.add_screenshot(
+        base64_data=desktop_base64,
+        viewport="desktop",
+        width=1920,
+        height=1080,
+        label="Homepage - Desktop"
+    )
+    
+    # Mobile viewport
+    span.add_screenshot(
+        base64_data=mobile_base64,
+        viewport="mobile",
+        width=375,
+        height=812,
+        label="Homepage - Mobile"
+    )
+    
+    span.set_io(
+        input_data="Load homepage and capture screenshots",
+        output_data="Captured 2 viewport screenshots"
+    )
+```
+
+### Generic images
+
+For charts, diagrams, or UI component states, use `add_image()`:
+
+```python
+with ze.span(name="button_hover_test") as span:
+    span.add_image(
+        base64_data=before_hover_base64,
+        label="Button - Default State"
+    )
+    
+    span.add_image(
+        base64_data=after_hover_base64,
+        label="Button - Hover State"
+    )
+    
+    span.set_io(
+        input_data="Test button hover interaction",
+        output_data="Button changes color on hover"
+    )
+```
+
+## Creating a multimodal judge
+
+Multimodal judges work like regular judges, but with criteria that reference attached images. The judge prompt should describe what to look for in the visual content.
+
+### Example: UI consistency judge
+
+```
+Evaluate whether the UI renders correctly across viewports.
+
+Check for:
+- Layout breaks or overlapping elements
+- Text that's too small to read on mobile
+- Missing or broken images
+- Inconsistent spacing between viewports
+
+Score 1 if all viewports render correctly, 0 if there are visual issues.
+```
+
+### Example: Brand compliance judge
+
+```
+Check if the page follows brand guidelines.
+
+Look for:
+- Correct logo placement and sizing
+- Brand colors used consistently
+- Proper typography hierarchy
+- Appropriate whitespace
+
+Score 1 for full compliance, 0 for violations.
+```
+
+### Example: Accessibility judge
+
+```
+Evaluate visual accessibility of the interface.
+
+Check:
+- Sufficient color contrast
+- Text size readability
+- Clear visual hierarchy
+- Button/link affordances
+
+Score 1 if accessible, 0 if there are issues. Include specific problems in the reasoning.
+```
+
+## Filtering spans for multimodal evaluation
+
+Use tags to identify which spans should be evaluated by your multimodal judge:
+
+```python
+# Tag spans that have screenshots
+with ze.span(name="browser_test", tags={"has_screenshots": "true"}) as span:
+    span.add_screenshot(...)
+```
+
+Then configure your judge to only evaluate spans matching that tag. This prevents the judge from running on text-only spans where multimodal evaluation doesn't apply.
+
+## Supported image formats
+
+- JPEG
+- PNG
+- WebP
+- GIF
+
+Images are validated during ingestion. The maximum size is 5MB per image, with up to 10 images per span.
+
+## Viewing images in the dashboard
+
+Screenshots appear in two places:
+
+1. **Span details view** - Images show in the Data tab with viewport labels and dimensions
+2. **Judge evaluation modal** - When reviewing an evaluation, you'll see the images the judge analyzed
+
+Images display with their labels, viewport type (for screenshots), and dimensions when available.
+
+## Model support
+
+Multimodal evaluation currently uses Gemini models, which support image inputs. When you create a judge, ZeroEval automatically handles the image formatting for the model.
+
+<Note>
+Multimodal evaluation works best with specific, measurable criteria. Vague prompts like "does this look good?" will produce inconsistent results. Be explicit about what visual properties to check.
+</Note>

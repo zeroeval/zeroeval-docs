@@ -71,6 +71,7 @@
             "pages": [
               "judges/introduction",
               "judges/setup",
+              "judges/multimodal-evaluation",
               "judges/submit-feedback",
               "judges/pull-evaluations"
             ]
@@ -78,10 +79,7 @@
           {
             "group": "Experiments",
             "icon": "flask",
-            "pages": [
-              "evaluations/ab-tests",
-              "evaluations/prompt-management"
-            ]
+            "pages": ["evaluations/ab-tests", "evaluations/prompt-management"]
           },
           {
             "group": "LLM Gateway",

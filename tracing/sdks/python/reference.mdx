@@ -484,6 +484,101 @@ def set_error(
 - `message` (str): Error message
 - `stack` (str, optional): Stack trace information
 
+##### `add_screenshot()`
+
+Attach a screenshot to the span for visual evaluation by LLM judges. Screenshots are uploaded to S3 during ingestion and can be evaluated alongside text data.
+
+```python
+def add_screenshot(
+    self,
+    base64_data: str,
+    viewport: str = "desktop",
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    label: Optional[str] = None
+) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `base64_data` (str): Base64 encoded image data. Accepts raw base64 or data URL format (`data:image/png;base64,...`)
+- `viewport` (str, optional): Viewport type - `"desktop"`, `"mobile"`, or `"tablet"`. Defaults to `"desktop"`
+- `width` (int, optional): Image width in pixels
+- `height` (int, optional): Image height in pixels
+- `label` (str, optional): Human-readable description of the screenshot
+
+**Example:**
+```python
+import zeroeval as ze
+
+with ze.span(name="browser_test", tags={"test": "visual"}) as span:
+    # Capture and attach a desktop screenshot
+    span.add_screenshot(
+        base64_data=desktop_screenshot_base64,
+        viewport="desktop",
+        width=1920,
+        height=1080,
+        label="Homepage - Desktop"
+    )
+    
+    # Also capture mobile view
+    span.add_screenshot(
+        base64_data=mobile_screenshot_base64,
+        viewport="mobile",
+        width=375,
+        height=812,
+        label="Homepage - iPhone"
+    )
+    
+    span.set_io(
+        input_data="Navigate to homepage",
+        output_data="Captured viewport screenshots"
+    )
+```
+
+##### `add_image()`
+
+Attach a generic image to the span for visual evaluation. Use this for non-screenshot images like charts, diagrams, or UI component states.
+
+```python
+def add_image(
+    self,
+    base64_data: str,
+    label: Optional[str] = None,
+    metadata: Optional[dict[str, Any]] = None
+) -> None
+```
+
+**Parameters:**
+- `self`: The Span instance
+- `base64_data` (str): Base64 encoded image data. Accepts raw base64 or data URL format
+- `label` (str, optional): Human-readable description of the image
+- `metadata` (dict, optional): Additional metadata to store with the image
+
+**Example:**
+```python
+import zeroeval as ze
+
+with ze.span(name="chart_generation") as span:
+    # Generate a chart and attach it
+    chart_base64 = generate_chart(data)
+    
+    span.add_image(
+        base64_data=chart_base64,
+        label="Monthly Revenue Chart",
+        metadata={"chart_type": "bar", "data_points": 12}
+    )
+    
+    span.set_io(
+        input_data="Generate revenue chart for Q4",
+        output_data="Chart generated with 12 data points"
+    )
+```
+
+<Note>
+Images attached to spans can be evaluated by LLM judges configured for multimodal evaluation. See the [Multimodal Evaluation](/judges/multimodal-evaluation) guide for setup instructions.
+</Note>
+
 ## Context Functions
 
 ### `get_current_span()`
