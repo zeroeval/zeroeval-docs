@@ -15,7 +15,6 @@
         "groups": [
           {
             "group": "Tracing",
-            "icon": "magnifying-glass",
             "pages": [
               "tracing/quickstart",
               {
@@ -46,7 +45,6 @@
           },
           {
             "group": "Prompts",
-            "icon": "wrench",
             "pages": [
               "autotune/introduction",
               "autotune/setup",
@@ -59,7 +57,6 @@
           },
           {
             "group": "Judges",
-            "icon": "gavel",
             "pages": [
               "judges/introduction",
               "judges/setup",
