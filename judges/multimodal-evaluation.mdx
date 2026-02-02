@@ -7,8 +7,8 @@ LLM judges can evaluate spans that contain images alongside text. This is useful
 
 ## How it works
 
-1. **Attach images to spans** using the SDK's `add_screenshot()` or `add_image()` methods
-2. **Images are stored in S3** during span ingestion (base64 data is stripped from the span)
+1. **Attach images to spans** using SDK methods or structured output data
+2. **Images are uploaded** during span ingestion (base64 data is stripped from the span)
 3. **Judges fetch images** when evaluating the span and send them to a vision-capable LLM
 4. **Evaluation results** appear in the dashboard like any other judge evaluation
 
@@ -16,14 +16,20 @@ The LLM sees both the span's text data (input/output) and any attached images, g
 
 ## Attaching images to spans
 
-### Screenshots with viewport context
+There are two ways to attach images to spans, depending on your workflow.
+
+### Option 1: SDK helper methods
+
+The SDK provides `add_screenshot()` and `add_image()` methods for attaching images with metadata.
+
+**Screenshots with viewport context**
 
 For browser agents or responsive testing, use `add_screenshot()` to capture different viewports:
 
 ```python
 import zeroeval as ze
 
-with ze.span(name="homepage_test", tags={"test_type": "visual"}) as span:
+with ze.span(name="homepage_test", tags={"has_screenshots": "true"}) as span:
     # Desktop viewport
     span.add_screenshot(
         base64_data=desktop_base64,
@@ -48,7 +54,7 @@ with ze.span(name="homepage_test", tags={"test_type": "visual"}) as span:
     )
 ```
 
-### Generic images
+**Generic images**
 
 For charts, diagrams, or UI component states, use `add_image()`:
 
@@ -69,6 +75,59 @@ with ze.span(name="button_hover_test") as span:
         output_data="Button changes color on hover"
     )
 ```
+
+### Option 2: Structured output_data
+
+If your workflow already produces screenshot data as structured output (common with browser automation agents), you can include images directly in the span's `output_data`. ZeroEval automatically detects and extracts images from JSON arrays containing `base64` fields.
+
+```python
+import zeroeval as ze
+
+with ze.span(
+    name="screenshot_capture",
+    kind="llm",
+    tags={"has_screenshots": "true", "screenshot_count": "2"}
+) as span:
+    # Set input as conversation messages
+    span.input_data = [
+        {
+            "role": "system",
+            "content": "You are a screenshot capture service."
+        },
+        {
+            "role": "user", 
+            "content": "Navigate to the homepage and capture screenshots"
+        }
+    ]
+    
+    # Set output as array of screenshot objects with base64 data
+    span.output_data = [
+        {
+            "viewport": "mobile",
+            "width": 768,
+            "height": 1024,
+            "base64": mobile_screenshot_base64
+        },
+        {
+            "viewport": "desktop",
+            "width": 1920,
+            "height": 1080,
+            "base64": desktop_screenshot_base64
+        }
+    ]
+```
+
+When ZeroEval ingests this span, it:
+1. Extracts each object with a `base64` field as an attachment
+2. Uploads the images to storage
+3. Strips the base64 data from `output_data` to keep the database lean
+4. Preserves the metadata (viewport, width, height) for display
+
+This approach works well when your browser agent or automation tool already produces structured screenshot output.
+
+<Note>
+Both methods produce the same result: images stored and available for multimodal judge evaluation. Choose whichever fits your workflow better.
+</Note>
 
 ## Creating a multimodal judge
 
@@ -135,7 +194,7 @@ Then configure your judge to only evaluate spans matching that tag. This prevent
 - WebP
 - GIF
 
-Images are validated during ingestion. The maximum size is 5MB per image, with up to 10 images per span.
+Images are validated during ingestion. The maximum size is 10MB per image, with up to 5 images per span.
 
 ## Viewing images in the dashboard
 
