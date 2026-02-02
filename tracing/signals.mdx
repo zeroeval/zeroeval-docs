@@ -12,14 +12,13 @@ You can attach signals to:
 - **Sessions** (user interactions)
 - **Traces** (entire request flows)
 
-For complete signals API documentation, see the [Python SDK Reference](/tracing/sdks/python/reference#signals) or [TypeScript SDK Reference](/tracing/sdks/typescript/reference#signals).
+For complete signals API documentation, see the [Python SDK Reference](/tracing/sdks/python/reference#signals).
 
 ## Using signals in code
 
 ### With the Python SDK
 
-<CodeGroup>
-```python Python
+```python
 import zeroeval as ze
 
 # Initialize the tracer
@@ -36,56 +35,9 @@ with ze.trace("user_query") as span:
     ze.set_signal("task_completed", "success")
 ```
 
-```typescript TypeScript (Basic)
-import * as ze from 'zeroeval';
-
-// Initialise the tracer
-ze.init({ apiKey: "your-api-key" });
-
-// Start a span and add signals
-await ze.withSpan({ name: "user_query" }, async () => {
-    const response = await processUserQuery(query);
-
-    // --- Add signals on the current span ---
-    await ze.sendSpanSignal("user_satisfaction", true);
-    await ze.sendSpanSignal("response_quality", 4.5);
-
-    // --- Attach to the whole trace / session ---
-    await ze.sendTraceSignal("task_completed", "success");
-    await ze.sendSessionSignal("vip_user", true);
-});
-```
-
-```typescript TypeScript (Decorators)
-import { span } from 'zeroeval';
-import * as ze from 'zeroeval';
-
-// Initialise the tracer
-ze.init({ apiKey: "your-api-key" });
-
-class QueryProcessor {
-    @span({ name: "user_query" })
-    async processQuery(query: string) {
-        const response = await processUserQuery(query);
-
-        // --- Add signals on the current span ---
-        await ze.sendSpanSignal("user_satisfaction", true);
-        await ze.sendSpanSignal("response_quality", 4.5);
-
-        // --- Attach to the whole trace / session ---
-        await ze.sendTraceSignal("task_completed", "success");
-        await ze.sendSessionSignal("vip_user", true);
-
-        return response;
-    }
-}
-```
-</CodeGroup>
-
 ### Setting signals on different targets
 
-<CodeGroup>
-```python Python
+```python
 # On the current span
 ze.set_signal("helpful", True)
 
@@ -99,25 +51,6 @@ ze.set_trace_signal("conversion", True)
 # On the current session
 ze.set_session_signal("user_engaged", True)
 ```
-
-```typescript TypeScript
-import * as ze from 'zeroeval';
-
-// On the current span
-await ze.sendSpanSignal("helpful", true);
-
-// On a specific span object
-const span = ze.getCurrentSpan();
-span?.addSignal("rating", 5);
-span?.addSignal("category", "excellent");
-
-// On the current trace
-await ze.sendTraceSignal("conversion", true);
-
-// On the current session
-await ze.sendSessionSignal("user_engaged", true);
-```
-</CodeGroup>
 
 ## API endpoint
 
@@ -163,16 +96,6 @@ ze.set_signal("thumbs_up", True)
 ze.set_signal(span, {"helpful": False})
 ```
 
-```typescript TypeScript SDK
-import * as ze from 'zeroeval';
-
-// Thumbs-up on the current span
-await ze.sendSpanSignal("thumbs_up", true);
-
-// Thumbs-down
-await ze.sendSpanSignal("thumbs_up", false);
-```
-
 ```python API
 import requests
 
@@ -192,41 +115,13 @@ requests.post(
 
 ### 2. Star rating (1–5)
 
-<CodeGroup>
-
-```python Python SDK
+```python
 ze.set_signal("star_rating", 4)
 ```
 
-```typescript TypeScript SDK
-import * as ze from 'zeroeval';
-
-// Star rating (1–5) on the current trace
-await ze.sendTraceSignal("star_rating", 4);
-```
-
-```js JavaScript API
-fetch(`https://api.zeroeval.com/workspaces/${WORKSPACE_ID}/signals`, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${ZE_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    trace_id: trace.id,
-    name: "star_rating",
-    value: 4, // any integer 1–5
-  }),
-});
-```
-
-</CodeGroup>
-
 ### 3. Continuous metrics
 
-<CodeGroup>
-
-```python Python SDK
+```python
 # Response time
 ze.set_signal("response_time_ms", 1250.5)
 
@@ -237,92 +132,31 @@ ze.set_signal("time_on_task_sec", 12.85)
 ze.set_signal("accuracy", 0.94)
 ```
 
-```typescript TypeScript SDK
-import * as ze from 'zeroeval';
-
-// Response time on the current session
-await ze.sendSessionSignal("response_time_ms", 1250.5);
-
-// Accuracy score on current span
-await ze.sendSpanSignal("accuracy", 0.94);
-```
-
-```python API
-payload = {
-    "session_id": session.id,
-    "name": "time_on_task_sec",
-    "value": 12.85  // float works too
-}
-```
-
-</CodeGroup>
-
 ### 4. Categorical outcomes
 
-<CodeGroup>
-
-```python Python SDK
+```python
 ze.set_signal("task_status", "success")
 ze.set_signal("error_type", "timeout")
 ze.set_signal("user_intent", "purchase")
 ```
 
-```typescript TypeScript SDK
-import * as ze from 'zeroeval';
-
-// Task status on current span
-await ze.sendSpanSignal("task_status", "success");
-```
-
-```js JavaScript API
-{
-  completion_id: completion.id,
-  name: "task_status",
-  value: "success" // could also be "retry" / "fail"
-}
-```
-
-</CodeGroup>
-
 ### 5. Session-level signals
 
-<CodeGroup>
-```python Python
+```python
 # Track user engagement across an entire session
 ze.set_session_signal("pages_visited", 5)
 ze.set_session_signal("converted", True)
 ze.set_session_signal("user_tier", "premium")
 ```
 
-```typescript TypeScript
-import * as ze from 'zeroeval';
-
-// Track user engagement across the session
-await ze.sendSessionSignal("pages_visited", 5);
-await ze.sendSessionSignal("converted", true);
-await ze.sendSessionSignal("user_tier", "premium");
-```
-</CodeGroup>
-
 ### 6. Trace-level signals
 
-<CodeGroup>
-```python Python
+```python
 # Track outcomes for an entire request flow
 ze.set_trace_signal("request_successful", True)
 ze.set_trace_signal("total_cost", 0.045)
 ze.set_trace_signal("model_used", "gpt-4o")
 ```
-
-```typescript TypeScript
-import * as ze from 'zeroeval';
-
-// Trace-level outcomes
-await ze.sendTraceSignal("request_successful", true);
-await ze.sendTraceSignal("total_cost", 0.045);
-await ze.sendTraceSignal("model_used", "gpt-4o");
-```
-</CodeGroup>
 
 ## Signal types
 
@@ -334,8 +168,7 @@ Signals are automatically categorized based on their values:
 
 ## Putting it all together
 
-<CodeGroup>
-```python Python
+```python
 import zeroeval as ze
 
 # Initialize tracing
@@ -362,77 +195,5 @@ with ze.trace("user_chat_session", session_name="Customer Support") as session:
     # Signal on the entire trace
     ze.set_trace_signal("interaction_complete", True)
 ```
-
-```typescript TypeScript (Basic)
-import * as ze from 'zeroeval';
-
-ze.init({ apiKey: "your-api-key" });
-
-// Start a session for user interaction
-await ze.withSpan({
-  name: "user_chat_session",
-  sessionName: "Customer Support",
-}, async () => {
-
-  // Process user query
-  await ze.withSpan({ name: "process_query" }, async () => {
-    const response = await llmClient.chat.completions.create(...);
-
-    // Signal on the LLM completion
-    await ze.sendSpanSignal("response_generated", true);
-    await ze.sendSpanSignal("response_length", response.choices[0].message.content.length);
-  });
-
-  // Capture user feedback
-  const userRating = await getUserFeedback();
-
-  // Session-level signals
-  await ze.sendSessionSignal("user_rating", userRating);
-  await ze.sendSessionSignal("issue_resolved", userRating >= 4);
-
-  // Trace-level signal
-  await ze.sendTraceSignal("interaction_complete", true);
-});
-```
-
-```typescript TypeScript (Decorators)
-import { span } from 'zeroeval';
-import * as ze from 'zeroeval';
-
-ze.init({ apiKey: "your-api-key" });
-
-class SupportChat {
-  @span({ 
-    name: "user_chat_session",
-    sessionName: "Customer Support"
-  })
-  async handleChatSession() {
-    // Process user query
-    await this.processQuery();
-
-    // Capture user feedback
-    const userRating = await getUserFeedback();
-
-    // Session-level signals
-    await ze.sendSessionSignal("user_rating", userRating);
-    await ze.sendSessionSignal("issue_resolved", userRating >= 4);
-
-    // Trace-level signal
-    await ze.sendTraceSignal("interaction_complete", true);
-  }
-
-  @span({ name: "process_query" })
-  async processQuery() {
-    const response = await llmClient.chat.completions.create(...);
-
-    // Signal on the LLM completion
-    await ze.sendSpanSignal("response_generated", true);
-    await ze.sendSpanSignal("response_length", response.choices[0].message.content.length);
-    
-    return response;
-  }
-}
-```
-</CodeGroup>
 
 That's it! Your signals will appear in the ZeroEval dashboard, helping you understand how your AI system performs in real-world scenarios.

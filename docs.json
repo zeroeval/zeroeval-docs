@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "palm",
   "name": "ZeroEval Documentation",
   "colors": {
     "primary": "#469d5c",
@@ -28,14 +28,6 @@
                       "tracing/sdks/python/integrations",
                       "tracing/sdks/python/reference"
                     ]
-                  },
-                  {
-                    "group": "TS/JS",
-                    "pages": [
-                      "tracing/sdks/typescript/setup",
-                      "tracing/sdks/typescript/integrations",
-                      "tracing/sdks/typescript/reference"
-                    ]
                   }
                 ]
               },
@@ -53,13 +45,13 @@
             ]
           },
           {
-            "group": "Autotune",
+            "group": "Prompts",
             "icon": "wrench",
             "pages": [
               "autotune/introduction",
               "autotune/setup",
               {
-                "group": "Prompts",
+                "group": "Optimization",
                 "pages": ["autotune/prompts/models", "autotune/prompts/prompts"]
               },
               "autotune/reference"

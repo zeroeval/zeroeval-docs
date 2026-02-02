@@ -5,14 +5,13 @@ description: Simple ways to attach rich, query-able tags to your traces.
 
 Tags are key–value pairs that can be attached to any **span**, **trace**, or **session**. They power the facet filters in the console so you can slice-and-dice your telemetry by *user*, *plan*, *model*, *tenant*, or anything else that matters to your business.
 
-For complete tagging API documentation, see the [Python SDK Reference](/tracing/sdks/python/reference#tags) or [TypeScript SDK Reference](/tracing/sdks/typescript/reference#tags).
+For complete tagging API documentation, see the [Python SDK Reference](/tracing/sdks/python/reference#tags).
 
 ## 1. Tag once, inherit everywhere
 
 When you add a `tags` dictionary to the **first** span you create, every child span automatically gets the same tags.  That means you set them once and they flow down the entire call-stack.
 
-<CodeGroup>
-```python Python
+```python
 import zeroeval as ze
 
 @ze.span(
@@ -36,88 +35,13 @@ def handle_request():
         ...
 ```
 
-```typescript TypeScript (Basic)
-import * as ze from 'zeroeval';
-
-function handleRequest() {
-    ze.withSpan({
-        name: "handle_request",
-        tags: {
-            user_id: "42",           // who triggered the request
-            tenant: "acme-corp",     // multi-tenant identifier
-            plan: "enterprise"       // commercial plan
-        }
-    }, () => {
-        authenticate();
-        fetchData();
-        process();
-    });
-}
-
-// Two nested child spans – they automatically inherit *all* the tags
-function fetchData() {
-    ze.withSpan({ name: "fetch_data" }, () => {
-        // ...
-    });
-}
-
-function process() {
-    ze.withSpan({ 
-        name: "process", 
-        tags: { stage: "post" }
-    }, () => {
-        // ...
-    });
-}
-```
-
-```typescript TypeScript (Decorators)
-import { span } from 'zeroeval';
-
-class RequestHandler {
-    @span({
-        name: "handle_request",
-        tags: {
-            user_id: "42",           // who triggered the request
-            tenant: "acme-corp",     // multi-tenant identifier
-            plan: "enterprise"       // commercial plan
-        }
-    })
-    handleRequest() {
-        this.authenticate();
-        this.fetchData();
-        this.process();
-    }
-
-    // Two nested child spans – they automatically inherit *all* the tags
-    @span({ name: "fetch_data" })
-    fetchData() {
-        // ...
-    }
-
-    @span({ 
-        name: "process", 
-        tags: { stage: "post" }
-    })
-    process() {
-        // ...
-    }
-
-    authenticate() {
-        // Not traced
-    }
-}
-```
-</CodeGroup>
-
 <br/>
 
 ## 2. Tag a single span
 
 If you want to tag only a **single** span (or override a tag inherited from a parent) simply provide the `tags` argument on that specific decorator or context manager.
 
-<CodeGroup>
-```python Python
+```python
 import zeroeval as ze
 
 @ze.span(name="top_level")
@@ -131,63 +55,13 @@ def top_level():
         render_template()
 ```
 
-```typescript TypeScript (Basic)
-import * as ze from 'zeroeval';
-
-function topLevel() {
-    ze.withSpan({ name: "top_level" }, () => {
-        // Child span with its own tags – *not* inherited by siblings
-        ze.withSpan({
-            name: "db_call",
-            tags: { table: "customers", operation: "SELECT" }
-        }, () => {
-            queryDatabase();
-        });
-
-        // Another child span without tags – it has no knowledge of the db_call tags
-        ze.withSpan({ name: "render" }, () => {
-            renderTemplate();
-        });
-    });
-}
-```
-
-```typescript TypeScript (Decorators)
-import { span } from 'zeroeval';
-
-class DataService {
-    @span({ name: "top_level" })
-    topLevel() {
-        this.performDbCall();
-        this.renderOutput();
-    }
-
-    @span({
-        name: "db_call",
-        tags: { table: "customers", operation: "SELECT" }
-    })
-    performDbCall() {
-        // Child span with its own tags – *not* inherited by siblings
-        queryDatabase();
-    }
-
-    @span({ name: "render" })
-    renderOutput() {
-        // Another child span without tags – it has no knowledge of the db_call tags
-        renderTemplate();
-    }
-}
-```
-</CodeGroup>
-
 Under the hood these tags live only on that single span, they are **not** copied to siblings or parents.
 
 ## 3. Granular tagging (session, trace, or span)
 
 You can add granular tags at the session, trace, or span level after they've been created:
 
-<CodeGroup>
-```python Python
+```python
 import uuid
 from langchain_core.messages import HumanMessage
 import zeroeval as ze
@@ -216,96 +90,4 @@ with ze.span(
 
     result = app.invoke({"messages": [HumanMessage(content="hello")], "count": 0})
 ```
-
-```typescript TypeScript (Basic)
-import { randomUUID } from 'crypto';
-import { HumanMessage } from '@langchain/core/messages';
-import * as ze from 'zeroeval';
-
-const DEMO_TAGS = { example: "langgraph_tags_demo", project: "zeroeval" };
-
-const SESSION_ID = randomUUID();
-const SESSION_INFO = { id: SESSION_ID, name: "Tags Demo Session" };
-
-ze.withSpan({
-    name: "demo.root_invoke",
-    sessionId: SESSION_INFO.id,
-    sessionName: SESSION_INFO.name,
-    tags: { ...DEMO_TAGS, run: "invoke" }
-}, async () => {
-    // 1️⃣ Tag the *current* span only
-    const currentSpan = ze.getCurrentSpan();
-    if (currentSpan) {
-        ze.setTag(currentSpan, { phase: "pre-run" });
-    }
-
-    // 2️⃣ Tag the whole trace – root + all children (past *and* future)
-    const currentTrace = ze.getCurrentTrace();
-    if (currentTrace) {
-        ze.setTag(currentTrace, { run_mode: "invoke" });
-    }
-
-    // 3️⃣ Tag the entire session
-    const currentSession = ze.getCurrentSession();
-    if (currentSession) {
-        ze.setTag(currentSession, { env: "local" });
-    }
-
-    const result = await app.invoke({ 
-        messages: [new HumanMessage("hello")], 
-        count: 0 
-    });
-});
-```
-
-```typescript TypeScript (Decorators)
-import { randomUUID } from 'crypto';
-import { HumanMessage } from '@langchain/core/messages';
-import { span } from 'zeroeval';
-import * as ze from 'zeroeval';
-
-const DEMO_TAGS = { example: "langgraph_tags_demo", project: "zeroeval" };
-
-class TaggingDemo {
-    private sessionId = randomUUID();
-    private sessionInfo = { 
-        id: this.sessionId, 
-        name: "Tags Demo Session" 
-    };
-
-    @span({
-        name: "demo.root_invoke",
-        sessionId: function(this: TaggingDemo) { return this.sessionInfo.id; },
-        sessionName: function(this: TaggingDemo) { return this.sessionInfo.name; },
-        tags: { ...DEMO_TAGS, run: "invoke" }
-    })
-    async rootInvoke() {
-        // 1️⃣ Tag the *current* span only
-        const currentSpan = ze.getCurrentSpan();
-        if (currentSpan) {
-            ze.setTag(currentSpan, { phase: "pre-run" });
-        }
-
-        // 2️⃣ Tag the whole trace – root + all children (past *and* future)
-        const currentTrace = ze.getCurrentTrace();
-        if (currentTrace) {
-            ze.setTag(currentTrace, { run_mode: "invoke" });
-        }
-
-        // 3️⃣ Tag the entire session
-        const currentSession = ze.getCurrentSession();
-        if (currentSession) {
-            ze.setTag(currentSession, { env: "local" });
-        }
-
-        const result = await app.invoke({ 
-            messages: [new HumanMessage("hello")], 
-            count: 0 
-        });
-        
-        return result;
-    }
-}
-```
-</CodeGroup>
 
