@@ -27,6 +27,14 @@
                       "tracing/sdks/python/integrations",
                       "tracing/sdks/python/reference"
                     ]
+                  },
+                  {
+                    "group": "TypeScript",
+                    "pages": [
+                      "tracing/sdks/typescript/setup",
+                      "tracing/sdks/typescript/integrations",
+                      "tracing/sdks/typescript/reference"
+                    ]
                   }
                 ]
               },

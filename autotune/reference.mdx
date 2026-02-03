@@ -5,20 +5,24 @@ description: "Parameters and configuration for ze.prompt"
 
 `ze.prompt` creates or fetches versioned prompts from the Prompt Library and returns decorated content for downstream LLM calls.
 
+<Info>
+**TypeScript differences**: In TypeScript, `ze.prompt()` is an async function that returns `Promise<string>`. Parameters use camelCase and are passed as an options object: `ze.prompt({ name: "...", content: "..." })`.
+</Info>
+
 ## Parameters
 
-| Parameter   | Type            | Required | Default | Description |
-| ----------- | --------------- | -------- | ------- | ----------- |
-| `name`      | string          | yes      | —       | Task name associated with the prompt in the library |
-| `content`   | string          | no       | `None`  | Raw prompt content to ensure/create a version by content |
-| `from_`     | string          | no       | `None`  | Either `"latest"` or a 64‑char lowercase SHA‑256 content hash to fetch a specific version |
-| `from`      | string (alias)  | no       | `None`  | Alias for `from_` (keyword‑only) |
-| `variables` | dict            | no       | `None`  | Template variables to render `{{variable}}` tokens in content |
+| Python | TypeScript | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- | --- |
+| `name` | `name` | string | yes | — | Task name associated with the prompt in the library |
+| `content` | `content` | string | no | `None`/`undefined` | Raw prompt content to ensure/create a version by content |
+| `from_` | `from` | string | no | `None`/`undefined` | Either `"latest"`, `"explicit"`, or a 64‑char SHA‑256 hash |
+| `variables` | `variables` | dict/object | no | `None`/`undefined` | Template variables to render `{{variable}}` tokens |
 
 Notes:
 
-- Exactly one of `content` or `from_/from` must be provided.
-- `from="latest"` fetches the latest version bound to the task; otherwise `from_` must be a 64‑char hex SHA‑256 hash.
+- In Python, use `from_` (with underscore) as `from` is a reserved keyword. TypeScript uses `from` directly.
+- Exactly one of `content` or `from` must be provided (except when using `from: "explicit"` with `content`).
+- `from="latest"` fetches the latest version bound to the task; otherwise `from` must be a 64‑char hex SHA‑256 hash.
 
 ## Behavior
 
@@ -34,19 +38,21 @@ OpenAI integration: when `prompt_version_id` is present, the SDK will automatica
 
 ## Return Value
 
-- `str`: Decorated prompt content ready to pass into LLM clients.
+- **Python**: `str` - Decorated prompt content ready to pass into LLM clients.
+- **TypeScript**: `Promise<string>` - Async function returning decorated prompt content.
 
 ## Errors
 
-| Error                  | When |
-| ---------------------- | ---- |
-| `ValueError`           | Both `content` and `from_` provided, or neither; invalid `from_` (not `"latest"` or 64‑char hex) |
-| `PromptRequestError`   | `from_="latest"` but no versions exist for `name` |
-| `PromptNotFoundError`  | `from_` is a hash that does not exist for `name` |
+| Python | TypeScript | When |
+| --- | --- | --- |
+| `ValueError` | `Error` | Both `content` and `from` provided (except explicit), or neither; invalid `from` value |
+| `PromptRequestError` | `PromptRequestError` | `from="latest"` but no versions exist for `name` |
+| `PromptNotFoundError` | `PromptNotFoundError` | `from` is a hash that does not exist for `name` |
 
 ## Examples
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 # Create/ensure a version by content
@@ -62,5 +68,22 @@ system = ze.prompt(name="support-triage", from_="latest")
 # Fetch a specific version by content hash
 system = ze.prompt(name="support-triage", from_="c6a7...deadbeef...0123")
 ```
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+// Create/ensure a version by content
+const system = await ze.prompt({
+  name: "support-triage",
+  content: "You are a helpful assistant for {{product}}.",
+  variables: { product: "Acme" },
+});
+
+// Fetch the latest version for this task
+const system = await ze.prompt({ name: "support-triage", from: "latest" });
+
+// Fetch a specific version by content hash
+const system = await ze.prompt({ name: "support-triage", from: "c6a7...deadbeef...0123" });
+```
+</CodeGroup>
 
 

@@ -12,7 +12,8 @@ ZeroEval's autotune feature allows you to continuously improve your prompts and 
 
 Replace hardcoded prompts with `ze.prompt()` and include the name of the specific part of your agent that you want to tune.
 
-```python
+<CodeGroup>
+```python Python
 # Before
 prompt = "You are a helpful assistant"
 
@@ -22,20 +23,41 @@ prompt = ze.prompt(
     content="You are a helpful assistant"
 )
 ```
+```typescript TypeScript
+// Before
+const prompt = "You are a helpful assistant";
+
+// After - with autotune
+const prompt = await ze.prompt({
+  name: "assistant",
+  content: "You are a helpful assistant"
+});
+```
+</CodeGroup>
 
 That's it! You'll start seeing production traces in your dashboard for this specific task at [`ZeroEval › Prompts › [task_name]`](https://app.zeroeval.com).
 
 <Note>
 **Auto-tune behavior:** When you provide `content`, ZeroEval automatically uses the latest optimized version from your dashboard if one exists. The `content` parameter serves as a fallback for when no optimized versions are available yet. This means you can hardcode a default prompt in your code, but ZeroEval will seamlessly swap in tuned versions without any code changes.
 
-To explicitly use the hardcoded content and bypass auto-optimization, use `from_="explicit"`:
-```python
+To explicitly use the hardcoded content and bypass auto-optimization, use `from_="explicit"` (Python) or `from: "explicit"` (TypeScript):
+
+<CodeGroup>
+```python Python
 prompt = ze.prompt(
     name="assistant",
     from_="explicit",
     content="You are a helpful assistant"
 )
 ```
+```typescript TypeScript
+const prompt = await ze.prompt({
+  name: "assistant",
+  from: "explicit",
+  content: "You are a helpful assistant"
+});
+```
+</CodeGroup>
 </Note>
 
 ## Pushing models to production
@@ -47,19 +69,29 @@ Once you see a model that performs well, you can send it to production with a si
 
 Your specified model gets replaced automatically any time you use the prompt from `ze.prompt()`, as seen below.
 
-```python
+<CodeGroup>
+```python Python
 # You write this
 response = client.chat.completions.create(
     model="gpt-4",  # ← Gets replaced!
     messages=[{"role": "system", "content": prompt}]
 )
 ```
+```typescript TypeScript
+// You write this
+const response = await openai.chat.completions.create({
+  model: "gpt-4",  // ← Gets replaced!
+  messages: [{ role: "system", content: prompt }]
+});
+```
+</CodeGroup>
 
 ## Example
 
 Here's autotune in action for a simple customer support bot:
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 from openai import OpenAI
 
@@ -83,6 +115,31 @@ response = client.chat.completions.create(
     ]
 )
 ```
+```typescript TypeScript
+import * as ze from 'zeroeval';
+import { OpenAI } from 'openai';
+
+ze.init();
+const client = ze.wrap(new OpenAI());
+
+// Define your prompt with version tracking
+const systemPrompt = await ze.prompt({
+  name: "support-bot",
+  content: `You are a customer support agent for {{company}}.
+    Be helpful, concise, and professional.`,
+  variables: { company: "TechCorp" }
+});
+
+// Use it normally - model gets patched automatically
+const response = await client.chat.completions.create({
+  model: "gpt-4",  // This might run claude-3-sonnet in production!
+  messages: [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "I need help with my order" }
+  ]
+});
+```
+</CodeGroup>
 
 ## Understanding Prompt Versions
 
@@ -94,7 +151,8 @@ ZeroEval automatically manages prompt versions for you. When you use `ze.prompt(
 
 This means you get the best of both worlds: hardcoded fallback prompts in your code, with automatic optimization in production.
 
-```python
+<CodeGroup>
+```python Python
 # This will use the latest optimized version if one exists in your dashboard
 # Otherwise, it uses the content you provide here
 prompt = ze.prompt(
@@ -102,12 +160,22 @@ prompt = ze.prompt(
     content="You are a helpful assistant."
 )
 ```
+```typescript TypeScript
+// This will use the latest optimized version if one exists in your dashboard
+// Otherwise, it uses the content you provide here
+const prompt = await ze.prompt({
+  name: "customer-support",
+  content: "You are a helpful assistant."
+});
+```
+</CodeGroup>
 
 ### Explicit version control
 
 If you need more control over which version to use:
 
-```python
+<CodeGroup>
+```python Python
 # Always use the latest optimized version (fails if none exists)
 prompt = ze.prompt(
     name="customer-support",
@@ -127,18 +195,39 @@ prompt = ze.prompt(
     from_="a1b2c3d4..."  # 64-character SHA-256 hash
 )
 ```
+```typescript TypeScript
+// Always use the latest optimized version (fails if none exists)
+const prompt = await ze.prompt({
+  name: "customer-support",
+  from: "latest"
+});
+
+// Always use the hardcoded content (bypass auto-optimization)
+const prompt = await ze.prompt({
+  name: "customer-support",
+  from: "explicit",
+  content: "You are a helpful assistant."
+});
+
+// Use a specific version by its content hash
+const prompt = await ze.prompt({
+  name: "customer-support",
+  from: "a1b2c3d4..."  // 64-character SHA-256 hash
+});
+```
+</CodeGroup>
 
 ### When to use each mode
 
 | Mode | Use Case | Behavior |
 |------|----------|----------|
 | `content` only | **Recommended for most cases** | Auto-optimization with fallback |
-| `from_="explicit"` | Testing, debugging, or A/B testing specific prompts | Always use hardcoded content |
-| `from_="latest"` | Production where optimization is required | Fail if no optimized version exists |
-| `from_="<hash>"` | Pinning to specific tested versions | Use exact version by hash |
+| `from_="explicit"` (Python) / `from: "explicit"` (TS) | Testing, debugging, or A/B testing specific prompts | Always use hardcoded content |
+| `from_="latest"` (Python) / `from: "latest"` (TS) | Production where optimization is required | Fail if no optimized version exists |
+| `from_="<hash>"` (Python) / `from: "<hash>"` (TS) | Pinning to specific tested versions | Use exact version by hash |
 
 <Tip>
-**Best practice**: Use `content` parameter alone for local development and production. ZeroEval will automatically use optimized versions when available. Only use `from_="explicit"` when you specifically need to test or debug the hardcoded content.
+**Best practice**: Use `content` parameter alone for local development and production. ZeroEval will automatically use optimized versions when available. Only use `from_="explicit"` (Python) or `from: "explicit"` (TypeScript) when you specifically need to test or debug the hardcoded content.
 </Tip>
 
 

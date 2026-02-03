@@ -1,0 +1,229 @@
+---
+title: Setup
+description: Get started with ZeroEval tracing in TypeScript and JavaScript applications
+---
+
+The [ZeroEval TypeScript SDK](https://www.npmjs.com/package/zeroeval) provides tracing for Node.js applications through wrapper functions and integration callbacks.
+
+## Installation
+
+<CodeGroup>
+```bash npm
+npm install zeroeval
+```
+
+```bash yarn
+yarn add zeroeval
+```
+
+```bash pnpm
+pnpm add zeroeval
+```
+</CodeGroup>
+
+## Basic Setup
+
+```typescript
+import * as ze from 'zeroeval';
+
+// Option 1: ZEROEVAL_API_KEY in your environment variable
+ze.init();
+
+// Option 2: Provide API key directly
+ze.init({ apiKey: 'YOUR_API_KEY' });
+
+// Option 3: With additional configuration
+ze.init({
+  apiKey: 'YOUR_API_KEY',
+  apiUrl: 'https://api.zeroeval.com', // optional
+  flushInterval: 10, // seconds
+  maxSpans: 100,
+});
+```
+
+## Patterns
+
+The SDK offers two ways to add tracing to your TypeScript/JavaScript code:
+
+### Function Wrapping
+
+Use `withSpan()` to wrap function executions:
+
+```typescript
+import * as ze from 'zeroeval';
+
+// Wrap synchronous functions
+const fetchData = (userId: string) =>
+  ze.withSpan({ name: 'fetch_data' }, () => ({
+    userId,
+    name: 'John Doe'
+  }));
+
+// Wrap async functions
+const processData = async (data: { name: string }) =>
+  ze.withSpan(
+    {
+      name: 'process_data',
+      attributes: { version: '1.0' }
+    },
+    async () => {
+      const result = await transform(data);
+      return `Welcome, ${result.name}!`;
+    }
+  );
+
+// Complex workflows with nested spans
+async function complexWorkflow() {
+  return ze.withSpan({ name: 'data_pipeline' }, async () => {
+    const data = await ze.withSpan(
+      { name: 'fetch_stage' },
+      fetchExternalData
+    );
+
+    const processed = await ze.withSpan(
+      { name: 'process_stage' },
+      () => transformData(data)
+    );
+
+    const result = await ze.withSpan(
+      { name: 'save_stage' },
+      () => saveToDatabase(processed)
+    );
+
+    return result;
+  });
+}
+```
+
+### Decorators
+
+Use the `@span` decorator for class methods:
+
+```typescript
+import { span } from 'zeroeval';
+
+class DataService {
+  @span({
+    name: 'fetch_user_data',
+    tags: { service: 'user_api' }
+  })
+  async fetchUser(userId: string) {
+    const response = await fetch(`/api/users/${userId}`);
+    return response.json();
+  }
+
+  @span({
+    name: 'process_order',
+    attributes: { version: '2.0' }
+  })
+  processOrder(orderId: string, items: string[]) {
+    return { orderId, processed: true };
+  }
+}
+```
+
+<Note>
+**Decorators require TypeScript configuration**: Enable `experimentalDecorators` in your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true
+  }
+}
+```
+
+When using runtime tools like `tsx` or `ts-node`, pass the `--experimental-decorators` flag.
+</Note>
+
+## Sessions
+
+Group related spans into sessions:
+
+```typescript
+import { v4 as uuidv4 } from 'uuid';
+import * as ze from 'zeroeval';
+
+const sessionId = uuidv4();
+
+async function userJourney(userId: string) {
+  return ze.withSpan(
+    {
+      name: 'user_journey',
+      sessionId: sessionId,
+      sessionName: 'User Onboarding'
+    },
+    async () => {
+      // All nested spans inherit the session
+      await ze.withSpan({ name: 'step_1' }, () => welcome(userId));
+      await ze.withSpan({ name: 'step_2' }, () => setupProfile(userId));
+      await ze.withSpan({ name: 'step_3' }, () => sendConfirmation(userId));
+    }
+  );
+}
+```
+
+## Context
+
+Access current context information:
+
+```typescript
+import * as ze from 'zeroeval';
+
+// Get the current span
+const currentSpan = ze.getCurrentSpan();
+
+// Get the current trace ID
+const traceId = ze.getCurrentTrace();
+
+// Get the current session ID
+const sessionId = ze.getCurrentSession();
+```
+
+## Tagging
+
+Attach tags for filtering and organization:
+
+```typescript
+import * as ze from 'zeroeval';
+
+// Set tags on the current span
+ze.setTag(undefined, { user_id: '12345', environment: 'production' });
+
+// Set tags on a specific trace
+const traceId = ze.getCurrentTrace();
+if (traceId) {
+  ze.setTag(traceId, { feature: 'checkout' });
+}
+
+// Set tags on a span object
+const span = ze.getCurrentSpan();
+if (span) {
+  ze.setTag(span, { action: 'process_payment' });
+}
+```
+
+## Advanced Configuration
+
+Fine-tune the SDK behavior:
+
+```typescript
+import * as ze from 'zeroeval';
+
+ze.init({
+  apiKey: 'YOUR_API_KEY',
+  apiUrl: 'https://api.zeroeval.com',
+  flushInterval: 5,           // Flush every 5 seconds
+  maxSpans: 200,              // Buffer up to 200 spans
+  collectCodeDetails: true,   // Capture source code context
+  debug: false,               // Enable debug logging
+  integrations: {
+    openai: true,             // Enable OpenAI integration
+    vercelAI: true,           // Enable Vercel AI SDK integration
+  }
+});
+```
+
+<Note>
+  Need help? Check out our [GitHub examples](https://github.com/zeroeval/zeroeval-ts-sdk/tree/main/examples) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
+</Note>

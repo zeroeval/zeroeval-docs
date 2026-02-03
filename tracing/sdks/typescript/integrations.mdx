@@ -1,0 +1,179 @@
+---
+title: Integrations
+description: Automatic tracing for popular AI/ML libraries
+---
+
+The ZeroEval TypeScript SDK provides automatic tracing for popular AI libraries through the `wrap()` function.
+
+## OpenAI
+
+Wrap your OpenAI client to automatically trace all API calls:
+
+```typescript
+import { OpenAI } from 'openai';
+import * as ze from 'zeroeval';
+
+ze.init();
+const openai = ze.wrap(new OpenAI());
+
+// Chat completions are automatically traced
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// Streaming is also automatically traced
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+```
+
+### Supported Methods
+
+The OpenAI integration automatically traces:
+- `chat.completions.create()` (streaming and non-streaming)
+- `embeddings.create()`
+- `images.generate()`, `images.edit()`, `images.createVariation()`
+- `audio.transcriptions.create()`, `audio.translations.create()`
+
+## Vercel AI SDK
+
+Wrap the Vercel AI SDK module to trace all AI operations:
+
+```typescript
+import * as ai from 'ai';
+import { openai } from '@ai-sdk/openai';
+import * as ze from 'zeroeval';
+
+ze.init();
+const wrappedAI = ze.wrap(ai);
+
+// Text generation
+const { text } = await wrappedAI.generateText({
+  model: openai('gpt-4'),
+  prompt: 'Write a haiku about coding'
+});
+
+// Streaming
+const { textStream } = await wrappedAI.streamText({
+  model: openai('gpt-4'),
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+for await (const delta of textStream) {
+  process.stdout.write(delta);
+}
+
+// Structured output
+import { z } from 'zod';
+
+const { object } = await wrappedAI.generateObject({
+  model: openai('gpt-4'),
+  schema: z.object({
+    name: z.string(),
+    age: z.number()
+  }),
+  prompt: 'Generate a random person'
+});
+```
+
+### Supported Methods
+
+The Vercel AI SDK integration automatically traces:
+- `generateText()`, `streamText()`
+- `generateObject()`, `streamObject()`
+- `embed()`, `embedMany()`
+- `generateImage()`
+- `transcribe()`
+- `generateSpeech()`
+
+## LangChain / LangGraph
+
+Use the callback handler for LangChain and LangGraph applications:
+
+```typescript
+import { 
+  ZeroEvalCallbackHandler, 
+  setGlobalCallbackHandler 
+} from 'zeroeval/langchain';
+
+// Option 1: Set globally (recommended)
+setGlobalCallbackHandler(new ZeroEvalCallbackHandler());
+
+// All chain invocations are now automatically traced
+const result = await chain.invoke({ topic: 'AI' });
+```
+
+```typescript
+import { ZeroEvalCallbackHandler } from 'zeroeval/langchain';
+
+// Option 2: Per-invocation
+const handler = new ZeroEvalCallbackHandler();
+const result = await chain.invoke(
+  { topic: 'AI' },
+  { callbacks: [handler] }
+);
+```
+
+## Auto-Detection
+
+The `wrap()` function automatically detects which client you're wrapping:
+
+```typescript
+import { OpenAI } from 'openai';
+import * as ai from 'ai';
+import * as ze from 'zeroeval';
+
+ze.init();
+
+// Automatically detected as OpenAI client
+const openai = ze.wrap(new OpenAI());
+
+// Automatically detected as Vercel AI SDK
+const wrappedAI = ze.wrap(ai);
+```
+
+<Info>
+If `ze.init()` hasn't been called and `ZEROEVAL_API_KEY` is set in your environment, the SDK will automatically initialize when you first use `wrap()`.
+</Info>
+
+## Using with Prompts
+
+The integrations automatically extract ZeroEval metadata from prompts created with `ze.prompt()`:
+
+```typescript
+import { OpenAI } from 'openai';
+import * as ze from 'zeroeval';
+
+ze.init();
+const openai = ze.wrap(new OpenAI());
+
+// Create a version-tracked prompt
+const systemPrompt = await ze.prompt({
+  name: 'customer-support',
+  content: 'You are a helpful customer support agent for {{company}}.',
+  variables: { company: 'TechCorp' }
+});
+
+// The integration automatically:
+// 1. Extracts the prompt metadata
+// 2. Links the completion to the prompt version
+// 3. Patches the model if one is bound to the prompt version
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',  // May be replaced by bound model
+  messages: [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: 'I need help with my order' }
+  ]
+});
+```
+
+<Note>
+  Need help? Check out our [GitHub examples](https://github.com/zeroeval/zeroeval-ts-sdk/tree/main/examples) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
+</Note>

@@ -1,0 +1,490 @@
+---
+title: 'Reference'
+description: 'Complete API reference for the TypeScript SDK'
+---
+
+## Installation
+
+```bash
+npm install zeroeval
+```
+
+## Core Functions
+
+### `init()`
+
+Initializes the ZeroEval SDK. Must be called before using any other SDK features.
+
+```typescript
+function init(opts?: InitOptions): void
+```
+
+#### Parameters
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | `ZEROEVAL_API_KEY` env | Your ZeroEval API key |
+| `apiUrl` | `string` | `https://api.zeroeval.com` | Custom API URL |
+| `flushInterval` | `number` | `10` | Interval in seconds to flush spans |
+| `maxSpans` | `number` | `100` | Maximum spans to buffer before flushing |
+| `collectCodeDetails` | `boolean` | `true` | Capture source code context |
+| `integrations` | `Record<string, boolean>` | — | Enable/disable specific integrations |
+| `debug` | `boolean` | `false` | Enable debug logging |
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+ze.init({
+  apiKey: 'your-api-key',
+  debug: true
+});
+```
+
+---
+
+## Wrapper Functions
+
+### `wrap()`
+
+Wraps a supported AI client to automatically trace all API calls.
+
+```typescript
+function wrap<T extends object>(client: T): WrappedClient<T>
+```
+
+#### Supported Clients
+
+- OpenAI SDK (`openai` package)
+- Vercel AI SDK (`ai` package)
+
+#### Examples
+
+```typescript
+// OpenAI
+import { OpenAI } from 'openai';
+import * as ze from 'zeroeval';
+
+const openai = ze.wrap(new OpenAI());
+
+// Vercel AI SDK
+import * as ai from 'ai';
+import * as ze from 'zeroeval';
+
+const wrappedAI = ze.wrap(ai);
+```
+
+---
+
+## Spans API
+
+### `withSpan()`
+
+Wraps a function execution in a span, automatically capturing timing and errors.
+
+```typescript
+function withSpan<T>(
+  opts: SpanOptions,
+  fn: () => Promise<T> | T
+): Promise<T> | T
+```
+
+#### SpanOptions
+
+| Option | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Yes | Name of the span |
+| `sessionId` | `string` | No | Session ID to associate with the span |
+| `sessionName` | `string` | No | Human-readable session name |
+| `tags` | `Record<string, string>` | No | Tags to attach to the span |
+| `attributes` | `Record<string, unknown>` | No | Additional attributes |
+| `inputData` | `any` | No | Manual input data override |
+| `outputData` | `any` | No | Manual output data override |
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+const result = await ze.withSpan(
+  { name: 'fetch-user-data' },
+  async () => {
+    const user = await fetchUser(userId);
+    return user;
+  }
+);
+```
+
+### `@span` Decorator
+
+Decorator for class methods to automatically create spans.
+
+```typescript
+span(opts: SpanOptions): MethodDecorator
+```
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+class UserService {
+  @ze.span({ name: 'get-user' })
+  async getUser(id: string): Promise<User> {
+    return await db.users.findById(id);
+  }
+}
+```
+
+<Note>
+Requires `experimentalDecorators: true` in your `tsconfig.json`.
+</Note>
+
+---
+
+## Context Functions
+
+### `getCurrentSpan()`
+
+Returns the currently active span, if any.
+
+```typescript
+function getCurrentSpan(): Span | undefined
+```
+
+### `getCurrentTrace()`
+
+Returns the current trace ID.
+
+```typescript
+function getCurrentTrace(): string | undefined
+```
+
+### `getCurrentSession()`
+
+Returns the current session ID.
+
+```typescript
+function getCurrentSession(): string | undefined
+```
+
+### `setTag()`
+
+Sets tags on a span, trace, or session.
+
+```typescript
+function setTag(
+  target: Span | string | undefined,
+  tags: Record<string, string>
+): void
+```
+
+#### Parameters
+
+| Parameter | Description |
+| --- | --- |
+| `Span` | Sets tags on the specific span |
+| `string` | Sets tags on the trace or session by ID |
+| `undefined` | Sets tags on the current span |
+
+---
+
+## Prompts API
+
+### `prompt()`
+
+Creates or fetches versioned prompts from the Prompt Library. Returns decorated content for downstream LLM calls.
+
+```typescript
+async function prompt(options: PromptOptions): Promise<string>
+```
+
+#### PromptOptions
+
+| Option | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | Yes | Task name associated with the prompt |
+| `content` | `string` | No | Raw prompt content (used as fallback or for explicit mode) |
+| `variables` | `Record<string, string>` | No | Template variables to interpolate `{{variable}}` tokens |
+| `from` | `string` | No | Version control: `"latest"`, `"explicit"`, or a 64-char SHA-256 hash |
+
+#### Behavior
+
+- **Auto-optimization (default)**: If `content` is provided without `from`, tries to fetch the latest optimized version first, falls back to provided content
+- **Explicit mode** (`from: "explicit"`): Always uses provided `content`, bypasses auto-optimization
+- **Latest mode** (`from: "latest"`): Requires an optimized version to exist, fails if none found
+- **Hash mode** (`from: "<hash>"`): Fetches a specific version by its 64-character SHA-256 content hash
+
+#### Examples
+
+```typescript
+import * as ze from 'zeroeval';
+
+// Auto-optimization mode (recommended)
+const prompt = await ze.prompt({
+  name: 'customer-support',
+  content: 'You are a helpful {{role}} assistant.',
+  variables: { role: 'customer service' }
+});
+
+// Explicit mode - bypass auto-optimization
+const prompt = await ze.prompt({
+  name: 'customer-support',
+  content: 'You are a helpful assistant.',
+  from: 'explicit'
+});
+
+// Latest mode - require optimized version
+const prompt = await ze.prompt({
+  name: 'customer-support',
+  from: 'latest'
+});
+
+// Hash mode - specific version
+const prompt = await ze.prompt({
+  name: 'customer-support',
+  from: 'a1b2c3d4e5f6...'  // 64-char SHA-256 hash
+});
+```
+
+#### Return Value
+
+Returns a decorated prompt string with metadata header used by integrations:
+
+```
+<zeroeval>{"task":"...", "prompt_version": 1, ...}</zeroeval>Your prompt content here
+```
+
+#### Errors
+
+| Error | When |
+| --- | --- |
+| `Error` | Both `content` and `from` provided (except `from: "explicit"`), or neither |
+| `PromptRequestError` | `from: "latest"` but no versions exist |
+| `PromptNotFoundError` | `from` is a hash that does not exist |
+
+---
+
+### `sendFeedback()`
+
+Sends feedback for a completion to enable prompt optimization.
+
+```typescript
+async function sendFeedback(options: SendFeedbackOptions): Promise<PromptFeedbackResponse>
+```
+
+#### SendFeedbackOptions
+
+| Option | Type | Required | Description |
+| --- | --- | --- | --- |
+| `promptSlug` | `string` | Yes | The slug of the prompt (task name) |
+| `completionId` | `string` | Yes | UUID of the span/completion |
+| `thumbsUp` | `boolean` | Yes | `true` for positive, `false` for negative |
+| `reason` | `string` | No | Explanation of the feedback |
+| `expectedOutput` | `string` | No | What the expected output should be |
+| `metadata` | `Record<string, unknown>` | No | Additional metadata |
+| `judgeId` | `string` | No | Judge automation ID for judge feedback |
+| `expectedScore` | `number` | No | Expected score for scored judges |
+| `scoreDirection` | `'too_high' \| 'too_low'` | No | Score direction for scored judges |
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+await ze.sendFeedback({
+  promptSlug: 'support-bot',
+  completionId: '550e8400-e29b-41d4-a716-446655440000',
+  thumbsUp: false,
+  reason: 'Response was too verbose',
+  expectedOutput: 'A concise 2-3 sentence response'
+});
+```
+
+---
+
+## Signals API
+
+### `sendSignal()`
+
+Send a signal to a specific entity.
+
+```typescript
+async function sendSignal(
+  entityType: 'session' | 'trace' | 'span' | 'completion',
+  entityId: string,
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): Promise<void>
+```
+
+### `sendTraceSignal()`
+
+Send a signal to the current trace.
+
+```typescript
+function sendTraceSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `sendSessionSignal()`
+
+Send a signal to the current session.
+
+```typescript
+function sendSessionSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `sendSpanSignal()`
+
+Send a signal to the current span.
+
+```typescript
+function sendSpanSignal(
+  name: string,
+  value: string | boolean | number,
+  signalType?: 'boolean' | 'numerical'
+): void
+```
+
+### `getEntitySignals()`
+
+Retrieve signals for a specific entity.
+
+```typescript
+async function getEntitySignals(
+  entityType: 'session' | 'trace' | 'span' | 'completion',
+  entityId: string
+): Promise<Signal[]>
+```
+
+#### Example
+
+```typescript
+import * as ze from 'zeroeval';
+
+await ze.withSpan({ name: 'process-request' }, async () => {
+  // Process something...
+  
+  // Send signals
+  ze.sendSpanSignal('success', true);
+  ze.sendSpanSignal('latency_ms', 150);
+  ze.sendTraceSignal('user_satisfied', true);
+});
+```
+
+---
+
+## Utility Functions
+
+### `renderTemplate()`
+
+Render a template string with variable substitution.
+
+```typescript
+function renderTemplate(
+  template: string,
+  variables: Record<string, string | number | boolean>,
+  options?: { ignoreMissing?: boolean }
+): string
+```
+
+### `extractVariables()`
+
+Extract variable names from a template string.
+
+```typescript
+function extractVariables(template: string): Set<string>
+```
+
+### `sha256Hex()`
+
+Compute SHA-256 hash of text.
+
+```typescript
+async function sha256Hex(text: string): Promise<string>
+```
+
+### `normalizePromptText()`
+
+Normalize prompt text for consistent hashing.
+
+```typescript
+function normalizePromptText(text: string): string
+```
+
+---
+
+## Error Classes
+
+### `PromptNotFoundError`
+
+Thrown when a specific prompt version (by hash) is not found.
+
+```typescript
+class PromptNotFoundError extends Error {
+  constructor(message: string)
+}
+```
+
+### `PromptRequestError`
+
+Thrown when a prompt request fails (e.g., no versions exist for `from: "latest"`).
+
+```typescript
+class PromptRequestError extends Error {
+  constructor(message: string, statusCode?: number)
+}
+```
+
+---
+
+## Types
+
+### `Prompt`
+
+```typescript
+interface Prompt {
+  id: string;
+  prompt_id: string;
+  content: string;
+  content_hash: string;
+  version: number;
+  model_id?: string;
+}
+```
+
+### `PromptMetadata`
+
+```typescript
+interface PromptMetadata {
+  task: string;
+  prompt_slug?: string;
+  prompt_version?: number;
+  prompt_version_id?: string;
+  content_hash?: string;
+  variables?: Record<string, string>;
+}
+```
+
+### `Signal`
+
+```typescript
+interface Signal {
+  value: string | boolean | number;
+  type: 'boolean' | 'numerical';
+}
+```
+
+<Note>
+  Need help? Check out our [GitHub examples](https://github.com/zeroeval/zeroeval-ts-sdk/tree/main/examples) or reach out on [Discord](https://discord.gg/MuExkGMNVz).
+</Note>

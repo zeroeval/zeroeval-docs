@@ -17,9 +17,10 @@ The easiest way to provide feedback is through the ZeroEval dashboard. Navigate 
 
 ### Feedback through the SDK
 
-For programmatic feedback submission, use the Python SDK. This is useful when you have automated evaluation systems or want to collect feedback from your application in production.
+For programmatic feedback submission, use the Python or TypeScript SDK. This is useful when you have automated evaluation systems or want to collect feedback from your application in production.
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 
 ze.init()
@@ -33,17 +34,32 @@ ze.send_feedback(
     expected_output="A concise 2-3 sentence response"
 )
 ```
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+ze.init();
+
+// Send feedback for a specific completion
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: "550e8400-e29b-41d4-a716-446655440000",
+  thumbsUp: false,
+  reason: "Response was too verbose",
+  expectedOutput: "A concise 2-3 sentence response"
+});
+```
+</CodeGroup>
 
 #### Parameters
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `prompt_slug` | `str` | Yes | The slug/name of your prompt (same as used in `ze.prompt()`) |
-| `completion_id` | `str` | Yes | The UUID of the completion to provide feedback on |
-| `thumbs_up` | `bool` | Yes | `True` for positive feedback, `False` for negative feedback |
-| `reason` | `str` | No | Optional explanation of why you gave this feedback |
-| `expected_output` | `str` | No | Optional description of what the expected output should be |
-| `metadata` | `dict` | No | Optional additional metadata to attach to the feedback |
+| Python | TypeScript | Type | Required | Description |
+| --- | --- | --- | --- | --- |
+| `prompt_slug` | `promptSlug` | `str`/`string` | Yes | The slug/name of your prompt (same as used in `ze.prompt()`) |
+| `completion_id` | `completionId` | `str`/`string` | Yes | The UUID of the completion to provide feedback on |
+| `thumbs_up` | `thumbsUp` | `bool`/`boolean` | Yes | `True`/`true` for positive, `False`/`false` for negative |
+| `reason` | `reason` | `str`/`string` | No | Optional explanation of why you gave this feedback |
+| `expected_output` | `expectedOutput` | `str`/`string` | No | Optional description of what the expected output should be |
+| `metadata` | `metadata` | `dict`/`object` | No | Optional additional metadata to attach to the feedback |
 
 <Note>
 The `completion_id` is automatically tracked when you use `ze.prompt()` with automatic tracing enabled. You can access it from the OpenAI response object's `id` field, or retrieve it from your traces in the dashboard.
@@ -51,7 +67,8 @@ The `completion_id` is automatically tracked when you use `ze.prompt()` with aut
 
 #### Complete example with feedback
 
-```python
+<CodeGroup>
+```python Python
 import zeroeval as ze
 from openai import OpenAI
 
@@ -90,12 +107,54 @@ ze.send_feedback(
     expected_output=None if is_good_response else "Should include direct link: https://app.example.com/reset"
 )
 ```
+```typescript TypeScript
+import * as ze from 'zeroeval';
+import { OpenAI } from 'openai';
+
+ze.init();
+const client = ze.wrap(new OpenAI());
+
+// Define your prompt - ZeroEval will automatically use the latest optimized
+// version from your dashboard if one exists, falling back to this content
+const systemPrompt = await ze.prompt({
+  name: "support-bot",
+  content: "You are a helpful customer support agent."
+});
+
+// Make a completion
+const response = await client.chat.completions.create({
+  model: "gpt-4",
+  messages: [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "How do I reset my password?" }
+  ]
+});
+
+// Get the completion ID and text
+const completionId = response.id;
+const completionText = response.choices[0].message.content;
+
+// Evaluate the response (manually or automatically)
+const isGoodResponse = evaluateResponse(completionText);
+
+// Send feedback based on evaluation
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: completionId,
+  thumbsUp: isGoodResponse,
+  reason: isGoodResponse ? "Clear step-by-step instructions" : "Missing link to reset page",
+  expectedOutput: isGoodResponse ? undefined : "Should include direct link: https://app.example.com/reset"
+});
+```
+</CodeGroup>
 
 <Note>
 **Auto-optimization**: When you use `ze.prompt()` with `content`, ZeroEval automatically fetches the latest optimized version from your dashboard if one exists. Your `content` serves as a fallback for initial setup. This means your prompts improve automatically as you tune them, without any code changes.
 
-If you need to test the hardcoded content specifically (e.g., for debugging or A/B testing), use `from_="explicit"`:
-```python
+If you need to test the hardcoded content specifically (e.g., for debugging or A/B testing), use `from_="explicit"` (Python) or `from: "explicit"` (TypeScript):
+
+<CodeGroup>
+```python Python
 # Bypass auto-optimization and always use this exact content
 prompt = ze.prompt(
     name="support-bot",
@@ -103,6 +162,15 @@ prompt = ze.prompt(
     content="You are a helpful customer support agent."
 )
 ```
+```typescript TypeScript
+// Bypass auto-optimization and always use this exact content
+const prompt = await ze.prompt({
+  name: "support-bot",
+  from: "explicit",
+  content: "You are a helpful customer support agent."
+});
+```
+</CodeGroup>
 </Note>
 
 ### Feedback through the API
