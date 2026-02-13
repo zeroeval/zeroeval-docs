@@ -681,6 +681,50 @@ if trace_id:
     ze.set_signal(trace_id, {"model_score": 0.85})
 ```
 
+## Judge Feedback APIs
+
+### `send_feedback()`
+
+Programmatically submit user feedback for a completion or judge evaluation.
+
+```python
+def send_feedback(
+    *,
+    prompt_slug: str,
+    completion_id: str,
+    thumbs_up: bool,
+    reason: Optional[str] = None,
+    expected_output: Optional[str] = None,
+    metadata: Optional[dict] = None,
+    judge_id: Optional[str] = None,
+    expected_score: Optional[float] = None,
+    score_direction: Optional[str] = None,
+    criteria_feedback: Optional[dict] = None
+) -> dict
+```
+
+**Notes:**
+- Existing usage without `criteria_feedback` is unchanged.
+- `criteria_feedback` is optional and supported for scored judges.
+- `judge_id` is required when sending `expected_score`, `score_direction`, or `criteria_feedback`.
+
+### `get_judge_criteria()`
+
+Fetch normalized criteria metadata for a judge (useful before criterion-level feedback).
+
+```python
+def get_judge_criteria(
+    project_id: str,
+    judge_id: str
+) -> dict
+```
+
+**Returns:**
+- `judge_id`
+- `evaluation_type`
+- `score_min`, `score_max`, `pass_threshold`
+- `criteria` (list of `{key, label, description}`)
+
 ## CLI Commands
 
 The ZeroEval SDK includes a CLI tool for running experiments and setup.

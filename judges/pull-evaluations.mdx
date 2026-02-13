@@ -17,6 +17,25 @@ Before making API calls, you'll need these identifiers:
 
 ## Python SDK
 
+### Get available criteria for a judge
+
+Use this before submitting criterion-level feedback to discover valid criterion keys.
+
+```python
+import zeroeval as ze
+
+ze.init(api_key="YOUR_API_KEY")
+
+criteria = ze.get_judge_criteria(
+    project_id="your-project-id",
+    judge_id="your-judge-id",
+)
+
+print(criteria["evaluation_type"])
+for criterion in criteria["criteria"]:
+    print(criterion["key"], criterion.get("description"))
+```
+
 ### Get evaluations by judge
 
 Fetch all evaluations for a specific judge with pagination and optional filters.
@@ -77,6 +96,13 @@ for eval in response["evaluations"]:
 
 Use these endpoints directly with your API key in the `Authorization` header.
 
+### Get available criteria for a judge
+
+```bash
+curl -X GET "https://api.zeroeval.com/projects/{project_id}/judges/{judge_id}/criteria" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
+
 ### Get evaluations by judge
 
 ```bash
@@ -112,6 +138,25 @@ curl -X GET "https://api.zeroeval.com/projects/{project_id}/spans/{span_id}/eval
   "total": 142,
   "limit": 100,
   "offset": 0
+}
+```
+
+### Judge criteria response
+
+```json
+{
+  "judge_id": "judge-uuid",
+  "evaluation_type": "scored",
+  "score_min": 0,
+  "score_max": 5,
+  "pass_threshold": 3.5,
+  "criteria": [
+    {
+      "key": "CTA_text",
+      "label": "CTA_text",
+      "description": "CTA clarity and visibility"
+    }
+  ]
 }
 ```
 

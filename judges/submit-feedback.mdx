@@ -12,6 +12,8 @@ This is useful for:
 - Integration with custom review workflows
 - Syncing feedback from external labeling tools
 
+Your existing `send_feedback` integrations remain valid. Criterion-level feedback is an optional extension for scored judges.
+
 ## Important: Using the Correct IDs
 
 Judge evaluations involve two related spans:
@@ -63,6 +65,7 @@ client.send_feedback(
 | `judge_id` | str | Yes* | The judge automation ID (*required for judge feedback) |
 | `expected_score` | float | No | For scored judges: the expected score value |
 | `score_direction` | str | No | For scored judges: `"too_high"` or `"too_low"` |
+| `criteria_feedback` | dict | No | For scored judges: per-criterion expected score/reason map |
 
 <Note>
   `expected_score` and `score_direction` are only valid for scored judges 
@@ -70,10 +73,33 @@ client.send_feedback(
   if these fields are provided for binary judges.
 </Note>
 
-### Score-Based Feedback
+### Step 1: Discover Available Criteria (Scored Judges)
+
+Before sending `criteria_feedback`, fetch valid criterion keys for the judge.
+
+```python
+from zeroeval import ZeroEval
+
+client = ZeroEval()
+
+criteria = client.get_judge_criteria(
+    project_id="your-project-id",
+    judge_id="automation-id-here",
+)
+
+print(criteria["evaluation_type"])  # "scored" or "binary"
+print(criteria["criteria"])         # [{"key": "...", "label": "...", "description": "..."}]
+```
+
+```bash
+curl -X GET "https://api.zeroeval.com/projects/{project_id}/judges/{judge_id}/criteria" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
+
+### Step 2: Score-Based Feedback (General Score)
 
 For judges using scored rubrics (not binary pass/fail), you can provide additional
-feedback about the expected score:
+feedback about the overall expected score:
 
 ```python
 from zeroeval import ZeroEval
@@ -89,6 +115,34 @@ client.send_feedback(
     expected_score=3.5,                    # What the score should have been
     score_direction="too_high",            # The judge scored too high
     reason="Score should have been lower due to grammar issues",
+)
+```
+
+### Step 3: Score-Based Feedback (Per-Criterion)
+
+For scored judges, you can send corrections for specific criteria:
+
+```python
+from zeroeval import ZeroEval
+
+client = ZeroEval()
+
+client.send_feedback(
+    prompt_slug="quality-scorer",
+    completion_id="span-id-here",
+    thumbs_up=False,
+    judge_id="automation-id-here",
+    reason="Criterion-level score adjustments",
+    criteria_feedback={
+        "CTA_text": {
+            "expected_score": 4.0,
+            "reason": "CTA is clear and prominent"
+        },
+        "CX-004": {
+            "expected_score": 1.0,
+            "reason": "Required phone number is missing"
+        }
+    }
 )
 ```
 
@@ -123,6 +177,48 @@ curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_
     "score_direction": "too_high"
   }'
 ```
+
+### Scored Judge Feedback (Criterion-Level)
+
+```bash
+curl -X POST "https://api.zeroeval.com/v1/prompts/{task_slug}/completions/{span_id}/feedback" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thumbs_up": false,
+    "judge_id": "automation-uuid-here",
+    "reason": "Criterion-level corrections",
+    "criteria_feedback": {
+      "CTA_text": {
+        "expected_score": 4.0,
+        "reason": "CTA is clear and visible"
+      },
+      "CX-004": {
+        "expected_score": 1.0,
+        "reason": "Phone number is missing"
+      }
+    }
+  }'
+```
+
+## Criteria Payload Shape
+
+`criteria_feedback` uses this shape:
+
+```json
+{
+  "criteria_feedback": {
+    "criterion_key": {
+      "expected_score": 4.0,
+      "reason": "Optional explanation"
+    }
+  }
+}
+```
+
+Validation rules:
+- `judge_id` is required when sending `criteria_feedback`
+- `criteria_feedback` is allowed only for scored judges (`evaluation_type: "scored"`)
 
 ## Finding Your IDs
 
@@ -165,4 +261,5 @@ for eval in evaluations["evaluations"]:
 ## Related
 
 - [Pulling Evaluations](/judges/pull-evaluations) - Retrieve judge evaluations programmatically
+- [Python SDK Reference](/tracing/sdks/python/reference) - Full SDK API reference
 - [Judge Setup](/judges/setup) - Configure and deploy judges
