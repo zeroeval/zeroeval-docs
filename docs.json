@@ -3,9 +3,9 @@
   "theme": "willow",
   "name": "ZeroEval Documentation",
   "colors": {
-    "primary": "#469d5c",
-    "light": "#07C983",
-    "dark": "#0a0a0a"
+    "primary": "#6B7280",
+    "light": "#9CA3AF",
+    "dark": "#374151"
   },
   "favicon": "/favicon.ico",
   "navigation": {
