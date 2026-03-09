@@ -8,11 +8,13 @@ LLM judges can evaluate spans that contain images alongside text. This is useful
 ## How it works
 
 1. **Attach images to spans** using SDK methods or structured output data
-2. **Images are uploaded** during span ingestion (base64 data is stripped from the span)
+2. **Images are uploaded** during span ingestion (image data is stripped from the span and stored separately)
 3. **Judges fetch images** when evaluating the span and send them to a vision-capable LLM
 4. **Evaluation results** appear in the dashboard like any other judge evaluation
 
 The LLM sees both the span's text data (input/output) and any attached images, giving it full context for evaluation.
+
+Images can be provided as **base64-encoded strings** or as **presigned S3 URLs**. In both cases, ZeroEval copies the image into its own storage during ingestion, so any presigned URL only needs to remain valid long enough for the ingest request to complete.
 
 ## Attaching images to spans
 
@@ -76,9 +78,45 @@ with ze.span(name="button_hover_test") as span:
     )
 ```
 
-### Option 2: Structured output_data
+### Option 2: Presigned S3 URLs
 
-If your workflow already produces screenshot data as structured output (common with browser automation agents), you can include images directly in the span's `output_data`. ZeroEval automatically detects and extracts images from JSON arrays containing `base64` fields.
+If your images are already stored in S3, you can pass a presigned HTTPS URL instead of base64 data. ZeroEval will download the image, validate it, and copy it into its own storage.
+
+Attach URLs via `attributes.attachments` using a `url` key instead of `base64`:
+
+```python
+import boto3
+import zeroeval as ze
+
+s3 = boto3.client("s3")
+presigned_url = s3.generate_presigned_url(
+    "get_object",
+    Params={"Bucket": "my-bucket", "Key": "images/chart.png"},
+    ExpiresIn=300,
+)
+
+with ze.span(name="chart_generation") as span:
+    span.attributes["attachments"] = [
+        {
+            "type": "image",
+            "url": presigned_url,
+            "label": "Monthly Revenue Chart",
+        }
+    ]
+
+    span.set_io(
+        input_data="Generate revenue chart",
+        output_data="Chart generated"
+    )
+```
+
+<Note>
+The presigned URL only needs to stay valid long enough for ZeroEval to download the image during ingestion (typically a few seconds). After that, ZeroEval serves the image from its own storage.
+</Note>
+
+### Option 3: Structured output_data
+
+If your workflow already produces screenshot data as structured output (common with browser automation agents), you can include images directly in the span's `output_data`. ZeroEval automatically detects and extracts images from JSON arrays containing `base64` or `url` fields.
 
 ```python
 import zeroeval as ze
@@ -117,16 +155,35 @@ with ze.span(
     ]
 ```
 
+You can also use presigned S3 URLs in `output_data` by replacing the `base64` key with `url`:
+
+```python
+    span.output_data = [
+        {
+            "viewport": "mobile",
+            "width": 768,
+            "height": 1024,
+            "url": mobile_presigned_url
+        },
+        {
+            "viewport": "desktop",
+            "width": 1920,
+            "height": 1080,
+            "url": desktop_presigned_url
+        }
+    ]
+```
+
 When ZeroEval ingests this span, it:
-1. Extracts each object with a `base64` field as an attachment
-2. Uploads the images to storage
-3. Strips the base64 data from `output_data` to keep the database lean
+1. Extracts each object with a `base64` or `url` field as an attachment
+2. Downloads (for URLs) and uploads the images to storage
+3. Strips the image data from `output_data` to keep the database lean
 4. Preserves the metadata (viewport, width, height) for display
 
 This approach works well when your browser agent or automation tool already produces structured screenshot output.
 
 <Note>
-Both methods produce the same result: images stored and available for multimodal judge evaluation. Choose whichever fits your workflow better.
+All methods produce the same result: images stored and available for multimodal judge evaluation. Choose whichever fits your workflow better.
 </Note>
 
 ## Creating a multimodal judge
@@ -194,7 +251,7 @@ Then configure your judge to only evaluate spans matching that tag. This prevent
 - WebP
 - GIF
 
-Images are validated during ingestion. The maximum size is 10MB per image, with up to 5 images per span.
+Images can be provided as base64-encoded strings or presigned S3 URLs (`https://*.amazonaws.com`). In both cases, images are validated by magic bytes during ingestion. The maximum size is 10MB per image, with up to 5 images per span.
 
 ## Viewing images in the dashboard
 
