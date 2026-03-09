@@ -575,9 +575,13 @@ with ze.span(name="chart_generation") as span:
     )
 ```
 
-##### Attaching images via presigned S3 URL
+##### Attaching images via URL (S3 presigned or CDN)
 
-If your images are already stored in S3, you can pass a presigned HTTPS URL instead of base64 data. ZeroEval will download, validate, and copy the image into its own storage during ingestion.
+If your images are already hosted externally, you can pass an HTTPS URL instead of base64 data. ZeroEval will download, validate, and copy the image into its own storage during ingestion.
+
+Supported URL sources:
+- **S3 presigned URLs** (`*.amazonaws.com` with valid authentication parameters)
+- **CDN URLs** from trusted domains
 
 Attach URLs directly via `attributes.attachments` using the `url` key:
 
@@ -585,6 +589,7 @@ Attach URLs directly via `attributes.attachments` using the `url` key:
 import boto3
 import zeroeval as ze
 
+# Option A: Presigned S3 URL
 s3 = boto3.client("s3")
 presigned_url = s3.generate_presigned_url(
     "get_object",
@@ -607,7 +612,26 @@ with ze.span(name="chart_generation") as span:
     )
 ```
 
-The presigned URL only needs to remain valid long enough for ZeroEval to download the image during ingestion (typically a few seconds). Supported hosts: `*.amazonaws.com` with valid presigned authentication parameters.
+```python
+import zeroeval as ze
+
+# Option B: CDN URL
+cdn_url = "https://cdn.example.com/images/product-photo.png"
+
+with ze.span(name="product_image_check") as span:
+    span.attributes["attachments"] = [
+        {
+            "type": "image",
+            "url": cdn_url,
+            "label": "Product listing photo",
+        }
+    ]
+
+    span.set_io(
+        input_data="Check product image quality",
+        output_data="Image attached for evaluation"
+    )
+```
 
 <Note>
 Images attached to spans can be evaluated by LLM judges configured for multimodal evaluation. See the [Multimodal Evaluation](/judges/multimodal-evaluation) guide for setup instructions.

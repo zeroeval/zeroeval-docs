@@ -14,7 +14,7 @@ LLM judges can evaluate spans that contain images alongside text. This is useful
 
 The LLM sees both the span's text data (input/output) and any attached images, giving it full context for evaluation.
 
-Images can be provided as **base64-encoded strings** or as **presigned S3 URLs**. In both cases, ZeroEval copies the image into its own storage during ingestion, so any presigned URL only needs to remain valid long enough for the ingest request to complete.
+Images can be provided as **base64-encoded strings**, **presigned S3 URLs**, or **CDN image URLs**. In all cases, ZeroEval copies the image into its own storage during ingestion, so the source URL only needs to remain valid long enough for the ingest request to complete.
 
 ## Attaching images to spans
 
@@ -78,11 +78,13 @@ with ze.span(name="button_hover_test") as span:
     )
 ```
 
-### Option 2: Presigned S3 URLs
+### Option 2: Image URLs (S3 presigned or CDN)
 
-If your images are already stored in S3, you can pass a presigned HTTPS URL instead of base64 data. ZeroEval will download the image, validate it, and copy it into its own storage.
+If your images are already hosted externally, you can pass an HTTPS URL instead of base64 data. ZeroEval will download the image, validate it, and copy it into its own storage.
 
 Attach URLs via `attributes.attachments` using a `url` key instead of `base64`:
+
+**Presigned S3 URL**
 
 ```python
 import boto3
@@ -110,8 +112,30 @@ with ze.span(name="chart_generation") as span:
     )
 ```
 
+**CDN URL**
+
+```python
+import zeroeval as ze
+
+cdn_url = "https://cdn.example.com/images/product-photo.png"
+
+with ze.span(name="product_image_check") as span:
+    span.attributes["attachments"] = [
+        {
+            "type": "image",
+            "url": cdn_url,
+            "label": "Product listing photo",
+        }
+    ]
+
+    span.set_io(
+        input_data="Check product image quality",
+        output_data="Image attached for evaluation"
+    )
+```
+
 <Note>
-The presigned URL only needs to stay valid long enough for ZeroEval to download the image during ingestion (typically a few seconds). After that, ZeroEval serves the image from its own storage.
+The URL only needs to stay valid long enough for ZeroEval to download the image during ingestion (typically a few seconds). After that, ZeroEval serves the image from its own storage. CDN URLs must be from a trusted domain configured in the backend.
 </Note>
 
 ### Option 3: Structured output_data
@@ -155,7 +179,7 @@ with ze.span(
     ]
 ```
 
-You can also use presigned S3 URLs in `output_data` by replacing the `base64` key with `url`:
+You can also use URLs (presigned S3 or CDN) in `output_data` by replacing the `base64` key with `url`:
 
 ```python
     span.output_data = [
@@ -251,7 +275,7 @@ Then configure your judge to only evaluate spans matching that tag. This prevent
 - WebP
 - GIF
 
-Images can be provided as base64-encoded strings or presigned S3 URLs (`https://*.amazonaws.com`). In both cases, images are validated by magic bytes during ingestion. The maximum size is 10MB per image, with up to 5 images per span.
+Images can be provided as base64-encoded strings, presigned S3 URLs, or CDN image URLs from trusted domains. In all cases, images are validated by magic bytes during ingestion. The maximum size is 10MB per image, with up to 5 images per span.
 
 ## Viewing images in the dashboard
 
