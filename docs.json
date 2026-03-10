@@ -72,6 +72,15 @@
               "judges/submit-feedback",
               "judges/pull-evaluations"
             ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/introduction",
+              "integrations/skills",
+              "integrations/mcp",
+              "integrations/cli"
+            ]
           }
         ]
       }

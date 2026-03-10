@@ -1,0 +1,97 @@
+---
+title: "Skills"
+description: "Set up ZeroEval from inside Cursor, Claude Code, Codex, and other coding agents"
+---
+
+Skills let your coding agent do the ZeroEval setup work for you. Instead of flipping between docs and your editor, you tell your agent "install zeroeval" or "create a judge" and the skill handles the rest in-context. The source lives at [zeroeval/zeroeval-skills](https://github.com/zeroeval/zeroeval-skills) on GitHub.
+
+They work with Cursor, Claude Code, Codex, and 30+ other agents that support the skills format.
+
+## Available skills
+
+<CardGroup cols={2}>
+  <Card title="zeroeval-install" icon="download">
+    Installs the SDK (Python or TypeScript), verifies your first trace, migrates prompts to `ze.prompt`, and recommends starter judges.
+  </Card>
+  <Card title="create-judge" icon="gavel">
+    Helps you pick an evaluation type (binary or scored), write a judge template, define criteria, and create the judge via dashboard or API.
+  </Card>
+</CardGroup>
+
+## Install
+
+<CodeGroup>
+
+```bash CLI (recommended)
+# Install all skills
+npx skills add zeroeval/zeroeval-skills
+
+# Install a specific skill
+npx skills add zeroeval/zeroeval-skills --skill zeroeval-install
+
+# List available skills
+npx skills add zeroeval/zeroeval-skills --list
+```
+
+```bash Claude Code plugin
+# Add the marketplace
+/plugin marketplace add zeroeval/zeroeval-skills
+
+# Install a specific plugin
+/plugin install zeroeval-install@zeroeval-skills
+/plugin install create-judge@zeroeval-skills
+
+# Reload plugins if the new commands do not appear immediately
+/reload-plugins
+```
+
+```bash Manual copy (Cursor / Claude Code)
+git clone https://github.com/zeroeval/zeroeval-skills.git
+
+# Cursor
+mkdir -p .cursor/skills
+cp -r zeroeval-skills/skills/zeroeval-install .cursor/skills/zeroeval-install
+cp -r zeroeval-skills/skills/create-judge .cursor/skills/create-judge
+
+# Claude Code
+mkdir -p .claude/skills
+cp -r zeroeval-skills/skills/zeroeval-install .claude/skills/zeroeval-install
+cp -r zeroeval-skills/skills/create-judge .claude/skills/create-judge
+```
+
+</CodeGroup>
+
+<Note>
+On Windows without symlink support, use `npx skills` or the manual copy method. The `plugins/` directory in the repo contains symlinks that may not resolve on Windows.
+</Note>
+
+## Requirements
+
+- A ZeroEval account and API key — [zeroeval.com](https://zeroeval.com)
+- Python 3.8+ or Node 18+
+- An LLM provider SDK (OpenAI, Vercel AI, LangChain, etc.)
+
+<Tip>
+The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills) has the latest skill content and deeper reference playbooks. This page covers discovery and install only.
+</Tip>
+
+## After installation
+
+Once installed, your coding agent picks up the skills automatically. Ask it to "set up zeroeval" or "create a judge" and it will use them.
+
+If you want to read the product docs directly:
+
+<CardGroup cols={2}>
+  <Card title="Tracing quickstart" icon="rocket" href="/tracing/quickstart">
+    Get your first trace in under 5 minutes
+  </Card>
+  <Card title="Prompt setup" icon="wrench" href="/autotune/setup">
+    Add ze.prompt() to your Python or TypeScript codebase
+  </Card>
+  <Card title="Judges" icon="gavel" href="/judges/introduction">
+    How calibrated judges evaluate your production traffic
+  </Card>
+  <Card title="Judge setup" icon="sliders" href="/judges/setup">
+    Create and calibrate a judge
+  </Card>
+</CardGroup>
