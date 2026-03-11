@@ -9,12 +9,15 @@ They work with Cursor, Claude Code, Codex, and 30+ other agents that support the
 
 ## Available skills
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="zeroeval-install" icon="download">
     Installs the SDK (Python or TypeScript), verifies your first trace, migrates prompts to `ze.prompt`, and recommends starter judges.
   </Card>
   <Card title="create-judge" icon="gavel">
     Helps you pick an evaluation type (binary or scored), write a judge template, define criteria, and create the judge via dashboard or API.
+  </Card>
+  <Card title="prompt-migration" icon="arrows-rotate">
+    Migrates hardcoded prompts to `ze.prompt`, wires feedback collection, connects judges, and walks through the staged rollout to prompt optimization.
   </Card>
 </CardGroup>
 
@@ -40,6 +43,7 @@ npx skills add zeroeval/zeroeval-skills --list
 # Install a specific plugin
 /plugin install zeroeval-install@zeroeval-skills
 /plugin install create-judge@zeroeval-skills
+/plugin install prompt-migration@zeroeval-skills
 
 # Reload plugins if the new commands do not appear immediately
 /reload-plugins
@@ -52,11 +56,13 @@ git clone https://github.com/zeroeval/zeroeval-skills.git
 mkdir -p .cursor/skills
 cp -r zeroeval-skills/skills/zeroeval-install .cursor/skills/zeroeval-install
 cp -r zeroeval-skills/skills/create-judge .cursor/skills/create-judge
+cp -r zeroeval-skills/skills/prompt-migration .cursor/skills/prompt-migration
 
 # Claude Code
 mkdir -p .claude/skills
 cp -r zeroeval-skills/skills/zeroeval-install .claude/skills/zeroeval-install
 cp -r zeroeval-skills/skills/create-judge .claude/skills/create-judge
+cp -r zeroeval-skills/skills/prompt-migration .claude/skills/prompt-migration
 ```
 
 </CodeGroup>
@@ -77,7 +83,7 @@ The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills) h
 
 ## After installation
 
-Once installed, your coding agent picks up the skills automatically. Ask it to "set up zeroeval" or "create a judge" and it will use them.
+Once installed, your coding agent picks up the skills automatically. Ask it to "set up zeroeval", "create a judge", or "migrate my prompts to ze.prompt" and it will use them.
 
 If you want to read the product docs directly:
 
