@@ -1,12 +1,363 @@
 ---
 title: "CLI"
-description: "Manage ZeroEval from your terminal"
+description: "Manage traces, prompts, judges, and optimization from your terminal"
 ---
 
+The ZeroEval CLI ships with the Python SDK and gives you terminal access to monitoring, prompts, judges, and optimization. It is designed to be agent-friendly and works well in CI pipelines, scripted workflows, and agent toolchains.
+
+```bash
+pip install zeroeval
+```
+
+## Setup
+
+Run the interactive setup to save your API key and resolve your project:
+
+```bash
+zeroeval setup
+```
+
+This opens the ZeroEval dashboard, prompts for your API key, saves it to your shell config (e.g. `~/.zshrc`, `~/.bashrc`), and links your project automatically.
+
+<Tip>
+For non-interactive environments like CI or coding agents, use `auth set` instead:
+
+```bash
+zeroeval auth set --api-key-env ZEROEVAL_API_KEY
+```
+</Tip>
+
+### Auth commands
+
+```bash
+zeroeval auth set --api-key <key>          # Set API key directly
+zeroeval auth set --api-key-env MY_KEY_VAR # Read API key from an env var
+zeroeval auth set --api-base-url <url>     # Override API base URL
+zeroeval auth show --redact                # Show current config (key masked)
+zeroeval auth clear                        # Wipe all stored config
+zeroeval auth clear --api-key-only         # Clear only the API key and project
+```
+
+### Auth resolution
+
+The CLI resolves credentials in this order:
+
+1. Explicit CLI flags (`--project-id`, `--api-base-url`)
+2. Environment variables (`ZEROEVAL_API_KEY`, `ZEROEVAL_PROJECT_ID`, `ZEROEVAL_BASE_URL`)
+3. Global CLI config file
+
+Config file location:
+- **macOS / Linux**: `~/.config/zeroeval/config.json` (or `$XDG_CONFIG_HOME/zeroeval/config.json`)
+- **Windows**: `%APPDATA%/zeroeval/config.json`
+
+## Global flags
+
+Global flags must appear **before** the subcommand:
+
+```bash
+zeroeval --output json --project-id <id> --timeout 30.0 traces list
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--output text\|json` | `text` | Output format. `json` emits stable JSON to stdout, errors to stderr. |
+| `--project-id` | env / config | Project context. Required for monitoring, prompts, judges, and optimization commands. |
+| `--api-base-url` | `https://api.zeroeval.com` | Override the API URL. |
+| `--quiet` | off | Suppress non-essential output. |
+| `--timeout` | `20.0` | HTTP request timeout in seconds. |
+
+### Output modes
+
+- **`text`** (default) — human-readable; dict/list payloads are pretty-printed as JSON.
+- **`json`** — stable, machine-readable JSON to stdout. Errors go to stderr as structured JSON. Confirmation prompts (e.g. `optimize promote`) are auto-skipped in JSON mode.
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `2` | User / validation error |
+| `3` | Auth or permission error |
+| `4` | Remote API or network error |
+
+## Querying and filtering
+
+Most list and get commands support `--where`, `--select`, and `--order` for client-side filtering, projection, and sorting.
+
+### `--where`
+
+Filter rows. Repeatable — multiple clauses are AND-ed.
+
+```bash
+# Exact match
+zeroeval judges list --where "name=Quality Check"
+
+# Substring match (case-insensitive)
+zeroeval traces list --where "status~completed"
+
+# Set membership
+zeroeval spans list --where 'kind in ["llm","tool"]'
+```
+
+Supported operators: `=` (exact), `~` (substring), `in` (JSON array).
+
+### `--select`
+
+Project specific fields. Comma-separated, supports dotted paths.
+
+```bash
+zeroeval judges list --select "id,name,evaluation_type"
+```
+
+### `--order`
+
+Sort results by a field. Defaults to ascending.
+
+```bash
+zeroeval traces list --order "created_at:desc"
+```
+
+## Monitoring
+
+Monitoring commands require a `--project-id` (resolved automatically after `zeroeval setup`).
+
+### Sessions
+
+```bash
+zeroeval sessions list --start-date 2025-01-01 --end-date 2025-02-01 --limit 50
+zeroeval sessions get <session_id>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--start-date` | ISO date string lower bound |
+| `--end-date` | ISO date string upper bound |
+| `--limit` | Max results (default 50) |
+| `--offset` | Pagination offset (default 0) |
+
+### Traces
+
+```bash
+zeroeval traces list --start-date 2025-01-01 --limit 50
+zeroeval traces get <trace_id>
+zeroeval traces spans <trace_id> --limit 100
+```
+
+`traces spans` returns the spans belonging to a specific trace, useful for debugging individual requests.
+
+### Spans
+
+```bash
+zeroeval spans list --start-date 2025-01-01 --limit 50
+zeroeval spans get <span_id>
+```
+
+## Prompts
+
+### List and inspect
+
+```bash
+zeroeval prompts list
+zeroeval prompts get <prompt_slug>
+zeroeval prompts get <prompt_slug> --version 3
+zeroeval prompts get <prompt_slug> --tag production
+zeroeval prompts versions <prompt_slug>
+zeroeval prompts tags <prompt_slug>
+```
+
+### Submit feedback
+
+Provide feedback on a prompt completion for DSPy optimization and prompt tuning:
+
+```bash
+zeroeval prompts feedback create \
+  --prompt-slug customer-support \
+  --completion-id <uuid> \
+  --thumbs-up \
+  --reason "Clear and helpful response"
+```
+
+For scored judges, add judge-specific fields:
+
+```bash
+zeroeval prompts feedback create \
+  --prompt-slug customer-support \
+  --completion-id <uuid> \
+  --thumbs-down \
+  --judge-id <judge_uuid> \
+  --expected-score 3.5 \
+  --score-direction too_high \
+  --reason "Score should be lower"
+```
+
 <Note>
-The CLI is coming soon.
+`--thumbs-up` and `--thumbs-down` are mutually exclusive and one is required.
 </Note>
 
-We're building a CLI for managing traces, prompts, and judges from the terminal. Useful for CI/CD pipelines, scripted workflows, and quick lookups when you don't want to open the console.
+## Judges
 
-Want to know when it ships? Email [founders@zeroeval.com](mailto:founders@zeroeval.com).
+### List and inspect
+
+```bash
+zeroeval judges list
+zeroeval judges get <judge_id>
+zeroeval judges criteria <judge_id>
+zeroeval judges evaluations <judge_id> --limit 100
+zeroeval judges insights <judge_id>
+zeroeval judges performance <judge_id>
+zeroeval judges calibration <judge_id>
+zeroeval judges versions <judge_id>
+```
+
+### Filter evaluations
+
+```bash
+zeroeval judges evaluations <judge_id> \
+  --start-date 2025-01-01 \
+  --end-date 2025-02-01 \
+  --evaluation-result true \
+  --feedback-state pending \
+  --limit 200
+```
+
+| Flag | Description |
+|------|-------------|
+| `--evaluation-result` | `true` or `false` |
+| `--feedback-state` | Filter by feedback state |
+| `--start-date` / `--end-date` | Date range |
+
+### Create a judge
+
+```bash
+zeroeval judges create \
+  --name "Tone Check" \
+  --prompt "Evaluate whether the response maintains a professional tone." \
+  --evaluation-type binary \
+  --sample-rate 1.0 \
+  --temperature 0.0
+```
+
+Or load the prompt from a file:
+
+```bash
+zeroeval judges create \
+  --name "Quality Scorer" \
+  --prompt-file judge_prompt.txt \
+  --evaluation-type scored \
+  --score-min 0 \
+  --score-max 10 \
+  --pass-threshold 7
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--name` | required | Judge name |
+| `--prompt` | — | Inline prompt text (mutually exclusive with `--prompt-file`) |
+| `--prompt-file` | — | Path to file containing the prompt |
+| `--evaluation-type` | `binary` | `binary` or `scored` |
+| `--score-min` | `0.0` | Minimum score (scored only) |
+| `--score-max` | `10.0` | Maximum score (scored only) |
+| `--pass-threshold` | — | Pass threshold (scored only) |
+| `--sample-rate` | `1.0` | Fraction of spans to evaluate |
+| `--backfill` | `100` | Number of existing spans to backfill |
+| `--tag` | — | Tag filter in `key=value1,value2` format. Repeatable. |
+| `--tag-match` | `all` | `all` or `any` |
+| `--target-prompt-id` | — | Scope judge to a specific prompt |
+| `--temperature` | `0.0` | LLM temperature for judge |
+
+### Submit judge feedback
+
+```bash
+zeroeval judges feedback create \
+  --span-id <span_uuid> \
+  --thumbs-down \
+  --reason "Missed safety issue" \
+  --expected-output "Should flag harmful content"
+```
+
+For scored judges with per-criterion feedback:
+
+```bash
+zeroeval judges feedback create \
+  --span-id <span_uuid> \
+  --thumbs-down \
+  --expected-score 2.0 \
+  --score-direction too_high \
+  --criteria-feedback '{"clarity": {"expected_score": 1.0, "reason": "Confusing response"}}'
+```
+
+## Optimization
+
+Start, inspect, and promote prompt or judge optimization runs. All optimization commands require `--project-id`.
+
+### Prompt optimization
+
+```bash
+zeroeval optimize prompt list <task_id>
+zeroeval optimize prompt get <task_id> <run_id>
+zeroeval optimize prompt start <task_id> --optimizer-type quick_refine
+zeroeval optimize prompt promote <task_id> <run_id> --yes
+```
+
+### Judge optimization
+
+```bash
+zeroeval optimize judge list <judge_id>
+zeroeval optimize judge get <judge_id> <run_id>
+zeroeval optimize judge start <judge_id> --optimizer-type dspy_bootstrap
+zeroeval optimize judge promote <judge_id> <run_id> --yes
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--optimizer-type` | `quick_refine` | `quick_refine`, `dspy_bootstrap`, or `dspy_gepa` |
+| `--config` | — | JSON string of extra optimizer configuration |
+| `--yes` | off | Skip the confirmation prompt (also skipped in `--output json` mode) |
+
+## Spec (machine-readable manual)
+
+The `spec` commands dump the CLI's command and parameter contract as JSON or Markdown, useful for agents and toolchains that need to discover available commands programmatically.
+
+```bash
+zeroeval spec cli --format json
+zeroeval spec command "judges create" --format markdown
+```
+
+## CI / automation recipes
+
+### Get the latest traces as JSON
+
+```bash
+zeroeval --output json traces list --limit 10 --order "created_at:desc"
+```
+
+### Check judge pass rate
+
+```bash
+zeroeval --output json judges evaluations <judge_id> \
+  --evaluation-result true --limit 1000 \
+  --select "id" | jq length
+```
+
+### Promote an optimization run non-interactively
+
+```bash
+zeroeval --output json optimize prompt promote <task_id> <run_id> --yes
+```
+
+## Related docs
+
+<CardGroup cols={2}>
+  <Card title="Tracing quickstart" icon="rocket" href="/tracing/quickstart">
+    Get your first trace in under 5 minutes
+  </Card>
+  <Card title="Judges" icon="gavel" href="/judges/introduction">
+    How calibrated judges evaluate your production traffic
+  </Card>
+  <Card title="Prompt setup" icon="wrench" href="/autotune/setup">
+    Add ze.prompt() to your Python or TypeScript codebase
+  </Card>
+  <Card title="Skills" icon="wand-magic-sparkles" href="/integrations/skills">
+    Let your coding agent handle SDK install and judge setup
+  </Card>
+</CardGroup>
