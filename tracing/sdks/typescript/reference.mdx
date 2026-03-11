@@ -25,6 +25,7 @@ function init(opts?: InitOptions): void
 | --- | --- | --- | --- |
 | `apiKey` | `string` | `ZEROEVAL_API_KEY` env | Your ZeroEval API key |
 | `apiUrl` | `string` | `https://api.zeroeval.com` | Custom API URL |
+| `workspaceName` | `string` | `"Personal Organization"` | Workspace/organization name |
 | `flushInterval` | `number` | `10` | Interval in seconds to flush spans |
 | `maxSpans` | `number` | `100` | Maximum spans to buffer before flushing |
 | `collectCodeDetails` | `boolean` | `true` | Capture source code context |
@@ -483,6 +484,54 @@ interface Signal {
   value: string | boolean | number;
   type: 'boolean' | 'numerical';
 }
+```
+
+## Environment Variables
+
+Set before importing ZeroEval to configure default behavior.
+
+| Variable | Type | Default | Description |
+| --- | --- | --- | --- |
+| `ZEROEVAL_API_KEY` | string | `""` | API key for authentication |
+| `ZEROEVAL_API_URL` | string | `"https://api.zeroeval.com"` | API endpoint URL |
+| `ZEROEVAL_WORKSPACE_NAME` | string | `"Personal Workspace"` | Workspace name |
+| `ZEROEVAL_SESSION_ID` | string | auto-generated | Session ID for grouping traces |
+| `ZEROEVAL_SESSION_NAME` | string | `""` | Human-readable session name |
+| `ZEROEVAL_SAMPLING_RATE` | float | `"1.0"` | Sampling rate (0.0-1.0) |
+| `ZEROEVAL_DISABLED_INTEGRATIONS` | string | `""` | Comma-separated integrations to disable |
+| `ZEROEVAL_DEBUG` | boolean | `"false"` | Enable debug logging |
+
+```bash
+export ZEROEVAL_API_KEY="ze_1234567890abcdef"
+export ZEROEVAL_SAMPLING_RATE="0.1"
+export ZEROEVAL_DEBUG="true"
+```
+
+## Configuration Examples
+
+### Production
+
+```typescript
+ze.init({
+  apiKey: 'your_key',
+  flushInterval: 1,
+  maxSpans: 200,
+  debug: false,
+  integrations: {
+    openai: true,
+    vercelAI: true,
+  }
+});
+```
+
+### Development
+
+```typescript
+ze.init({
+  apiKey: 'your_key',
+  debug: true,
+  collectCodeDetails: true,
+});
 ```
 
 <Note>

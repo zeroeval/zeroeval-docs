@@ -1,36 +1,43 @@
 ---
 title: "Introduction"
-description: "Run evaluations on models and prompts to find the best variants for your agents"
+description: "Version, track, and optimize every prompt your agent uses"
 ---
 
-Prompt optimization is a different approach to the traditional evals experience. Instead of setting up complex eval pipelines, we simply ingest your production traces and let you optimize your prompts based on your feedback.
+Prompts are the instructions that drive your agent's behavior. Small changes in wording can dramatically affect output quality, but without tracking, you have no way to know which version works best -- or even which version is running in production.
+
+ZeroEval Prompts gives you version control for prompts with a single function call. Every change is tracked, every completion is linked to the exact prompt version that produced it, and you can deploy optimized versions without touching code.
+
+## Why track prompts
+
+- **Version history** -- every prompt change creates a new version you can compare and roll back to
+- **Production visibility** -- see exactly which prompt version is running, how often it's called, and what it produces
+- **Feedback loop** -- attach thumbs-up/down feedback to completions, then use it to [optimize prompts](/autotune/prompts/prompts) and [evaluate models](/autotune/prompts/models)
+- **One-click deployments** -- push a winning prompt or model to production without redeploying your app
 
 ## How it works
 
 <Steps>
-  <Step title="Instrument your code">
-    Replace hardcoded prompts with `ze.prompt()` calls in Python or `ze.prompt({...})` in TypeScript
+  <Step title="Replace hardcoded prompts">
+    Swap string literals for `ze.prompt()` calls. Your existing prompt text becomes the fallback content.
   </Step>
-  <Step title="Every change creates a version">
-    Each time you modify your prompt content, a new version is automatically created and tracked
+  <Step title="Versions are created automatically">
+    Each unique prompt string creates a tracked version. Changes in your code produce new versions without any extra work.
   </Step>
-  <Step title="Collect performance data">
-    ZeroEval automatically tracks all LLM interactions and their outcomes
+  <Step title="Completions are linked to versions">
+    When your LLM integration fires, ZeroEval links each completion to the exact prompt version and model that produced it.
   </Step>
-  <Step title="Tune and evaluate">
-    Use the UI to run experiments, vote on outputs, and identify the best prompt/model combinations
-  </Step>
-  <Step title="One-click model deployments">
-    Winning configurations are automatically deployed to your application without code changes
+  <Step title="Optimize from production data">
+    Review completions, submit feedback, and generate improved prompt variants -- all from real traffic.
   </Step>
 </Steps>
 
+## Get started
+
 <CardGroup cols={2}>
-  <Card title="Setup Guide" icon="wrench" href="/autotune/setup">
-    Learn how to integrate ze.prompt() into your Python or TypeScript codebase
+  <Card title="Python" icon="python" href="/autotune/sdks/python">
+    `ze.prompt()` and `ze.get_prompt()` for Python applications
   </Card>
-  <Card title="Prompts Guide" icon="sliders" href="/autotune/prompts">
-    Run experiments and deploy winning combinations
+  <Card title="TypeScript" icon="js" href="/autotune/sdks/typescript">
+    `ze.prompt()` for TypeScript and JavaScript applications
   </Card>
 </CardGroup>
-

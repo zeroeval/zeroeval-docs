@@ -1,89 +1,250 @@
 ---
-title: "Reference"
-description: "Parameters and configuration for ze.prompt"
+title: "API Reference"
+description: "REST API for managing prompts, versions, and deployments"
 ---
 
-`ze.prompt` creates or fetches versioned prompts from the Prompt Library and returns decorated content for downstream LLM calls.
+Base URL: `https://api.zeroeval.com`
 
-<Info>
-**TypeScript differences**: In TypeScript, `ze.prompt()` is an async function that returns `Promise<string>`. Parameters use camelCase and are passed as an options object: `ze.prompt({ name: "...", content: "..." })`.
-</Info>
+All requests require a Bearer token:
 
-## Parameters
+```
+Authorization: Bearer YOUR_ZEROEVAL_API_KEY
+```
 
-| Python | TypeScript | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- | --- |
-| `name` | `name` | string | yes | — | Task name associated with the prompt in the library |
-| `content` | `content` | string | no | `None`/`undefined` | Raw prompt content to ensure/create a version by content |
-| `from_` | `from` | string | no | `None`/`undefined` | Either `"latest"`, `"explicit"`, or a 64‑char SHA‑256 hash |
-| `variables` | `variables` | dict/object | no | `None`/`undefined` | Template variables to render `{{variable}}` tokens |
+---
 
-Notes:
+## Get Prompt
 
-- In Python, use `from_` (with underscore) as `from` is a reserved keyword. TypeScript uses `from` directly.
-- Exactly one of `content` or `from` must be provided (except when using `from: "explicit"` with `content`).
-- `from="latest"` fetches the latest version bound to the task; otherwise `from` must be a 64‑char hex SHA‑256 hash.
+```
+GET /v1/prompts/{prompt_slug}
+```
 
-## Behavior
+Fetch the current version of a prompt by its slug.
 
-- **content provided**: Computes a normalized SHA‑256 hash, ensures a prompt version exists for `name`, and returns decorated content.
-- **from="latest"**: Fetches the latest version for `name` and returns decorated content.
-- **from=**`<hash>`: Fetches by content hash for `name` and returns decorated content.
+| Query Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `version` | `int` | — | Fetch a specific version number |
+| `tag` | `string` | `"latest"` | Tag to fetch (`"production"`, `"latest"`, etc.) |
 
-Decoration adds a compact metadata header used by integrations:
+```bash
+curl https://api.zeroeval.com/v1/prompts/support-bot \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
 
-- `task`, `prompt_slug`, `prompt_version`, `prompt_version_id`, `variables`, and (when created by content) `content_hash`.
+**Response:** 200
 
-OpenAI integration: when `prompt_version_id` is present, the SDK will automatically patch the `model` parameter to the model bound to that prompt version.
+```json
+{
+  "id": "a1b2c3d4-...",
+  "prompt_id": "b2c3d4e5-...",
+  "content": "You are a helpful customer support agent.",
+  "content_hash": "e3b0c44298fc...",
+  "version": 3,
+  "model_id": "gpt-4o",
+  "tag": "production",
+  "is_latest": true,
+  "metadata": {},
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
 
-## Return Value
+### Fetch by tag
 
-- **Python**: `str` - Decorated prompt content ready to pass into LLM clients.
-- **TypeScript**: `Promise<string>` - Async function returning decorated prompt content.
+```bash
+curl "https://api.zeroeval.com/v1/prompts/support-bot?tag=production" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
 
-## Errors
+### Fetch by version number
 
-| Python | TypeScript | When |
+```bash
+curl "https://api.zeroeval.com/v1/prompts/support-bot?version=2" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY"
+```
+
+---
+
+## Ensure Prompt Version
+
+```
+POST /v1/tasks/{task_name}/prompt/versions/ensure
+```
+
+Create a prompt version if it doesn't already exist (idempotent by content hash). This is what `ze.prompt()` calls under the hood.
+
+**Request body:**
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `content` | `string` | Yes | Prompt content |
+| `content_hash` | `string` | No | SHA-256 hash (computed server-side if omitted) |
+| `model_id` | `string` | No | Model to bind to this version |
+| `metadata` | `object` | No | Additional metadata |
+
+```bash
+curl -X POST https://api.zeroeval.com/v1/tasks/support-bot/prompt/versions/ensure \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "You are a helpful customer support agent for {{company}}."
+  }'
+```
+
+**Response:** 200
+
+```json
+{
+  "id": "c3d4e5f6-...",
+  "content": "You are a helpful customer support agent for {{company}}.",
+  "content_hash": "a1b2c3d4...",
+  "version": 1,
+  "model_id": null,
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
+
+---
+
+## Get Version by Hash
+
+```
+GET /v1/tasks/{task_name}/prompt/versions/by-hash/{content_hash}
+```
+
+Fetch a specific prompt version by its SHA-256 content hash.
+
+**Response:** 200 (same schema as ensure)
+
+---
+
+## Get Latest Version
+
+```
+GET /v1/tasks/{task_name}/prompt/latest
+```
+
+Fetch the latest prompt version for a task.
+
+**Response:** 200 (same schema as ensure)
+
+---
+
+## Resolve Model for Version
+
+```
+GET /v1/prompt-versions/{version_id}/model
+```
+
+Get the model bound to a specific prompt version. Used by SDK integrations to auto-patch the `model` parameter.
+
+**Response:** 200
+
+```json
+{
+  "model_id": "gpt-4o",
+  "provider": "openai"
+}
+```
+
+Returns `null` for `model_id` if no model is bound.
+
+---
+
+## Deploy a Version (Pin Tag)
+
+```
+POST /projects/{project_id}/prompts/{prompt_slug}/tags/{tag}:pin
+```
+
+Pin a tag (e.g. `production`) to a specific version number. This is how you deploy a prompt version to production.
+
+**Request body:**
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `version` | `int` | Yes | Version number to pin |
+
+```bash
+curl -X POST https://api.zeroeval.com/projects/$PROJECT_ID/prompts/support-bot/tags/production:pin \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"version": 3}'
+```
+
+---
+
+## List Versions
+
+```
+GET /projects/{project_id}/prompts/{prompt_slug}/versions
+```
+
+List all versions of a prompt.
+
+**Response:** 200
+
+```json
+[
+  {
+    "id": "c3d4e5f6-...",
+    "content": "You are a helpful assistant.",
+    "content_hash": "a1b2c3d4...",
+    "version": 1,
+    "model_id": null,
+    "created_at": "2025-01-10T10:00:00Z"
+  },
+  {
+    "id": "d4e5f6a7-...",
+    "content": "You are a helpful customer support agent.",
+    "content_hash": "b2c3d4e5...",
+    "version": 2,
+    "model_id": "gpt-4o",
+    "created_at": "2025-01-15T10:30:00Z"
+  }
+]
+```
+
+---
+
+## List Tags
+
+```
+GET /projects/{project_id}/prompts/{prompt_slug}/tags
+```
+
+List all tags and which version each is pinned to.
+
+**Response:** 200
+
+```json
+[
+  { "tag": "latest", "version": 2 },
+  { "tag": "production", "version": 1 }
+]
+```
+
+---
+
+## Update Version Model
+
+```
+PATCH /projects/{project_id}/prompts/{prompt_slug}/versions/{version}
+```
+
+Update the model bound to a version.
+
+**Request body:**
+
+| Field | Type | Description |
 | --- | --- | --- |
-| `ValueError` | `Error` | Both `content` and `from` provided (except explicit), or neither; invalid `from` value |
-| `PromptRequestError` | `PromptRequestError` | `from="latest"` but no versions exist for `name` |
-| `PromptNotFoundError` | `PromptNotFoundError` | `from` is a hash that does not exist for `name` |
+| `model_id` | `string` | Model identifier to bind |
 
-## Examples
+---
 
-<CodeGroup>
-```python Python
-import zeroeval as ze
+## Submit Completion Feedback
 
-# Create/ensure a version by content
-system = ze.prompt(
-    name="support-triage",
-    content="You are a helpful assistant for {{product}}.",
-    variables={"product": "Acme"},
-)
-
-# Fetch the latest version for this task
-system = ze.prompt(name="support-triage", from_="latest")
-
-# Fetch a specific version by content hash
-system = ze.prompt(name="support-triage", from_="c6a7...deadbeef...0123")
 ```
-```typescript TypeScript
-import * as ze from 'zeroeval';
-
-// Create/ensure a version by content
-const system = await ze.prompt({
-  name: "support-triage",
-  content: "You are a helpful assistant for {{product}}.",
-  variables: { product: "Acme" },
-});
-
-// Fetch the latest version for this task
-const system = await ze.prompt({ name: "support-triage", from: "latest" });
-
-// Fetch a specific version by content hash
-const system = await ze.prompt({ name: "support-triage", from: "c6a7...deadbeef...0123" });
+POST /v1/prompts/{prompt_slug}/completions/{completion_id}/feedback
 ```
-</CodeGroup>
 
-
+See [Feedback API Reference](/feedback/api-reference#completion-feedback) for the full specification.

@@ -16,7 +16,7 @@
           {
             "group": "Tracing",
             "pages": [
-              "tracing/quickstart",
+              "tracing/introduction",
               {
                 "group": "SDKs",
                 "pages": [
@@ -38,29 +38,31 @@
                   }
                 ]
               },
-              {
-                "group": "Advanced",
-                "pages": [
-                  "tracing/sessions",
-                  "tracing/tagging",
-                  "tracing/signals",
-                  "tracing/manual-instrumentation",
-                  "tracing/opentelemetry"
-                ]
-              },
-              "tracing/reference"
+              "tracing/api-reference",
+              "tracing/opentelemetry"
             ]
           },
           {
             "group": "Prompts",
             "pages": [
               "autotune/introduction",
-              "autotune/setup",
               {
-                "group": "Optimization",
-                "pages": ["autotune/prompts/models", "autotune/prompts/prompts"]
+                "group": "SDKs",
+                "pages": [
+                  "autotune/sdks/python",
+                  "autotune/sdks/typescript"
+                ]
               },
               "autotune/reference"
+            ]
+          },
+          {
+            "group": "Feedback",
+            "pages": [
+              "feedback/introduction",
+              "feedback/python",
+              "feedback/typescript",
+              "feedback/api-reference"
             ]
           },
           {
@@ -71,6 +73,12 @@
               "judges/multimodal-evaluation",
               "judges/submit-feedback",
               "judges/pull-evaluations"
+            ]
+          },
+          {
+            "group": "Optimization",
+            "pages": [
+              "autotune/prompts/prompts"
             ]
           },
           {

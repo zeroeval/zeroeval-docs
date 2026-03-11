@@ -1,0 +1,145 @@
+---
+title: "Python"
+description: "Attach signals and feedback to spans, traces, and sessions in Python"
+---
+
+## Signals
+
+Signals are key-value pairs you attach to spans, traces, or sessions to capture feedback, metrics, or outcomes. They appear in the ZeroEval console and can be used for filtering, monitoring, and optimization.
+
+### `set_signal()`
+
+Send one or more signals to a span, trace, or session.
+
+```python
+import zeroeval as ze
+
+ze.set_signal(target, signals)
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `target` | `Span \| str` | A `Span` object, a trace ID string, or a session ID string |
+| `signals` | `dict[str, str \| bool \| int \| float]` | Signal names mapped to values |
+
+**Returns:** `True` if sent successfully, `False` otherwise.
+
+### On a span
+
+```python
+with ze.span(name="generate_response") as span:
+    response = llm.generate(query)
+
+    ze.set_signal(span, {
+        "thumbs_up": True,
+        "response_quality": 4.5,
+        "latency_ms": 320
+    })
+```
+
+Or use the span's instance method for a single signal:
+
+```python
+span.set_signal("accuracy", 0.95)
+```
+
+### On a trace
+
+```python
+trace_id = ze.get_current_trace()
+ze.set_signal(trace_id, {
+    "request_successful": True,
+    "total_cost": 0.045,
+    "model_used": "gpt-4o"
+})
+```
+
+### On a session
+
+```python
+session_id = ze.get_current_session()
+ze.set_signal(session_id, {
+    "converted": True,
+    "pages_visited": 5,
+    "user_tier": "premium"
+})
+```
+
+### Common patterns
+
+```python
+# Binary feedback
+ze.set_signal(span, {"helpful": True})
+
+# Star rating
+ze.set_signal(span, {"star_rating": 4})
+
+# Continuous metrics
+ze.set_signal(span, {"response_time_ms": 1250.5, "accuracy": 0.94})
+
+# Categorical outcomes
+ze.set_signal(span, {"task_status": "success", "error_type": "none"})
+```
+
+---
+
+## Completion Feedback
+
+Attach structured feedback to a specific LLM completion to power prompt optimization.
+
+### `send_feedback()`
+
+```python
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id="550e8400-e29b-41d4-a716-446655440000",
+    thumbs_up=False,
+    reason="Response was too verbose",
+    expected_output="A concise 2-3 sentence response"
+)
+```
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `prompt_slug` | `str` | Yes | Prompt name (same as `ze.prompt(name=...)`) |
+| `completion_id` | `str` | Yes | UUID of the completion span |
+| `thumbs_up` | `bool` | Yes | Positive or negative feedback |
+| `reason` | `str` | No | Explanation of the feedback |
+| `expected_output` | `str` | No | What the output should have been |
+| `metadata` | `dict` | No | Additional metadata |
+| `judge_id` | `str` | No | Judge automation ID (for judge feedback) |
+| `expected_score` | `float` | No | Expected score (for scored judges) |
+| `score_direction` | `str` | No | `"too_high"` or `"too_low"` |
+| `criteria_feedback` | `dict` | No | Per-criterion feedback: `{"criterion": {"expected_score": 4.0, "reason": "..."}}` |
+
+### End-to-end example
+
+```python
+import zeroeval as ze
+from openai import OpenAI
+
+ze.init()
+client = OpenAI()
+
+system_prompt = ze.prompt(
+    name="support-bot",
+    content="You are a helpful customer support agent."
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "How do I reset my password?"}
+    ]
+)
+
+is_good = evaluate_response(response.choices[0].message.content)
+
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id=response.id,
+    thumbs_up=is_good,
+    reason="Clear instructions" if is_good else "Missing reset link"
+)
+```
