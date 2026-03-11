@@ -27,32 +27,32 @@ Send one or more spans. Traces and sessions referenced by the spans are auto-cre
 
 **Request body:** `SpanCreate[]`
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `trace_id` | `string (UUID)` | Yes | — | Trace this span belongs to |
-| `name` | `string` | Yes | — | Descriptive name |
-| `started_at` | `ISO 8601` | Yes | — | When the span started |
-| `id` | `string (UUID)` | No | auto-generated | Client-provided span ID |
-| `kind` | `string` | No | `"generic"` | `generic`, `llm`, `tts`, `http`, `database`, `vector_store` |
-| `status` | `string` | No | `null` | `unset`, `ok`, `error` |
-| `ended_at` | `ISO 8601` | No | `null` | When the span completed |
-| `duration_ms` | `float` | No | `null` | Duration in milliseconds |
-| `cost` | `float` | No | auto-calculated | Cost (auto-calculated for LLM spans) |
-| `parent_span_id` | `string (UUID)` | No | `null` | Parent span for nesting |
-| `session_id` | `string (UUID)` | No | `null` | Session to associate with |
-| `session` | `object` | No | `null` | `{"id": "...", "name": "..."}` — alternative to `session_id` |
-| `input_data` | `string` | No | `null` | Input data (JSON string for messages) |
-| `output_data` | `string` | No | `null` | Output/response text |
-| `attributes` | `object` | No | `{}` | Arbitrary key-value attributes |
-| `tags` | `object` | No | `{}` | Key-value tags for filtering |
-| `trace_tags` | `object` | No | `{}` | Tags applied to the parent trace |
-| `session_tags` | `object` | No | `{}` | Tags applied to the parent session |
-| `signals` | `object` | No | `{}` | Signal name → value pairs |
-| `error_code` | `string` | No | `null` | Error code or exception class |
-| `error_message` | `string` | No | `null` | Error description |
-| `error_stack` | `string` | No | `null` | Stack trace |
-| `code_filepath` | `string` | No | `null` | Source file path |
-| `code_lineno` | `int` | No | `null` | Source line number |
+| Field            | Type            | Required | Default         | Description                                                  |
+| ---------------- | --------------- | -------- | --------------- | ------------------------------------------------------------ |
+| `trace_id`       | `string (UUID)` | Yes      | —               | Trace this span belongs to                                   |
+| `name`           | `string`        | Yes      | —               | Descriptive name                                             |
+| `started_at`     | `ISO 8601`      | Yes      | —               | When the span started                                        |
+| `id`             | `string (UUID)` | No       | auto-generated  | Client-provided span ID                                      |
+| `kind`           | `string`        | No       | `"generic"`     | `generic`, `llm`, `tts`, `http`, `database`, `vector_store`  |
+| `status`         | `string`        | No       | `null`          | `unset`, `ok`, `error`                                       |
+| `ended_at`       | `ISO 8601`      | No       | `null`          | When the span completed                                      |
+| `duration_ms`    | `float`         | No       | `null`          | Duration in milliseconds                                     |
+| `cost`           | `float`         | No       | auto-calculated | Cost (auto-calculated for LLM spans)                         |
+| `parent_span_id` | `string (UUID)` | No       | `null`          | Parent span for nesting                                      |
+| `session_id`     | `string (UUID)` | No       | `null`          | Session to associate with                                    |
+| `session`        | `object`        | No       | `null`          | `{"id": "...", "name": "..."}` — alternative to `session_id` |
+| `input_data`     | `string`        | No       | `null`          | Input data (JSON string for messages)                        |
+| `output_data`    | `string`        | No       | `null`          | Output/response text                                         |
+| `attributes`     | `object`        | No       | `{}`            | Arbitrary key-value attributes                               |
+| `tags`           | `object`        | No       | `{}`            | Key-value tags for filtering                                 |
+| `trace_tags`     | `object`        | No       | `{}`            | Tags applied to the parent trace                             |
+| `session_tags`   | `object`        | No       | `{}`            | Tags applied to the parent session                           |
+| `signals`        | `object`        | No       | `{}`            | Signal name → value pairs                                    |
+| `error_code`     | `string`        | No       | `null`          | Error code or exception class                                |
+| `error_message`  | `string`        | No       | `null`          | Error description                                            |
+| `error_stack`    | `string`        | No       | `null`          | Stack trace                                                  |
+| `code_filepath`  | `string`        | No       | `null`          | Source file path                                             |
+| `code_lineno`    | `int`           | No       | `null`          | Source line number                                           |
 
 <CodeGroup>
 
@@ -113,12 +113,12 @@ requests.post(
 
 For automatic cost calculation on LLM spans, set `kind` to `"llm"` and include these attributes:
 
-| Attribute | Required | Description |
-| --- | --- | --- |
-| `provider` | Yes | `"openai"`, `"gemini"`, `"anthropic"` |
-| `model` | Yes | `"gpt-4o"`, `"claude-3-5-sonnet"`, etc. |
-| `inputTokens` | Yes | Number of input tokens |
-| `outputTokens` | Yes | Number of output tokens |
+| Attribute      | Required | Description                             |
+| -------------- | -------- | --------------------------------------- |
+| `provider`     | Yes      | `"openai"`, `"gemini"`, `"anthropic"`   |
+| `model`        | Yes      | `"gpt-4o"`, `"claude-3-5-sonnet"`, etc. |
+| `inputTokens`  | Yes      | Number of input tokens                  |
+| `outputTokens` | Yes      | Number of output tokens                 |
 
 Cost is calculated as: `(inputTokens × inputPrice + outputTokens × outputPrice) / 1,000,000`
 
@@ -132,25 +132,25 @@ GET /spans
 
 Retrieve spans with filtering, sorting, and pagination.
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `id` | `string` | — | Filter by span ID |
-| `trace_id` | `string` | — | Filter by trace ID |
-| `parent_span_id` | `string` | — | Filter by parent; `"null"` for root spans |
-| `span_kind` | `string` | — | `llm`, `generic`, `tts`, `http`, etc. |
-| `created_before` | `ISO 8601` | — | Upper bound on created_at |
-| `created_after` | `ISO 8601` | — | Lower bound on created_at |
-| `names` | `string` | — | Comma-separated span names |
-| `error_codes` | `string` | — | Comma-separated error codes |
-| `has_error` | `bool` | — | `true` or `false` |
-| `duration_min` | `float` | — | Minimum duration (ms) |
-| `duration_max` | `float` | — | Maximum duration (ms) |
-| `cost_min` | `float` | — | Minimum cost |
-| `cost_max` | `float` | — | Maximum cost |
-| `sort_by` | `string` | — | `started_at`, `name`, `status`, `duration_ms`, `cost`, `kind` |
-| `sort_order` | `string` | `desc` | `asc` or `desc` |
-| `limit` | `int` | `5000` | 1–10000 |
-| `offset` | `int` | `0` | Pagination offset |
+| Parameter        | Type       | Default | Description                                                   |
+| ---------------- | ---------- | ------- | ------------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by span ID                                             |
+| `trace_id`       | `string`   | —       | Filter by trace ID                                            |
+| `parent_span_id` | `string`   | —       | Filter by parent; `"null"` for root spans                     |
+| `span_kind`      | `string`   | —       | `llm`, `generic`, `tts`, `http`, etc.                         |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                                     |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                                     |
+| `names`          | `string`   | —       | Comma-separated span names                                    |
+| `error_codes`    | `string`   | —       | Comma-separated error codes                                   |
+| `has_error`      | `bool`     | —       | `true` or `false`                                             |
+| `duration_min`   | `float`    | —       | Minimum duration (ms)                                         |
+| `duration_max`   | `float`    | —       | Maximum duration (ms)                                         |
+| `cost_min`       | `float`    | —       | Minimum cost                                                  |
+| `cost_max`       | `float`    | —       | Maximum cost                                                  |
+| `sort_by`        | `string`   | —       | `started_at`, `name`, `status`, `duration_ms`, `cost`, `kind` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                               |
+| `limit`          | `int`      | `5000`  | 1–10000                                                       |
+| `offset`         | `int`      | `0`     | Pagination offset                                             |
 
 Any unrecognized query parameter is treated as a **tag filter** (e.g. `?environment=production`).
 
@@ -197,18 +197,18 @@ Create one or more traces. Traces are also auto-created when ingesting spans.
 
 **Request body:** `TraceCreate[]`
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `session_id` | `string (UUID)` | Yes | — | Parent session |
-| `name` | `string` | Yes | — | Trace name |
-| `started_at` | `ISO 8601` | Yes | — | Start time |
-| `id` | `string (UUID)` | No | auto-generated | Client-provided trace ID |
-| `status` | `string` | No | `null` | `unset`, `ok`, `error` |
-| `ended_at` | `ISO 8601` | No | `null` | End time |
-| `duration_ms` | `float` | No | `null` | Duration in milliseconds |
-| `cost` | `float` | No | `null` | Total cost |
-| `attributes` | `object` | No | `{}` | Arbitrary attributes |
-| `tags` | `object` | No | `{}` | Key-value tags |
+| Field         | Type            | Required | Default        | Description              |
+| ------------- | --------------- | -------- | -------------- | ------------------------ |
+| `session_id`  | `string (UUID)` | Yes      | —              | Parent session           |
+| `name`        | `string`        | Yes      | —              | Trace name               |
+| `started_at`  | `ISO 8601`      | Yes      | —              | Start time               |
+| `id`          | `string (UUID)` | No       | auto-generated | Client-provided trace ID |
+| `status`      | `string`        | No       | `null`         | `unset`, `ok`, `error`   |
+| `ended_at`    | `ISO 8601`      | No       | `null`         | End time                 |
+| `duration_ms` | `float`         | No       | `null`         | Duration in milliseconds |
+| `cost`        | `float`         | No       | `null`         | Total cost               |
+| `attributes`  | `object`        | No       | `{}`           | Arbitrary attributes     |
+| `tags`        | `object`        | No       | `{}`           | Key-value tags           |
 
 **Response:** `TraceRead[]` (200)
 
@@ -220,23 +220,23 @@ Create one or more traces. Traces are also auto-created when ingesting spans.
 GET /traces
 ```
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `id` | `string` | — | Filter by trace ID |
-| `session_id` | `string` | — | Filter by session ID |
-| `status` | `string` | — | Filter by status |
-| `created_before` | `ISO 8601` | — | Upper bound on created_at |
-| `created_after` | `ISO 8601` | — | Lower bound on created_at |
-| `names` | `string` | — | Comma-separated trace names |
-| `has_error` | `bool` | — | `true` or `false` |
-| `duration_min` | `float` | — | Minimum duration (ms) |
-| `duration_max` | `float` | — | Maximum duration (ms) |
-| `cost_min` | `float` | — | Minimum cost |
-| `cost_max` | `float` | — | Maximum cost |
-| `sort_by` | `string` | — | `started_at`, `name`, `status`, `span_count`, `duration_ms`, `cost` |
-| `sort_order` | `string` | `desc` | `asc` or `desc` |
-| `limit` | `int` | `50` | 1–500 |
-| `offset` | `int` | `0` | Pagination offset |
+| Parameter        | Type       | Default | Description                                                         |
+| ---------------- | ---------- | ------- | ------------------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by trace ID                                                  |
+| `session_id`     | `string`   | —       | Filter by session ID                                                |
+| `status`         | `string`   | —       | Filter by status                                                    |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                                           |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                                           |
+| `names`          | `string`   | —       | Comma-separated trace names                                         |
+| `has_error`      | `bool`     | —       | `true` or `false`                                                   |
+| `duration_min`   | `float`    | —       | Minimum duration (ms)                                               |
+| `duration_max`   | `float`    | —       | Maximum duration (ms)                                               |
+| `cost_min`       | `float`    | —       | Minimum cost                                                        |
+| `cost_max`       | `float`    | —       | Maximum cost                                                        |
+| `sort_by`        | `string`   | —       | `started_at`, `name`, `status`, `span_count`, `duration_ms`, `cost` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                                     |
+| `limit`          | `int`      | `50`    | 1–500                                                               |
+| `offset`         | `int`      | `0`     | Pagination offset                                                   |
 
 Tag and signal filters work the same as for spans.
 
@@ -244,21 +244,21 @@ Tag and signal filters work the same as for spans.
 
 Each trace includes:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | `string` | Trace ID |
-| `session_id` | `string` | Parent session |
-| `name` | `string` | Trace name |
-| `status` | `string` | `unset`, `ok`, `error` |
-| `started_at` | `ISO 8601` | Start time |
-| `ended_at` | `ISO 8601` | End time |
-| `duration_ms` | `float` | Duration |
-| `cost` | `float` | Total cost |
-| `span_count` | `int` | Number of spans |
-| `root_span_input` | `string` | Input from the root span |
-| `root_span_output` | `string` | Output from the root span |
-| `tags` | `object` | Tags |
-| `signals` | `array` | Attached signals |
+| Field              | Type       | Description               |
+| ------------------ | ---------- | ------------------------- |
+| `id`               | `string`   | Trace ID                  |
+| `session_id`       | `string`   | Parent session            |
+| `name`             | `string`   | Trace name                |
+| `status`           | `string`   | `unset`, `ok`, `error`    |
+| `started_at`       | `ISO 8601` | Start time                |
+| `ended_at`         | `ISO 8601` | End time                  |
+| `duration_ms`      | `float`    | Duration                  |
+| `cost`             | `float`    | Total cost                |
+| `span_count`       | `int`      | Number of spans           |
+| `root_span_input`  | `string`   | Input from the root span  |
+| `root_span_output` | `string`   | Output from the root span |
+| `tags`             | `object`   | Tags                      |
+| `signals`          | `array`    | Attached signals          |
 
 ---
 
@@ -274,13 +274,13 @@ Create one or more sessions. Sessions are also auto-created when ingesting spans
 
 **Request body:** `SessionCreate[]`
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `project_id` | `string` | Yes | — | Project ID |
-| `name` | `string` | No | `null` | Human-readable session name |
-| `id` | `string (UUID)` | No | auto-generated | Client-provided session ID |
-| `attributes` | `object` | No | `{}` | Arbitrary attributes |
-| `tags` | `object` | No | `{}` | Key-value tags |
+| Field        | Type            | Required | Default        | Description                 |
+| ------------ | --------------- | -------- | -------------- | --------------------------- |
+| `project_id` | `string`        | Yes      | —              | Project ID                  |
+| `name`       | `string`        | No       | `null`         | Human-readable session name |
+| `id`         | `string (UUID)` | No       | auto-generated | Client-provided session ID  |
+| `attributes` | `object`        | No       | `{}`           | Arbitrary attributes        |
+| `tags`       | `object`        | No       | `{}`           | Key-value tags              |
 
 **Response:** `SessionRead[]` (200)
 
@@ -292,21 +292,21 @@ Create one or more sessions. Sessions are also auto-created when ingesting spans
 GET /sessions
 ```
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `id` | `string` | — | Filter by session ID |
-| `created_before` | `ISO 8601` | — | Upper bound on created_at |
-| `created_after` | `ISO 8601` | — | Lower bound on created_at |
-| `names` | `string` | — | Comma-separated session names |
-| `has_error` | `bool` | — | `true` or `false` |
-| `duration_min` | `float` | — | Minimum duration |
-| `duration_max` | `float` | — | Maximum duration |
-| `cost_min` | `float` | — | Minimum cost |
-| `cost_max` | `float` | — | Maximum cost |
-| `sort_by` | `string` | — | `created_at`, `name`, `trace_count`, `cost`, `duration` |
-| `sort_order` | `string` | `desc` | `asc` or `desc` |
-| `limit` | `int` | `50` | 1–500 |
-| `offset` | `int` | `0` | Pagination offset |
+| Parameter        | Type       | Default | Description                                             |
+| ---------------- | ---------- | ------- | ------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by session ID                                    |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                               |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                               |
+| `names`          | `string`   | —       | Comma-separated session names                           |
+| `has_error`      | `bool`     | —       | `true` or `false`                                       |
+| `duration_min`   | `float`    | —       | Minimum duration                                        |
+| `duration_max`   | `float`    | —       | Maximum duration                                        |
+| `cost_min`       | `float`    | —       | Minimum cost                                            |
+| `cost_max`       | `float`    | —       | Maximum cost                                            |
+| `sort_by`        | `string`   | —       | `created_at`, `name`, `trace_count`, `cost`, `duration` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                         |
+| `limit`          | `int`      | `50`    | 1–500                                                   |
+| `offset`         | `int`      | `0`     | Pagination offset                                       |
 
 Tag and signal filters work the same as for spans.
 
@@ -314,17 +314,17 @@ Tag and signal filters work the same as for spans.
 
 Each session includes:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | `string` | Session ID |
-| `project_id` | `string` | Project ID |
-| `name` | `string` | Session name |
-| `trace_count` | `int` | Number of traces |
-| `error_count` | `int` | Number of errors |
-| `cost` | `float` | Total cost |
-| `duration` | `float` | Total duration |
-| `tags` | `object` | Tags |
-| `signals` | `array` | Attached signals |
+| Field         | Type     | Description      |
+| ------------- | -------- | ---------------- |
+| `id`          | `string` | Session ID       |
+| `project_id`  | `string` | Project ID       |
+| `name`        | `string` | Session name     |
+| `trace_count` | `int`    | Number of traces |
+| `error_count` | `int`    | Number of errors |
+| `cost`        | `float`  | Total cost       |
+| `duration`    | `float`  | Total duration   |
+| `tags`        | `object` | Tags             |
+| `signals`     | `array`  | Attached signals |
 
 ---
 
@@ -340,14 +340,14 @@ Attach a signal to a span, trace, session, or completion.
 
 **Request body:**
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `entity_type` | `string` | Yes | — | `session`, `trace`, `span`, or `completion` |
-| `entity_id` | `string` | Yes | — | UUID of the target entity |
-| `name` | `string` | Yes | — | Signal name (e.g. `user_satisfaction`) |
-| `value` | `string \| bool \| int \| float` | Yes | — | Signal value |
-| `signal_type` | `string` | No | `"boolean"` | `boolean` or `numerical` |
-| `project_id` | `string` | No | `null` | Project ID |
+| Field         | Type                             | Required | Default     | Description                                 |
+| ------------- | -------------------------------- | -------- | ----------- | ------------------------------------------- |
+| `entity_type` | `string`                         | Yes      | —           | `session`, `trace`, `span`, or `completion` |
+| `entity_id`   | `string`                         | Yes      | —           | UUID of the target entity                   |
+| `name`        | `string`                         | Yes      | —           | Signal name (e.g. `user_satisfaction`)      |
+| `value`       | `string \| bool \| int \| float` | Yes      | —           | Signal value                                |
+| `signal_type` | `string`                         | No       | `"boolean"` | `boolean` or `numerical`                    |
+| `project_id`  | `string`                         | No       | `null`      | Project ID                                  |
 
 ```bash
 curl -X POST https://api.zeroeval.com/signals/ \
@@ -418,10 +418,10 @@ GET /signals/entity/{entity_type}/{entity_id}
 
 Retrieve all signals attached to an entity.
 
-| Path Parameter | Description |
-| --- | --- |
-| `entity_type` | `session`, `trace`, `span`, or `completion` |
-| `entity_id` | UUID of the entity |
+| Path Parameter | Description                                 |
+| -------------- | ------------------------------------------- |
+| `entity_type`  | `session`, `trace`, `span`, or `completion` |
+| `entity_id`    | UUID of the entity                          |
 
 **Response:**
 
@@ -430,8 +430,8 @@ Retrieve all signals attached to an entity.
   "entity_type": "span",
   "entity_id": "550e8400-...",
   "signals": [
-    {"name": "thumbs_up", "value": true, "type": "boolean"},
-    {"name": "accuracy", "value": 0.95, "type": "numerical"}
+    { "name": "thumbs_up", "value": true, "type": "boolean" },
+    { "name": "accuracy", "value": 0.95, "type": "numerical" }
   ]
 }
 ```
@@ -448,10 +448,10 @@ Update the value of an existing signal.
 
 **Request body:**
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `value` | `string \| bool \| int \| float` | Yes | New signal value |
-| `signal_type` | `string` | No | `boolean` or `numerical` |
+| Field         | Type                             | Required | Description              |
+| ------------- | -------------------------------- | -------- | ------------------------ |
+| `value`       | `string \| bool \| int \| float` | Yes      | New signal value         |
+| `signal_type` | `string`                         | No       | `boolean` or `numerical` |
 
 **Response:** `SignalResponse` (200)
 
@@ -481,9 +481,9 @@ Accepts standard OpenTelemetry Protocol (OTLP) trace data in JSON or protobuf fo
 
 **Headers:**
 
-| Header | Value |
-| --- | --- |
-| `Authorization` | `Bearer YOUR_ZEROEVAL_API_KEY` |
-| `Content-Type` | `application/json` or `application/x-protobuf` |
+| Header          | Value                                          |
+| --------------- | ---------------------------------------------- |
+| `Authorization` | `Bearer YOUR_ZEROEVAL_API_KEY`                 |
+| `Content-Type`  | `application/json` or `application/x-protobuf` |
 
 This endpoint is compatible with the OpenTelemetry Collector's `otlphttp` exporter. See [OpenTelemetry](/tracing/opentelemetry) for collector configuration.

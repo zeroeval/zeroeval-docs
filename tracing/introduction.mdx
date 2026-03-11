@@ -16,16 +16,20 @@ ZeroEval Tracing captures the full execution graph of your AI system so you can:
 
 <Steps>
   <Step title="Instrument your code">
-    Add a few lines to your application. The SDK automatically captures LLM calls, or you can create custom spans for any operation.
+    Add a few lines to your application. The SDK automatically captures LLM
+    calls, or you can create custom spans for any operation.
   </Step>
   <Step title="Traces flow into ZeroEval">
-    Every agent run becomes a trace -- a tree of spans showing what happened, in what order, with full inputs and outputs.
+    Every agent run becomes a trace -- a tree of spans showing what happened, in
+    what order, with full inputs and outputs.
   </Step>
   <Step title="Organize with sessions, tags, and signals">
-    Group related traces into sessions, tag them with metadata for filtering, and attach user feedback as signals.
+    Group related traces into sessions, tag them with metadata for filtering,
+    and attach user feedback as signals.
   </Step>
   <Step title="Unlock the feedback loop">
-    Use your traced data to run judges, optimize prompts, and build evaluations -- all from the same production data.
+    Use your traced data to run judges, optimize prompts, and build evaluations
+    -- all from the same production data.
   </Step>
 </Steps>
 
@@ -35,19 +39,27 @@ Create an API key from [Settings → API Keys](https://app.zeroeval.com/settings
 
 <CardGroup cols={2}>
   <Card title="Python SDK" icon="python" href="/tracing/sdks/python/setup">
-    Decorators and context managers for Python apps. Auto-instruments OpenAI, LangChain, Gemini, and more.
+    Decorators and context managers for Python apps. Auto-instruments OpenAI,
+    LangChain, Gemini, and more.
   </Card>
   <Card title="TypeScript SDK" icon="js" href="/tracing/sdks/typescript/setup">
-    Wrapper functions for Node.js and Bun. Auto-instruments OpenAI and Vercel AI SDK.
+    Wrapper functions for Node.js and Bun. Auto-instruments OpenAI and Vercel AI
+    SDK.
   </Card>
   <Card title="REST API" icon="code" href="/tracing/api-reference">
     Send spans, traces, and sessions directly over HTTP from any language.
   </Card>
-  <Card title="OpenTelemetry" icon="tower-broadcast" href="/tracing/opentelemetry">
+  <Card
+    title="OpenTelemetry"
+    icon="tower-broadcast"
+    href="/tracing/opentelemetry"
+  >
     Route OTLP traces from any OpenTelemetry-instrumented app to ZeroEval.
   </Card>
 </CardGroup>
 
 <Tip>
-Using Cursor, Claude Code, or another coding agent? The [`zeroeval-install` skill](/integrations/skills) can handle SDK setup, first trace, and prompt migration for you.
+  Using Cursor, Claude Code, or another coding agent? The [`zeroeval-install`
+  skill](/integrations/skills) can handle SDK setup, first trace, and prompt
+  migration for you.
 </Tip>

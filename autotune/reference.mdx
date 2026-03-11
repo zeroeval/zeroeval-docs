@@ -21,10 +21,10 @@ GET /v1/prompts/{prompt_slug}
 
 Fetch the current version of a prompt by its slug.
 
-| Query Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `version` | `int` | — | Fetch a specific version number |
-| `tag` | `string` | `"latest"` | Tag to fetch (`"production"`, `"latest"`, etc.) |
+| Query Parameter | Type     | Default    | Description                                     |
+| --------------- | -------- | ---------- | ----------------------------------------------- |
+| `version`       | `int`    | —          | Fetch a specific version number                 |
+| `tag`           | `string` | `"latest"` | Tag to fetch (`"production"`, `"latest"`, etc.) |
 
 ```bash
 curl https://api.zeroeval.com/v1/prompts/support-bot \
@@ -74,12 +74,12 @@ Create a prompt version if it doesn't already exist (idempotent by content hash)
 
 **Request body:**
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `content` | `string` | Yes | Prompt content |
-| `content_hash` | `string` | No | SHA-256 hash (computed server-side if omitted) |
-| `model_id` | `string` | No | Model to bind to this version |
-| `metadata` | `object` | No | Additional metadata |
+| Field          | Type     | Required | Description                                    |
+| -------------- | -------- | -------- | ---------------------------------------------- |
+| `content`      | `string` | Yes      | Prompt content                                 |
+| `content_hash` | `string` | No       | SHA-256 hash (computed server-side if omitted) |
+| `model_id`     | `string` | No       | Model to bind to this version                  |
+| `metadata`     | `object` | No       | Additional metadata                            |
 
 ```bash
 curl -X POST https://api.zeroeval.com/v1/tasks/support-bot/prompt/versions/ensure \
@@ -160,9 +160,9 @@ Pin a tag (e.g. `production`) to a specific version number. This is how you depl
 
 **Request body:**
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `version` | `int` | Yes | Version number to pin |
+| Field     | Type  | Required | Description           |
+| --------- | ----- | -------- | --------------------- |
+| `version` | `int` | Yes      | Version number to pin |
 
 ```bash
 curl -X POST https://api.zeroeval.com/projects/$PROJECT_ID/prompts/support-bot/tags/production:pin \
@@ -235,8 +235,8 @@ Update the model bound to a version.
 
 **Request body:**
 
-| Field | Type | Description |
-| --- | --- | --- |
+| Field      | Type     | Description              |
+| ---------- | -------- | ------------------------ |
 | `model_id` | `string` | Model identifier to bind |
 
 ---

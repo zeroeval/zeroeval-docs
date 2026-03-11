@@ -14,23 +14,23 @@ npm install zeroeval
 Replace hardcoded prompt strings with `ze.prompt()`. Your existing text becomes the fallback content that's used until an optimized version is available.
 
 ```typescript
-import * as ze from 'zeroeval';
-import { OpenAI } from 'openai';
+import * as ze from "zeroeval";
+import { OpenAI } from "openai";
 
 ze.init();
 const client = ze.wrap(new OpenAI());
 
 const systemPrompt = await ze.prompt({
-  name: 'support-bot',
-  content: 'You are a helpful customer support agent for {{company}}.',
-  variables: { company: 'TechCorp' },
+  name: "support-bot",
+  content: "You are a helpful customer support agent for {{company}}.",
+  variables: { company: "TechCorp" },
 });
 
 const response = await client.chat.completions.create({
-  model: 'gpt-4',
+  model: "gpt-4",
   messages: [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: 'How do I reset my password?' },
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "How do I reset my password?" },
   ],
 });
 ```
@@ -38,7 +38,9 @@ const response = await client.chat.completions.create({
 Every call to `ze.prompt()` is tracked, versioned, and linked to the completions it produces. You'll see production traces at [ZeroEval → Prompts](https://app.zeroeval.com).
 
 <Note>
-When you provide `content`, ZeroEval automatically uses the latest optimized version from your dashboard if one exists. The `content` parameter serves as a fallback for when no optimized versions are available yet.
+  When you provide `content`, ZeroEval automatically uses the latest optimized
+  version from your dashboard if one exists. The `content` parameter serves as a
+  fallback for when no optimized versions are available yet.
 </Note>
 
 ## Version Control
@@ -47,8 +49,8 @@ When you provide `content`, ZeroEval automatically uses the latest optimized ver
 
 ```typescript
 const prompt = await ze.prompt({
-  name: 'customer-support',
-  content: 'You are a helpful assistant.',
+  name: "customer-support",
+  content: "You are a helpful assistant.",
 });
 ```
 
@@ -58,9 +60,9 @@ Uses the latest optimized version if one exists, otherwise falls back to the pro
 
 ```typescript
 const prompt = await ze.prompt({
-  name: 'customer-support',
-  from: 'explicit',
-  content: 'You are a helpful assistant.',
+  name: "customer-support",
+  from: "explicit",
+  content: "You are a helpful assistant.",
 });
 ```
 
@@ -70,8 +72,8 @@ Always uses the provided content. Useful for debugging or A/B testing a specific
 
 ```typescript
 const prompt = await ze.prompt({
-  name: 'customer-support',
-  from: 'latest',
+  name: "customer-support",
+  from: "latest",
 });
 ```
 
@@ -81,19 +83,19 @@ Requires an optimized version to exist. Fails with `PromptRequestError` if none 
 
 ```typescript
 const prompt = await ze.prompt({
-  name: 'customer-support',
-  from: 'a1b2c3d4...',  // 64-char SHA-256 hash
+  name: "customer-support",
+  from: "a1b2c3d4...", // 64-char SHA-256 hash
 });
 ```
 
 ## Parameters
 
-| Parameter | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `name` | `string` | Yes | — | Task name for this prompt |
-| `content` | `string` | No | `undefined` | Prompt content (fallback or explicit) |
-| `from` | `string` | No | `undefined` | `"latest"`, `"explicit"`, or a 64-char SHA-256 hash |
-| `variables` | `Record<string, string>` | No | `undefined` | Template variables for `{{var}}` tokens |
+| Parameter   | Type                     | Required | Default     | Description                                         |
+| ----------- | ------------------------ | -------- | ----------- | --------------------------------------------------- |
+| `name`      | `string`                 | Yes      | —           | Task name for this prompt                           |
+| `content`   | `string`                 | No       | `undefined` | Prompt content (fallback or explicit)               |
+| `from`      | `string`                 | No       | `undefined` | `"latest"`, `"explicit"`, or a 64-char SHA-256 hash |
+| `variables` | `Record<string, string>` | No       | `undefined` | Template variables for `{{var}}` tokens             |
 
 ### Return value
 
@@ -101,11 +103,11 @@ Returns `Promise<string>` -- a decorated prompt string with metadata that integr
 
 ### Errors
 
-| Error | When |
-| --- | --- |
-| `Error` | Both `content` and `from` provided (except `from: "explicit"`), or neither |
-| `PromptRequestError` | `from: "latest"` but no versions exist |
-| `PromptNotFoundError` | `from` is a hash that doesn't exist |
+| Error                 | When                                                                       |
+| --------------------- | -------------------------------------------------------------------------- |
+| `Error`               | Both `content` and `from` provided (except `from: "explicit"`), or neither |
+| `PromptRequestError`  | `from: "latest"` but no versions exist                                     |
+| `PromptNotFoundError` | `from` is a hash that doesn't exist                                        |
 
 ## Model Deployments
 
@@ -113,15 +115,15 @@ When you deploy a model to a prompt version in the dashboard, the SDK automatica
 
 ```typescript
 const systemPrompt = await ze.prompt({
-  name: 'support-bot',
-  content: 'You are a helpful customer support agent.',
+  name: "support-bot",
+  content: "You are a helpful customer support agent.",
 });
 
 const response = await client.chat.completions.create({
-  model: 'gpt-4',  // Gets replaced with the deployed model
+  model: "gpt-4", // Gets replaced with the deployed model
   messages: [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: 'Hello' },
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "Hello" },
   ],
 });
 ```
@@ -132,18 +134,18 @@ Attach feedback to completions to power prompt optimization:
 
 ```typescript
 await ze.sendFeedback({
-  promptSlug: 'support-bot',
+  promptSlug: "support-bot",
   completionId: response.id,
   thumbsUp: true,
-  reason: 'Clear and concise response',
+  reason: "Clear and concise response",
 });
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `promptSlug` | `string` | Yes | Prompt name (same as used in `ze.prompt()`) |
-| `completionId` | `string` | Yes | UUID of the completion |
-| `thumbsUp` | `boolean` | Yes | Positive or negative feedback |
-| `reason` | `string` | No | Explanation of the feedback |
-| `expectedOutput` | `string` | No | What the output should have been |
-| `metadata` | `Record<string, unknown>` | No | Additional metadata |
+| Parameter        | Type                      | Required | Description                                 |
+| ---------------- | ------------------------- | -------- | ------------------------------------------- |
+| `promptSlug`     | `string`                  | Yes      | Prompt name (same as used in `ze.prompt()`) |
+| `completionId`   | `string`                  | Yes      | UUID of the completion                      |
+| `thumbsUp`       | `boolean`                 | Yes      | Positive or negative feedback               |
+| `reason`         | `string`                  | No       | Explanation of the feedback                 |
+| `expectedOutput` | `string`                  | No       | What the output should have been            |
+| `metadata`       | `Record<string, unknown>` | No       | Additional metadata                         |

@@ -8,7 +8,7 @@ Your agent produces thousands of outputs, but without feedback you can't tell wh
 ZeroEval supports two kinds of feedback:
 
 - **Human feedback** -- thumbs-up/down, star ratings, corrections, and expected outputs submitted by users or reviewers
-- **AI feedback** -- automated evaluations from [calibrated judges](/judges/introduction) that score outputs against criteria you define
+- **AI feedback** -- automated evaluations from calibrated judges that score outputs against criteria you define
 
 Both feed into the same system. Feedback attached to completions powers [prompt optimization](/autotune/introduction). Signals attached to spans, traces, and sessions let you filter and monitor quality across your entire system.
 
@@ -16,32 +16,37 @@ Both feed into the same system. Feedback attached to completions powers [prompt 
 
 <Steps>
   <Step title="Agent produces output">
-    Your agent runs and ZeroEval captures the full trace -- inputs, outputs, model, prompt version.
+    Your agent runs and ZeroEval captures the full trace -- inputs, outputs,
+    model, prompt version.
   </Step>
   <Step title="Feedback is attached">
-    Humans review outputs in the dashboard or your app submits feedback programmatically. Judges evaluate outputs automatically based on your criteria.
+    Humans review outputs in the dashboard or your app submits feedback
+    programmatically. Judges evaluate outputs automatically based on your
+    criteria.
   </Step>
   <Step title="Quality becomes measurable">
-    Feedback appears on traces and completions in the console. Filter by thumbs-up rate, judge scores, or custom signals to find patterns.
+    Feedback appears on traces and completions in the console. Filter by
+    thumbs-up rate, judge scores, or custom signals to find patterns.
   </Step>
   <Step title="Improvements are driven by data">
-    Use feedback to optimize prompts, compare models, calibrate judges, and catch regressions before users do.
+    Use feedback to optimize prompts, compare models, calibrate judges, and
+    catch regressions before users do.
   </Step>
 </Steps>
 
 ## Get started
 
 <CardGroup cols={2}>
-  <Card title="Python" icon="python" href="/feedback/python">
-    `ze.set_signal()` and `ze.send_feedback()` for attaching signals and feedback in Python.
+  <Card title="Human Feedback" icon="user" href="/feedback/human-feedback">
+    Collect feedback from reviewers in the dashboard or from end users via
+    like/dislike buttons, ratings, and corrections.
   </Card>
-  <Card title="TypeScript" icon="js" href="/feedback/typescript">
-    `sendSpanSignal()`, `sendTraceSignal()`, and `sendFeedback()` for TypeScript applications.
-  </Card>
-  <Card title="REST API" icon="code" href="/feedback/api-reference">
-    Create, retrieve, update, and delete signals over HTTP from any language.
-  </Card>
-  <Card title="Judges" icon="scale-balanced" href="/judges/introduction">
-    Configure AI evaluators that automatically score every completion against criteria you define.
+  <Card
+    title="AI Feedback (Judges)"
+    icon="scale-balanced"
+    href="/judges/introduction"
+  >
+    Configure AI evaluators that automatically score every completion against
+    criteria you define. Includes built-in judges for common failures.
   </Card>
 </CardGroup>

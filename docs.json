@@ -46,13 +46,8 @@
             "group": "Prompts",
             "pages": [
               "autotune/introduction",
-              {
-                "group": "SDKs",
-                "pages": [
-                  "autotune/sdks/python",
-                  "autotune/sdks/typescript"
-                ]
-              },
+              "autotune/sdks/python",
+              "autotune/sdks/typescript",
               "autotune/reference"
             ]
           },
@@ -60,29 +55,32 @@
             "group": "Feedback",
             "pages": [
               "feedback/introduction",
-              "feedback/python",
-              "feedback/typescript",
-              "feedback/api-reference"
-            ]
-          },
-          {
-            "group": "Judges",
-            "pages": [
-              "judges/introduction",
-              "judges/setup",
-              "judges/multimodal-evaluation",
-              "judges/submit-feedback",
-              "judges/pull-evaluations"
+              {
+                "group": "Human Feedback",
+                "pages": [
+                  "feedback/human-feedback",
+                  "feedback/python",
+                  "feedback/typescript",
+                  "feedback/api-reference"
+                ]
+              },
+              {
+                "group": "AI Feedback (Judges)",
+                "pages": [
+                  "judges/introduction",
+                  "judges/calibration",
+                  "judges/multimodal-evaluation",
+                  "judges/pull-evaluations"
+                ]
+              }
             ]
           },
           {
             "group": "Optimization",
-            "pages": [
-              "autotune/prompts/prompts"
-            ]
+            "pages": ["autotune/prompts/prompts"]
           },
           {
-            "group": "Integrations",
+            "group": "Helpers",
             "pages": [
               "integrations/introduction",
               "integrations/skills",

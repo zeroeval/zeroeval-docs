@@ -17,10 +17,10 @@ import zeroeval as ze
 ze.set_signal(target, signals)
 ```
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `target` | `Span \| str` | A `Span` object, a trace ID string, or a session ID string |
-| `signals` | `dict[str, str \| bool \| int \| float]` | Signal names mapped to values |
+| Parameter | Type                                     | Description                                                |
+| --------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `target`  | `Span \| str`                            | A `Span` object, a trace ID string, or a session ID string |
+| `signals` | `dict[str, str \| bool \| int \| float]` | Signal names mapped to values                              |
 
 **Returns:** `True` if sent successfully, `False` otherwise.
 
@@ -99,18 +99,18 @@ ze.send_feedback(
 )
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `prompt_slug` | `str` | Yes | Prompt name (same as `ze.prompt(name=...)`) |
-| `completion_id` | `str` | Yes | UUID of the completion span |
-| `thumbs_up` | `bool` | Yes | Positive or negative feedback |
-| `reason` | `str` | No | Explanation of the feedback |
-| `expected_output` | `str` | No | What the output should have been |
-| `metadata` | `dict` | No | Additional metadata |
-| `judge_id` | `str` | No | Judge automation ID (for judge feedback) |
-| `expected_score` | `float` | No | Expected score (for scored judges) |
-| `score_direction` | `str` | No | `"too_high"` or `"too_low"` |
-| `criteria_feedback` | `dict` | No | Per-criterion feedback: `{"criterion": {"expected_score": 4.0, "reason": "..."}}` |
+| Parameter           | Type    | Required | Description                                                                       |
+| ------------------- | ------- | -------- | --------------------------------------------------------------------------------- |
+| `prompt_slug`       | `str`   | Yes      | Prompt name (same as `ze.prompt(name=...)`)                                       |
+| `completion_id`     | `str`   | Yes      | UUID of the completion span                                                       |
+| `thumbs_up`         | `bool`  | Yes      | Positive or negative feedback                                                     |
+| `reason`            | `str`   | No       | Explanation of the feedback                                                       |
+| `expected_output`   | `str`   | No       | What the output should have been                                                  |
+| `metadata`          | `dict`  | No       | Additional metadata                                                               |
+| `judge_id`          | `str`   | No       | Judge automation ID (for judge feedback)                                          |
+| `expected_score`    | `float` | No       | Expected score (for scored judges)                                                |
+| `score_direction`   | `str`   | No       | `"too_high"` or `"too_low"`                                                       |
+| `criteria_feedback` | `dict`  | No       | Per-criterion feedback: `{"criterion": {"expected_score": 4.0, "reason": "..."}}` |
 
 ### End-to-end example
 

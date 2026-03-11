@@ -12,32 +12,32 @@ Signals are key-value pairs you attach to spans, traces, or sessions to capture 
 Send signals to whichever entity is currently active -- no IDs needed:
 
 ```typescript
-import * as ze from 'zeroeval';
+import * as ze from "zeroeval";
 
-await ze.withSpan({ name: 'process_request' }, async () => {
+await ze.withSpan({ name: "process_request" }, async () => {
   const result = await processQuery(query);
 
   // Signal on the current span
-  ze.sendSpanSignal('success', true);
-  ze.sendSpanSignal('latency_ms', 150);
+  ze.sendSpanSignal("success", true);
+  ze.sendSpanSignal("latency_ms", 150);
 
   // Signal on the current trace
-  ze.sendTraceSignal('user_satisfied', true);
-  ze.sendTraceSignal('total_cost', 0.045);
+  ze.sendTraceSignal("user_satisfied", true);
+  ze.sendTraceSignal("total_cost", 0.045);
 
   // Signal on the current session
-  ze.sendSessionSignal('converted', true);
-  ze.sendSessionSignal('pages_visited', 5);
+  ze.sendSessionSignal("converted", true);
+  ze.sendSessionSignal("pages_visited", 5);
 });
 ```
 
 Each helper has the same signature:
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `name` | `string` | Yes | Signal name |
-| `value` | `string \| boolean \| number` | Yes | Signal value |
-| `signalType` | `'boolean' \| 'numerical'` | No | Auto-detected if omitted |
+| Parameter    | Type                          | Required | Description              |
+| ------------ | ----------------------------- | -------- | ------------------------ |
+| `name`       | `string`                      | Yes      | Signal name              |
+| `value`      | `string \| boolean \| number` | Yes      | Signal value             |
+| `signalType` | `'boolean' \| 'numerical'`    | No       | Auto-detected if omitted |
 
 ### Span Instance Method
 
@@ -45,8 +45,8 @@ You can also attach signals directly to a span object:
 
 ```typescript
 const span = ze.getCurrentSpan();
-span?.addSignal('accuracy', 0.95);
-span?.addSignal('is_cached', false);
+span?.addSignal("accuracy", 0.95);
+span?.addSignal("is_cached", false);
 ```
 
 ### Direct Signal API
@@ -55,18 +55,18 @@ For sending signals to specific entities by ID:
 
 ```typescript
 // Send to a specific entity
-await ze.sendSignal('span', spanId, 'accuracy', 0.95);
-await ze.sendSignal('trace', traceId, 'model_used', 'gpt-4o');
-await ze.sendSignal('session', sessionId, 'user_tier', 'premium');
+await ze.sendSignal("span", spanId, "accuracy", 0.95);
+await ze.sendSignal("trace", traceId, "model_used", "gpt-4o");
+await ze.sendSignal("session", sessionId, "user_tier", "premium");
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `entityType` | `'session' \| 'trace' \| 'span' \| 'completion'` | Yes | Target entity type |
-| `entityId` | `string` | Yes | Entity UUID |
-| `name` | `string` | Yes | Signal name |
-| `value` | `string \| boolean \| number` | Yes | Signal value |
-| `signalType` | `'boolean' \| 'numerical'` | No | Auto-detected if omitted |
+| Parameter    | Type                                             | Required | Description              |
+| ------------ | ------------------------------------------------ | -------- | ------------------------ |
+| `entityType` | `'session' \| 'trace' \| 'span' \| 'completion'` | Yes      | Target entity type       |
+| `entityId`   | `string`                                         | Yes      | Entity UUID              |
+| `name`       | `string`                                         | Yes      | Signal name              |
+| `value`      | `string \| boolean \| number`                    | Yes      | Signal value             |
+| `signalType` | `'boolean' \| 'numerical'`                       | No       | Auto-detected if omitted |
 
 ### Bulk Signals
 
@@ -74,16 +74,16 @@ Send multiple signals in a single request:
 
 ```typescript
 await ze.sendBulkSignals([
-  { entity_type: 'span', entity_id: spanId, name: 'accuracy', value: 0.95 },
-  { entity_type: 'trace', entity_id: traceId, name: 'successful', value: true },
-  { entity_type: 'session', entity_id: sessionId, name: 'rating', value: 4 },
+  { entity_type: "span", entity_id: spanId, name: "accuracy", value: 0.95 },
+  { entity_type: "trace", entity_id: traceId, name: "successful", value: true },
+  { entity_type: "session", entity_id: sessionId, name: "rating", value: 4 },
 ]);
 ```
 
 ### Retrieve Signals
 
 ```typescript
-const signals = await ze.getEntitySignals('span', spanId);
+const signals = await ze.getEntitySignals("span", spanId);
 // [{ value: 0.95, type: 'numerical' }, ...]
 ```
 
@@ -97,54 +97,54 @@ Attach structured feedback to a specific LLM completion to power prompt optimiza
 
 ```typescript
 await ze.sendFeedback({
-  promptSlug: 'support-bot',
-  completionId: '550e8400-e29b-41d4-a716-446655440000',
+  promptSlug: "support-bot",
+  completionId: "550e8400-e29b-41d4-a716-446655440000",
   thumbsUp: false,
-  reason: 'Response was too verbose',
-  expectedOutput: 'A concise 2-3 sentence response',
+  reason: "Response was too verbose",
+  expectedOutput: "A concise 2-3 sentence response",
 });
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `promptSlug` | `string` | Yes | Prompt name (same as `ze.prompt({ name: ... })`) |
-| `completionId` | `string` | Yes | UUID of the completion span |
-| `thumbsUp` | `boolean` | Yes | Positive or negative feedback |
-| `reason` | `string` | No | Explanation of the feedback |
-| `expectedOutput` | `string` | No | What the output should have been |
-| `metadata` | `Record<string, unknown>` | No | Additional metadata |
-| `judgeId` | `string` | No | Judge automation ID (for judge feedback) |
-| `expectedScore` | `number` | No | Expected score (for scored judges) |
-| `scoreDirection` | `'too_high' \| 'too_low'` | No | Score direction for scored judges |
+| Parameter        | Type                      | Required | Description                                      |
+| ---------------- | ------------------------- | -------- | ------------------------------------------------ |
+| `promptSlug`     | `string`                  | Yes      | Prompt name (same as `ze.prompt({ name: ... })`) |
+| `completionId`   | `string`                  | Yes      | UUID of the completion span                      |
+| `thumbsUp`       | `boolean`                 | Yes      | Positive or negative feedback                    |
+| `reason`         | `string`                  | No       | Explanation of the feedback                      |
+| `expectedOutput` | `string`                  | No       | What the output should have been                 |
+| `metadata`       | `Record<string, unknown>` | No       | Additional metadata                              |
+| `judgeId`        | `string`                  | No       | Judge automation ID (for judge feedback)         |
+| `expectedScore`  | `number`                  | No       | Expected score (for scored judges)               |
+| `scoreDirection` | `'too_high' \| 'too_low'` | No       | Score direction for scored judges                |
 
 ### End-to-end example
 
 ```typescript
-import * as ze from 'zeroeval';
-import { OpenAI } from 'openai';
+import * as ze from "zeroeval";
+import { OpenAI } from "openai";
 
 ze.init();
 const client = ze.wrap(new OpenAI());
 
 const systemPrompt = await ze.prompt({
-  name: 'support-bot',
-  content: 'You are a helpful customer support agent.',
+  name: "support-bot",
+  content: "You are a helpful customer support agent.",
 });
 
 const response = await client.chat.completions.create({
-  model: 'gpt-4',
+  model: "gpt-4",
   messages: [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: 'How do I reset my password?' },
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "How do I reset my password?" },
   ],
 });
 
 const isGood = evaluateResponse(response.choices[0].message.content);
 
 await ze.sendFeedback({
-  promptSlug: 'support-bot',
+  promptSlug: "support-bot",
   completionId: response.id,
   thumbsUp: isGood,
-  reason: isGood ? 'Clear instructions' : 'Missing reset link',
+  reason: isGood ? "Clear instructions" : "Missing reset link",
 });
 ```

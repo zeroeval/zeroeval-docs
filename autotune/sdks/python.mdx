@@ -38,7 +38,9 @@ response = client.chat.completions.create(
 That's it. Every call to `ze.prompt()` is tracked, versioned, and linked to the completions it produces. You'll see production traces at [ZeroEval → Prompts](https://app.zeroeval.com).
 
 <Note>
-When you provide `content`, ZeroEval automatically uses the latest optimized version from your dashboard if one exists. The `content` parameter serves as a fallback for when no optimized versions are available yet.
+  When you provide `content`, ZeroEval automatically uses the latest optimized
+  version from your dashboard if one exists. The `content` parameter serves as a
+  fallback for when no optimized versions are available yet.
 </Note>
 
 ## Version Control
@@ -105,34 +107,34 @@ print(prompt.model)
 
 ### Parameters
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `slug` | `str` | — | Prompt slug (e.g. `"support-triage"`) |
-| `version` | `int` | `None` | Fetch a specific version number |
-| `tag` | `str` | `"latest"` | Tag to fetch (`"production"`, `"latest"`, etc.) |
-| `fallback` | `str` | `None` | Content to use if the prompt is not found |
-| `variables` | `dict` | `None` | Template variables for `{{var}}` tokens |
-| `task_name` | `str` | `None` | Override the task name for tracing |
-| `render` | `bool` | `True` | Whether to render template variables |
-| `missing` | `str` | `"error"` | What to do with missing variables: `"error"` or `"ignore"` |
-| `use_cache` | `bool` | `True` | Use in-memory cache for repeated fetches |
-| `timeout` | `float` | `None` | Request timeout in seconds |
+| Parameter   | Type    | Default    | Description                                                |
+| ----------- | ------- | ---------- | ---------------------------------------------------------- |
+| `slug`      | `str`   | —          | Prompt slug (e.g. `"support-triage"`)                      |
+| `version`   | `int`   | `None`     | Fetch a specific version number                            |
+| `tag`       | `str`   | `"latest"` | Tag to fetch (`"production"`, `"latest"`, etc.)            |
+| `fallback`  | `str`   | `None`     | Content to use if the prompt is not found                  |
+| `variables` | `dict`  | `None`     | Template variables for `{{var}}` tokens                    |
+| `task_name` | `str`   | `None`     | Override the task name for tracing                         |
+| `render`    | `bool`  | `True`     | Whether to render template variables                       |
+| `missing`   | `str`   | `"error"`  | What to do with missing variables: `"error"` or `"ignore"` |
+| `use_cache` | `bool`  | `True`     | Use in-memory cache for repeated fetches                   |
+| `timeout`   | `float` | `None`     | Request timeout in seconds                                 |
 
 ### Return value
 
 Returns a `Prompt` object with:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `content` | `str` | The rendered prompt content |
-| `version` | `int` | Version number |
-| `version_id` | `str` | Version UUID |
-| `tag` | `str` | Tag this version was fetched from |
-| `is_latest` | `bool` | Whether this is the latest version |
-| `model` | `str` | Model bound to this version (if any) |
-| `metadata` | `dict` | Additional metadata |
-| `source` | `str` | `"api"` or `"fallback"` |
-| `content_hash` | `str` | SHA-256 hash of the content |
+| Field          | Type   | Description                          |
+| -------------- | ------ | ------------------------------------ |
+| `content`      | `str`  | The rendered prompt content          |
+| `version`      | `int`  | Version number                       |
+| `version_id`   | `str`  | Version UUID                         |
+| `tag`          | `str`  | Tag this version was fetched from    |
+| `is_latest`    | `bool` | Whether this is the latest version   |
+| `model`        | `str`  | Model bound to this version (if any) |
+| `metadata`     | `dict` | Additional metadata                  |
+| `source`       | `str`  | `"api"` or `"fallback"`              |
+| `content_hash` | `str`  | SHA-256 hash of the content          |
 
 ## Model Deployments
 
@@ -166,11 +168,11 @@ ze.send_feedback(
 )
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `prompt_slug` | `str` | Yes | Prompt name (same as used in `ze.prompt()`) |
-| `completion_id` | `str` | Yes | UUID of the completion |
-| `thumbs_up` | `bool` | Yes | Positive or negative feedback |
-| `reason` | `str` | No | Explanation of the feedback |
-| `expected_output` | `str` | No | What the output should have been |
-| `metadata` | `dict` | No | Additional metadata |
+| Parameter         | Type   | Required | Description                                 |
+| ----------------- | ------ | -------- | ------------------------------------------- |
+| `prompt_slug`     | `str`  | Yes      | Prompt name (same as used in `ze.prompt()`) |
+| `completion_id`   | `str`  | Yes      | UUID of the completion                      |
+| `thumbs_up`       | `bool` | Yes      | Positive or negative feedback               |
+| `reason`          | `str`  | No       | Explanation of the feedback                 |
+| `expected_output` | `str`  | No       | What the output should have been            |
+| `metadata`        | `dict` | No       | Additional metadata                         |

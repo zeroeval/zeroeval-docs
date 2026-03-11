@@ -15,7 +15,9 @@ Use this integration when:
 - You prefer a vendor-neutral instrumentation layer
 
 <Note>
-If you're starting fresh, the [Python SDK](/tracing/sdks/python/setup) or [TypeScript SDK](/tracing/sdks/typescript/setup) provide a simpler setup with automatic LLM instrumentation.
+  If you're starting fresh, the [Python SDK](/tracing/sdks/python/setup) or
+  [TypeScript SDK](/tracing/sdks/typescript/setup) provide a simpler setup with
+  automatic LLM instrumentation.
 </Note>
 
 ## Endpoint Reference
@@ -24,10 +26,10 @@ If you're starting fresh, the [Python SDK](/tracing/sdks/python/setup) or [TypeS
 POST https://api.zeroeval.com/v1/traces
 ```
 
-| Header | Value |
-| --- | --- |
-| `Authorization` | `Bearer YOUR_ZEROEVAL_API_KEY` |
-| `Content-Type` | `application/json` or `application/x-protobuf` |
+| Header          | Value                                          |
+| --------------- | ---------------------------------------------- |
+| `Authorization` | `Bearer YOUR_ZEROEVAL_API_KEY`                 |
+| `Content-Type`  | `application/json` or `application/x-protobuf` |
 
 The endpoint accepts the standard `ExportTraceServiceRequest` payload defined in the [OTLP specification](https://opentelemetry.io/docs/specs/otlp/). Spans are converted to ZeroEval's internal format -- trace IDs, parent-child relationships, attributes, and status are all preserved.
 
@@ -150,28 +152,28 @@ spec:
         app: otel-collector
     spec:
       containers:
-      - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:latest
-        args: ["--config=/etc/config.yaml"]
-        env:
-        - name: ZEROEVAL_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: zeroeval-secret
-              key: api-key
-        ports:
-        - containerPort: 4317
-          name: otlp-grpc
-        - containerPort: 4318
-          name: otlp-http
-        volumeMounts:
-        - name: config
-          mountPath: /etc/config.yaml
-          subPath: config.yaml
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/config.yaml"]
+          env:
+            - name: ZEROEVAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zeroeval-secret
+                  key: api-key
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config.yaml
+              subPath: config.yaml
       volumes:
-      - name: config
-        configMap:
-          name: otel-collector-config
+        - name: config
+          configMap:
+            name: otel-collector-config
 ---
 apiVersion: v1
 kind: Service
@@ -181,10 +183,10 @@ spec:
   selector:
     app: otel-collector
   ports:
-  - name: otlp-grpc
-    port: 4317
-  - name: otlp-http
-    port: 4318
+    - name: otlp-grpc
+      port: 4317
+    - name: otlp-http
+      port: 4318
 ```
 
 </Accordion>
@@ -238,14 +240,14 @@ trace.set_tracer_provider(provider)
 ## Option 3: Direct from Node.js
 
 ```typescript
-import { NodeTracerProvider } from '@opentelemetry/sdk-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeTracerProvider } from "@opentelemetry/sdk-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 
 const exporter = new OTLPTraceExporter({
-  url: 'https://api.zeroeval.com/v1/traces',
+  url: "https://api.zeroeval.com/v1/traces",
   headers: {
-    Authorization: 'Bearer YOUR_ZEROEVAL_API_KEY',
+    Authorization: "Bearer YOUR_ZEROEVAL_API_KEY",
   },
 });
 
@@ -260,36 +262,36 @@ provider.register();
 
 ZeroEval maps standard OpenTelemetry span attributes to its internal format:
 
-| OTLP Attribute | ZeroEval Field | Notes |
-| --- | --- | --- |
-| `span.name` | `name` | Span name |
-| `span.kind` | `kind` | Mapped to `generic`, `llm`, etc. |
-| `span.status` | `status` | `ok`, `error`, `unset` |
-| `span.start_time` | `started_at` | Nanosecond timestamp converted to ISO 8601 |
-| `span.end_time` | `ended_at` | Nanosecond timestamp converted to ISO 8601 |
-| `span.trace_id` | `trace_id` | Hex-encoded trace ID |
-| `span.parent_span_id` | `parent_span_id` | Hex-encoded span ID |
-| `span.attributes.*` | `attributes` | All attributes preserved |
-| `resource.service.name` | Service identification | Used for grouping |
+| OTLP Attribute          | ZeroEval Field         | Notes                                      |
+| ----------------------- | ---------------------- | ------------------------------------------ |
+| `span.name`             | `name`                 | Span name                                  |
+| `span.kind`             | `kind`                 | Mapped to `generic`, `llm`, etc.           |
+| `span.status`           | `status`               | `ok`, `error`, `unset`                     |
+| `span.start_time`       | `started_at`           | Nanosecond timestamp converted to ISO 8601 |
+| `span.end_time`         | `ended_at`             | Nanosecond timestamp converted to ISO 8601 |
+| `span.trace_id`         | `trace_id`             | Hex-encoded trace ID                       |
+| `span.parent_span_id`   | `parent_span_id`       | Hex-encoded span ID                        |
+| `span.attributes.*`     | `attributes`           | All attributes preserved                   |
+| `resource.service.name` | Service identification | Used for grouping                          |
 
 ### LLM Spans
 
 To get LLM-specific features (cost calculation, token tracking), set these attributes on your spans:
 
-| Attribute | Description |
-| --- | --- |
-| `llm.provider` or `gen_ai.system` | Provider name (`openai`, `anthropic`, etc.) |
-| `llm.model` or `gen_ai.request.model` | Model identifier |
-| `llm.input_tokens` or `gen_ai.usage.prompt_tokens` | Input token count |
-| `llm.output_tokens` or `gen_ai.usage.completion_tokens` | Output token count |
+| Attribute                                               | Description                                 |
+| ------------------------------------------------------- | ------------------------------------------- |
+| `llm.provider` or `gen_ai.system`                       | Provider name (`openai`, `anthropic`, etc.) |
+| `llm.model` or `gen_ai.request.model`                   | Model identifier                            |
+| `llm.input_tokens` or `gen_ai.usage.prompt_tokens`      | Input token count                           |
+| `llm.output_tokens` or `gen_ai.usage.completion_tokens` | Output token count                          |
 
 ### Sessions
 
 Attach session context to your OTLP spans via attributes:
 
-| Attribute | Description |
-| --- | --- |
-| `zeroeval.session.id` | Session ID for grouping traces |
-| `zeroeval.session.name` | Human-readable session name |
+| Attribute               | Description                    |
+| ----------------------- | ------------------------------ |
+| `zeroeval.session.id`   | Session ID for grouping traces |
+| `zeroeval.session.name` | Human-readable session name    |
 
 The `ZeroEvalOTLPProvider` stamps these automatically when you configure a session via environment variables (`ZEROEVAL_SESSION_ID`, `ZEROEVAL_SESSION_NAME`).

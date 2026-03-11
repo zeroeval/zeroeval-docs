@@ -23,14 +23,14 @@ Attach a signal to a span, trace, session, or completion.
 
 **Request body:**
 
-| Field | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `entity_type` | `string` | Yes | — | `session`, `trace`, `span`, or `completion` |
-| `entity_id` | `string` | Yes | — | UUID of the target entity |
-| `name` | `string` | Yes | — | Signal name (e.g. `user_satisfaction`) |
-| `value` | `string \| bool \| int \| float` | Yes | — | Signal value |
-| `signal_type` | `string` | No | `"boolean"` | `boolean` or `numerical` |
-| `project_id` | `string` | No | `null` | Project ID (inferred from auth if omitted) |
+| Field         | Type                             | Required | Default     | Description                                 |
+| ------------- | -------------------------------- | -------- | ----------- | ------------------------------------------- |
+| `entity_type` | `string`                         | Yes      | —           | `session`, `trace`, `span`, or `completion` |
+| `entity_id`   | `string`                         | Yes      | —           | UUID of the target entity                   |
+| `name`        | `string`                         | Yes      | —           | Signal name (e.g. `user_satisfaction`)      |
+| `value`       | `string \| bool \| int \| float` | Yes      | —           | Signal value                                |
+| `signal_type` | `string`                         | No       | `"boolean"` | `boolean` or `numerical`                    |
+| `project_id`  | `string`                         | No       | `null`      | Project ID (inferred from auth if omitted)  |
 
 ```bash
 curl -X POST https://api.zeroeval.com/signals/ \
@@ -101,10 +101,10 @@ GET /signals/entity/{entity_type}/{entity_id}
 
 Retrieve all signals attached to an entity.
 
-| Path Parameter | Description |
-| --- | --- |
-| `entity_type` | `session`, `trace`, `span`, or `completion` |
-| `entity_id` | UUID of the entity |
+| Path Parameter | Description                                 |
+| -------------- | ------------------------------------------- |
+| `entity_type`  | `session`, `trace`, `span`, or `completion` |
+| `entity_id`    | UUID of the entity                          |
 
 **Response:** 200
 
@@ -131,10 +131,10 @@ Update the value of an existing signal.
 
 **Request body:**
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `value` | `string \| bool \| int \| float` | Yes | New signal value |
-| `signal_type` | `string` | No | `boolean` or `numerical` |
+| Field         | Type                             | Required | Description              |
+| ------------- | -------------------------------- | -------- | ------------------------ |
+| `value`       | `string \| bool \| int \| float` | Yes      | New signal value         |
+| `signal_type` | `string`                         | No       | `boolean` or `numerical` |
 
 **Response:** 200
 
@@ -181,16 +181,16 @@ Submit structured feedback for a specific LLM completion. This feedback powers p
 
 **Request body:**
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `thumbs_up` | `bool` | Yes | Positive or negative feedback |
-| `reason` | `string` | No | Explanation of the feedback |
-| `expected_output` | `string` | No | What the output should have been |
-| `metadata` | `object` | No | Additional metadata |
-| `judge_id` | `string` | No | Judge automation ID |
-| `expected_score` | `float` | No | Expected score (for scored judges) |
-| `score_direction` | `string` | No | `"too_high"` or `"too_low"` |
-| `criteria_feedback` | `object` | No | Per-criterion feedback |
+| Field               | Type     | Required | Description                        |
+| ------------------- | -------- | -------- | ---------------------------------- |
+| `thumbs_up`         | `bool`   | Yes      | Positive or negative feedback      |
+| `reason`            | `string` | No       | Explanation of the feedback        |
+| `expected_output`   | `string` | No       | What the output should have been   |
+| `metadata`          | `object` | No       | Additional metadata                |
+| `judge_id`          | `string` | No       | Judge automation ID                |
+| `expected_score`    | `float`  | No       | Expected score (for scored judges) |
+| `score_direction`   | `string` | No       | `"too_high"` or `"too_low"`        |
+| `criteria_feedback` | `object` | No       | Per-criterion feedback             |
 
 ```bash
 curl -X POST https://api.zeroeval.com/v1/prompts/support-bot/completions/550e8400-.../feedback \
@@ -218,5 +218,6 @@ curl -X POST https://api.zeroeval.com/v1/prompts/support-bot/completions/550e840
 ```
 
 <Note>
-If feedback already exists for the same completion from the same user, it will be updated with the new values.
+  If feedback already exists for the same completion from the same user, it will
+  be updated with the new values.
 </Note>

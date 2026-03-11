@@ -1,6 +1,6 @@
 ---
-title: 'Reference'
-description: 'Complete API reference for the Python SDK'
+title: "Reference"
+description: "Complete API reference for the Python SDK"
 ---
 
 ## Installation
@@ -31,21 +31,22 @@ def init(
 ) -> None
 ```
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `api_key` | `str` | `None` | API key. Falls back to `ZEROEVAL_API_KEY` env var |
-| `workspace_name` | `str` | `"Personal Organization"` | Deprecated -- use `organization_name` |
-| `organization_name` | `str` | `None` | Organization name |
-| `debug` | `bool` | `False` | Enable debug logging with colors |
-| `api_url` | `str` | `"https://api.zeroeval.com"` | API endpoint URL |
-| `disabled_integrations` | `list[str]` | `None` | Integrations to disable (e.g. `["langchain"]`) |
-| `enabled_integrations` | `list[str]` | `None` | Only enable these integrations |
-| `setup_otlp` | `bool` | `True` | Configure OpenTelemetry OTLP export |
-| `service_name` | `str` | `"zeroeval-app"` | OTLP service name |
-| `tags` | `dict[str, str]` | `None` | Global tags applied to all spans |
-| `sampling_rate` | `float` | `None` | Sampling rate 0.0-1.0 (1.0 = sample all) |
+| Parameter               | Type             | Default                      | Description                                       |
+| ----------------------- | ---------------- | ---------------------------- | ------------------------------------------------- |
+| `api_key`               | `str`            | `None`                       | API key. Falls back to `ZEROEVAL_API_KEY` env var |
+| `workspace_name`        | `str`            | `"Personal Organization"`    | Deprecated -- use `organization_name`             |
+| `organization_name`     | `str`            | `None`                       | Organization name                                 |
+| `debug`                 | `bool`           | `False`                      | Enable debug logging with colors                  |
+| `api_url`               | `str`            | `"https://api.zeroeval.com"` | API endpoint URL                                  |
+| `disabled_integrations` | `list[str]`      | `None`                       | Integrations to disable (e.g. `["langchain"]`)    |
+| `enabled_integrations`  | `list[str]`      | `None`                       | Only enable these integrations                    |
+| `setup_otlp`            | `bool`           | `True`                       | Configure OpenTelemetry OTLP export               |
+| `service_name`          | `str`            | `"zeroeval-app"`             | OTLP service name                                 |
+| `tags`                  | `dict[str, str]` | `None`                       | Global tags applied to all spans                  |
+| `sampling_rate`         | `float`          | `None`                       | Sampling rate 0.0-1.0 (1.0 = sample all)          |
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -76,6 +77,7 @@ Decorator and context manager for creating spans around code blocks.
 ```
 
 **Parameters:**
+
 - `name` (str): Name of the span
 - `session_id` (str, optional): **Deprecated** - Use `session` parameter instead
 - `session` (Union[str, dict], optional): Session information. Can be:
@@ -87,6 +89,7 @@ Decorator and context manager for creating spans around code blocks.
 - `tags` (dict, optional): Tags to attach to the span
 
 **Usage as Decorator:**
+
 ```python
 import zeroeval as ze
 
@@ -107,6 +110,7 @@ def user_action():
 ```
 
 **Usage as Context Manager:**
+
 ```python
 import zeroeval as ze
 
@@ -127,10 +131,12 @@ Decorator that attaches dataset and model information to a function.
 ```
 
 **Parameters:**
+
 - `dataset` (Dataset, optional): Dataset to use for the experiment
 - `model` (str, optional): Model identifier
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -159,11 +165,13 @@ Dataset(
 ```
 
 **Parameters:**
+
 - `name` (str): The name of the dataset
 - `data` (list[dict]): A list of dictionaries containing the data
 - `description` (str, optional): A description of the dataset
 
 **Example:**
+
 ```python
 dataset = Dataset(
     name="Capitals",
@@ -186,6 +194,7 @@ def push(self, create_new_version: bool = False) -> Dataset
 ```
 
 **Parameters:**
+
 - `self`: The Dataset instance
 - `create_new_version` (bool, optional): For backward compatibility. This parameter is no longer needed as new versions are automatically created when a dataset name already exists. Defaults to False
 
@@ -205,6 +214,7 @@ def pull(
 ```
 
 **Parameters:**
+
 - `cls`: The Dataset class itself (automatically provided when using `@classmethod`)
 - `dataset_name` (str): The name of the dataset to pull from the backend
 - `version_number` (int, optional): Specific version number to pull. If not provided, pulls the latest version
@@ -220,6 +230,7 @@ def add_rows(self, new_rows: list[dict[str, Any]]) -> None
 ```
 
 **Parameters:**
+
 - `self`: The Dataset instance
 - `new_rows` (list[dict]): A list of dictionaries representing the rows to add
 
@@ -237,6 +248,7 @@ def add_image(
 ```
 
 **Parameters:**
+
 - `self`: The Dataset instance
 - `row_index` (int): Index of the row to update (0-based)
 - `column_name` (str): Name of the column to add the image to
@@ -256,6 +268,7 @@ def add_audio(
 ```
 
 **Parameters:**
+
 - `self`: The Dataset instance
 - `row_index` (int): Index of the row to update (0-based)
 - `column_name` (str): Name of the column to add the audio to
@@ -276,6 +289,7 @@ def add_media_url(
 ```
 
 **Parameters:**
+
 - `self`: The Dataset instance
 - `row_index` (int): Index of the row to update (0-based)
 - `column_name` (str): Name of the column to add the media URL to
@@ -339,6 +353,7 @@ Experiment(
 ```
 
 **Parameters:**
+
 - `dataset` (Dataset): The dataset to run the experiment on
 - `task` (Callable): Function that processes each row and returns output
 - `evaluators` (list[Callable], optional): List of evaluator functions that take (row, output) and return evaluation result
@@ -346,6 +361,7 @@ Experiment(
 - `description` (str, optional): Description of the experiment. Defaults to task function's docstring
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -391,6 +407,7 @@ def run(
 ```
 
 **Parameters:**
+
 - `self`: The Experiment instance
 - `subset` (list[dict], optional): Subset of dataset rows to run the experiment on. If None, runs on entire dataset
 
@@ -409,6 +426,7 @@ def run_task(
 ```
 
 **Parameters:**
+
 - `self`: The Experiment instance
 - `subset` (list[dict], optional): Subset of dataset rows to run the task on. If None, runs on entire dataset
 - `raise_on_error` (bool, optional): If True, raises exceptions encountered during task execution. If False, captures errors. Defaults to False
@@ -428,6 +446,7 @@ def run_evaluators(
 ```
 
 **Parameters:**
+
 - `self`: The Experiment instance
 - `evaluators` (list[Callable], optional): List of evaluator functions to run. If None, uses evaluators from the Experiment instance
 - `results` (list[ExperimentResult], optional): List of results to evaluate. If None, uses results from the Experiment instance
@@ -453,6 +472,7 @@ def set_io(
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `input_data` (str, optional): Input data to attach to the span. Will be converted to string if not already
 - `output_data` (str, optional): Output data to attach to the span. Will be converted to string if not already
@@ -466,6 +486,7 @@ def set_tags(self, tags: dict[str, str]) -> None
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `tags` (dict[str, str]): Dictionary of tags to set on the span
 
@@ -478,6 +499,7 @@ def set_attributes(self, attributes: dict[str, Any]) -> None
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `attributes` (dict[str, Any]): Dictionary of attributes to set on the span
 
@@ -495,6 +517,7 @@ def set_error(
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `code` (str): Error code or exception class name
 - `message` (str): Error message
@@ -516,6 +539,7 @@ def add_screenshot(
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `base64_data` (str): Base64 encoded image data. Accepts raw base64 or data URL format (`data:image/png;base64,...`)
 - `viewport` (str, optional): Viewport type - `"desktop"`, `"mobile"`, or `"tablet"`. Defaults to `"desktop"`
@@ -524,6 +548,7 @@ def add_screenshot(
 - `label` (str, optional): Human-readable description of the screenshot
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -536,7 +561,7 @@ with ze.span(name="browser_test", tags={"test": "visual"}) as span:
         height=1080,
         label="Homepage - Desktop"
     )
-    
+
     # Also capture mobile view
     span.add_screenshot(
         base64_data=mobile_screenshot_base64,
@@ -545,7 +570,7 @@ with ze.span(name="browser_test", tags={"test": "visual"}) as span:
         height=812,
         label="Homepage - iPhone"
     )
-    
+
     span.set_io(
         input_data="Navigate to homepage",
         output_data="Captured viewport screenshots"
@@ -566,25 +591,27 @@ def add_image(
 ```
 
 **Parameters:**
+
 - `self`: The Span instance
 - `base64_data` (str): Base64 encoded image data. Accepts raw base64 or data URL format
 - `label` (str, optional): Human-readable description of the image
 - `metadata` (dict, optional): Additional metadata to store with the image
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
 with ze.span(name="chart_generation") as span:
     # Generate a chart and attach it
     chart_base64 = generate_chart(data)
-    
+
     span.add_image(
         base64_data=chart_base64,
         label="Monthly Revenue Chart",
         metadata={"chart_type": "bar", "data_points": 12}
     )
-    
+
     span.set_io(
         input_data="Generate revenue chart for Q4",
         output_data="Chart generated with 12 data points"
@@ -596,6 +623,7 @@ with ze.span(name="chart_generation") as span:
 If your images are already hosted externally, you can pass an HTTPS URL instead of base64 data. ZeroEval will download, validate, and copy the image into its own storage during ingestion.
 
 Supported URL sources:
+
 - **S3 presigned URLs** (`*.amazonaws.com` with valid authentication parameters)
 - **CDN URLs** from trusted domains
 
@@ -650,7 +678,9 @@ with ze.span(name="product_image_check") as span:
 ```
 
 <Note>
-Images attached to spans can be evaluated by LLM judges configured for multimodal evaluation. See the [Multimodal Evaluation](/judges/multimodal-evaluation) guide for setup instructions.
+  Images attached to spans can be evaluated by LLM judges configured for
+  multimodal evaluation. See the [Multimodal
+  Evaluation](/judges/multimodal-evaluation) guide for setup instructions.
 </Note>
 
 ## Context Functions
@@ -697,12 +727,14 @@ def set_tag(
 ```
 
 **Parameters:**
+
 - `target`: The target to set tags on
   - `Span`: Sets tags on the specific span
   - `str`: Sets tags on the trace (if valid trace ID) or session (if valid session ID)
 - `tags` (dict[str, str]): Dictionary of tags to set
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -729,6 +761,7 @@ def set_signal(
 ```
 
 **Parameters:**
+
 - `target`: The entity to attach signals to
   - `Span`: Sends signals to the specific span
   - `str`: Sends signals to the trace (if active trace ID) or session
@@ -737,6 +770,7 @@ def set_signal(
 **Returns:** True if signals were sent successfully, False otherwise
 
 **Example:**
+
 ```python
 import zeroeval as ze
 
@@ -778,6 +812,7 @@ def send_feedback(
 ```
 
 **Notes:**
+
 - Existing usage without `criteria_feedback` is unchanged.
 - `criteria_feedback` is optional and supported for scored judges.
 - `judge_id` is required when sending `expected_score`, `score_direction`, or `criteria_feedback`.
@@ -794,6 +829,7 @@ def get_judge_criteria(
 ```
 
 **Returns:**
+
 - `judge_id`
 - `evaluation_type`
 - `score_min`, `score_max`, `pass_threshold`
@@ -823,16 +859,16 @@ zeroeval setup
 
 Set before importing ZeroEval to configure default behavior.
 
-| Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `ZEROEVAL_API_KEY` | string | `""` | API key for authentication |
-| `ZEROEVAL_API_URL` | string | `"https://api.zeroeval.com"` | API endpoint URL |
-| `ZEROEVAL_WORKSPACE_NAME` | string | `"Personal Workspace"` | Workspace name |
-| `ZEROEVAL_SESSION_ID` | string | auto-generated | Session ID for grouping traces |
-| `ZEROEVAL_SESSION_NAME` | string | `""` | Human-readable session name |
-| `ZEROEVAL_SAMPLING_RATE` | float | `"1.0"` | Sampling rate (0.0-1.0) |
-| `ZEROEVAL_DISABLED_INTEGRATIONS` | string | `""` | Comma-separated integrations to disable |
-| `ZEROEVAL_DEBUG` | boolean | `"false"` | Enable debug logging |
+| Variable                         | Type    | Default                      | Description                             |
+| -------------------------------- | ------- | ---------------------------- | --------------------------------------- |
+| `ZEROEVAL_API_KEY`               | string  | `""`                         | API key for authentication              |
+| `ZEROEVAL_API_URL`               | string  | `"https://api.zeroeval.com"` | API endpoint URL                        |
+| `ZEROEVAL_WORKSPACE_NAME`        | string  | `"Personal Workspace"`       | Workspace name                          |
+| `ZEROEVAL_SESSION_ID`            | string  | auto-generated               | Session ID for grouping traces          |
+| `ZEROEVAL_SESSION_NAME`          | string  | `""`                         | Human-readable session name             |
+| `ZEROEVAL_SAMPLING_RATE`         | float   | `"1.0"`                      | Sampling rate (0.0-1.0)                 |
+| `ZEROEVAL_DISABLED_INTEGRATIONS` | string  | `""`                         | Comma-separated integrations to disable |
+| `ZEROEVAL_DEBUG`                 | boolean | `"false"`                    | Enable debug logging                    |
 
 ```bash
 export ZEROEVAL_API_KEY="ze_1234567890abcdef"
@@ -844,13 +880,13 @@ export ZEROEVAL_DEBUG="true"
 
 Configure after initialization via `ze.tracer.configure()`.
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `flush_interval` | `float` | `1.0` | Flush frequency in seconds |
-| `max_spans` | `int` | `20` | Buffer size before forced flush |
-| `collect_code_details` | `bool` | `True` | Capture code details in spans |
-| `integrations` | `dict[str, bool]` | `{}` | Enable/disable specific integrations |
-| `sampling_rate` | `float` | `None` | Sampling rate (0.0-1.0) |
+| Parameter              | Type              | Default | Description                          |
+| ---------------------- | ----------------- | ------- | ------------------------------------ |
+| `flush_interval`       | `float`           | `1.0`   | Flush frequency in seconds           |
+| `max_spans`            | `int`             | `20`    | Buffer size before forced flush      |
+| `collect_code_details` | `bool`            | `True`  | Capture code details in spans        |
+| `integrations`         | `dict[str, bool]` | `{}`    | Enable/disable specific integrations |
+| `sampling_rate`        | `float`           | `None`  | Sampling rate (0.0-1.0)              |
 
 ```python
 ze.tracer.configure(
@@ -863,14 +899,14 @@ ze.tracer.configure(
 
 ## Available Integrations
 
-| Integration | Name | Auto-Instruments |
-| --- | --- | --- |
-| `OpenAIIntegration` | `"openai"` | OpenAI client calls |
-| `GeminiIntegration` | `"gemini"` | Google Gemini calls |
+| Integration            | Name          | Auto-Instruments     |
+| ---------------------- | ------------- | -------------------- |
+| `OpenAIIntegration`    | `"openai"`    | OpenAI client calls  |
+| `GeminiIntegration`    | `"gemini"`    | Google Gemini calls  |
 | `LangChainIntegration` | `"langchain"` | LangChain components |
-| `LangGraphIntegration` | `"langgraph"` | LangGraph workflows |
-| `HttpxIntegration` | `"httpx"` | HTTPX requests |
-| `VocodeIntegration` | `"vocode"` | Vocode voice SDK |
+| `LangGraphIntegration` | `"langgraph"` | LangGraph workflows  |
+| `HttpxIntegration`     | `"httpx"`     | HTTPX requests       |
+| `VocodeIntegration`    | `"vocode"`    | Vocode voice SDK     |
 
 Control integrations via:
 

@@ -1,0 +1,126 @@
+---
+title: "Introduction"
+description: "Collect feedback from reviewers in the dashboard or from end users via the API"
+---
+
+Human feedback captures what automated metrics can't -- whether the agent's response actually helped the user. You can collect it from internal reviewers using the ZeroEval dashboard, or from end users in your own application via the API.
+
+## Dashboard Review
+
+Reviewers can browse completions directly in the ZeroEval console and submit feedback without writing any code.
+
+1. Navigate to **Prompts → [your task]** in the dashboard
+2. Open the **Suggestions** tab to see incoming completions
+3. Review each output and provide thumbs-up or thumbs-down
+4. Optionally add a reason and the expected output
+
+Dashboard feedback is linked to the exact prompt version and model that produced the completion, so you can track quality per version over time.
+
+## In-App Feedback
+
+Add like/dislike buttons, star ratings, or other feedback controls directly in your application. Use the SDK or REST API to send feedback tied to specific completions.
+
+### Thumbs-up / Thumbs-down
+
+<CodeGroup>
+
+```python Python
+import zeroeval as ze
+
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id=response.id,
+    thumbs_up=user_clicked_thumbs_up,
+    reason="User found the answer helpful"
+)
+```
+
+```typescript TypeScript
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: response.id,
+  thumbsUp: userClickedThumbsUp,
+  reason: "User found the answer helpful",
+});
+```
+
+```bash cURL
+curl -X POST "https://api.zeroeval.com/v1/prompts/support-bot/completions/$COMPLETION_ID/feedback" \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "thumbs_up": true,
+    "reason": "User found the answer helpful"
+  }'
+```
+
+</CodeGroup>
+
+### With expected output
+
+When a user corrects the agent, capture what the response should have been:
+
+<CodeGroup>
+
+```python Python
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id=response.id,
+    thumbs_up=False,
+    reason="Wrong link provided",
+    expected_output="The password reset page is at https://app.example.com/reset"
+)
+```
+
+```typescript TypeScript
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: response.id,
+  thumbsUp: false,
+  reason: "Wrong link provided",
+  expectedOutput: "The password reset page is at https://app.example.com/reset",
+});
+```
+
+</CodeGroup>
+
+Expected outputs are used during [prompt optimization](/autotune/prompts/prompts) to generate better prompt variants.
+
+### Using signals for custom metrics
+
+For feedback that doesn't fit the thumbs-up/down model -- star ratings, NPS scores, task completion -- use signals:
+
+<CodeGroup>
+
+```python Python
+span = ze.get_current_span()
+ze.set_signal(span, {
+    "star_rating": 4,
+    "task_completed": True,
+    "time_on_task_sec": 12.5
+})
+```
+
+```typescript TypeScript
+ze.sendSpanSignal("star_rating", 4);
+ze.sendSpanSignal("task_completed", true);
+ze.sendSpanSignal("time_on_task_sec", 12.5);
+```
+
+</CodeGroup>
+
+## Feedback Links
+
+For collecting feedback from users who don't have a ZeroEval account (e.g. customers, external reviewers), create a feedback link that anyone can use:
+
+```bash
+curl -X POST https://api.zeroeval.com/feedback-links \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt_slug": "support-bot",
+    "link_type": "prompt_completion"
+  }'
+```
+
+Share the returned URL with reviewers. They can submit feedback without needing API access or a ZeroEval account.
