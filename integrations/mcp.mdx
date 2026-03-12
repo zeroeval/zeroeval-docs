@@ -109,12 +109,6 @@ Proposal tools are read-only helpers that gather evidence or prepare the exact n
 | `prepare-prompt-optimization` | Propose the exact `start-prompt-optimization` call to make |
 | `prepare-judge-optimization` | Propose the exact `start-judge-optimization` call to make |
 
-## Good to know
-
-- **Single-project scope.** Each MCP connection is tied to one ZeroEval project. To work with a different project, use a different API key.
-- **Optimization prerequisites.** Prompts must have been used with `ze.prompt()` before optimization is available. Judges need a linked tuning task.
-- **Proposal tools are read-only.** The `investigate-*` and `prepare-*` tools never mutate state. They recommend the next tool call for the agent to confirm and execute.
-
 <CardGroup cols={2}>
   <Card title="Tracing quickstart" icon="rocket" href="/tracing/quickstart">
     Get your first trace in under 5 minutes
