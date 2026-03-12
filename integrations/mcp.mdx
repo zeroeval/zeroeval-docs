@@ -1,12 +1,131 @@
 ---
 title: "MCP"
-description: "Model Context Protocol server for ZeroEval"
+description: "Connect AI agents to ZeroEval via the Model Context Protocol"
 ---
 
-<Note>
-MCP integration is coming soon.
-</Note>
+The ZeroEval MCP server lets AI agents inspect traces, manage judges and prompts, submit feedback, run optimizations, and deploy to production, all without leaving the agent context. It speaks the [Model Context Protocol](https://modelcontextprotocol.io), so any MCP-compatible client (Cursor, Claude Code, Windsurf, etc.) can connect directly.
 
-We're building an MCP server so AI agents can query traces, manage prompts, and run evaluations through ZeroEval without leaving the agent context.
+## Setup
 
-Want to know when it ships? Email [founders@zeroeval.com](mailto:founders@zeroeval.com).
+The fastest way to get started is to point your MCP client at the hosted server. No installation required.
+
+### Cursor
+
+Add this to your Cursor MCP settings (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "zeroeval": {
+      "url": "https://mcp.zeroeval.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-project-api-key>"
+      }
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add zeroeval --transport http https://mcp.zeroeval.com/mcp \
+  --header "Authorization: Bearer <your-project-api-key>"
+```
+
+### Other MCP clients
+
+Any client that supports HTTP transport works. Set the server URL to `https://mcp.zeroeval.com/mcp` and pass your project API key in the `Authorization: Bearer <key>` header.
+
+<Tip>
+Get your project API key from the [ZeroEval dashboard](https://app.zeroeval.com) under **Settings → API Keys**.
+</Tip>
+
+## Resources
+
+The server exposes two MCP resources for introspection:
+
+| URI | Description |
+|-----|-------------|
+| `config://server-context` | Redacted server config: auth mode, base URL, project scope, and feature flags |
+| `docs://capabilities` | Canonical tool and resource inventory with annotations and output contract summary |
+
+## Tools
+
+### Read tools
+
+Read tools are safe to call at any time. They do not modify state.
+
+| Tool | Description |
+|------|-------------|
+| `list-traces` | List recent traces |
+| `get-trace` | Get a trace with its spans |
+| `list-judges` | List all judges |
+| `get-judge` | Get judge details and linkage state |
+| `list-judge-evaluations` | List evaluations from a judge |
+| `get-judge-criteria` | Get scoring criteria for a judge |
+| `list-prompts` | List all prompts |
+| `get-prompt` | Get a prompt at a specific version or tag |
+| `list-prompt-versions` | List all versions of a prompt |
+| `list-optimization-runs` | List optimization runs for a task |
+| `get-optimization-run` | Get run details with candidate prompt and metrics |
+| `get-project-summary` | High-level project monitoring summary |
+
+### Write tools
+
+All write tools require `confirm: true` in the request and are annotated with `destructiveHint: true` so MCP clients can prompt for user approval before calling.
+
+| Tool | Description |
+|------|-------------|
+| `create-judge` | Create a new judge |
+| `link-judge-to-prompt` | Link a judge to a prompt |
+| `unlink-judge-from-prompt` | Remove a judge's prompt link |
+| `create-judge-feedback` | Submit feedback on a judge evaluation |
+| `create-prompt-feedback` | Submit feedback on a prompt completion |
+| `start-prompt-optimization` | Start a prompt optimization run |
+| `start-judge-optimization` | Start a judge optimization run |
+| `cancel-optimization-run` | Cancel a running optimization |
+
+### Deploy
+
+Production deploys always require two steps:
+
+1. **Preview:** Call `preview-optimization-deploy` with the run ID. This verifies the run succeeded, summarizes the candidate vs current production, and returns a time-limited confirmation receipt.
+2. **Deploy:** Call `deploy-optimization-run` with `confirm: true` and the receipt from preview. The server re-reads current state and rejects the deploy if anything drifted since the preview.
+
+| Tool | Description |
+|------|-------------|
+| `preview-optimization-deploy` | Preview what deploying a run would do (read-only) |
+| `deploy-optimization-run` | Deploy a succeeded run to production (requires receipt + confirm) |
+
+### Proposal tools
+
+Proposal tools are read-only helpers that gather evidence or prepare the exact next mutating call without executing it.
+
+| Tool | Description |
+|------|-------------|
+| `investigate-prompt-issues` | Gather evidence about prompt state and recommend next steps |
+| `investigate-judge-issues` | Gather evidence about judge state and recommend next steps |
+| `prepare-prompt-optimization` | Propose the exact `start-prompt-optimization` call to make |
+| `prepare-judge-optimization` | Propose the exact `start-judge-optimization` call to make |
+
+## Good to know
+
+- **Single-project scope.** Each MCP connection is tied to one ZeroEval project. To work with a different project, use a different API key.
+- **Optimization prerequisites.** Prompts must have been used with `ze.prompt()` before optimization is available. Judges need a linked tuning task.
+- **Proposal tools are read-only.** The `investigate-*` and `prepare-*` tools never mutate state. They recommend the next tool call for the agent to confirm and execute.
+
+<CardGroup cols={2}>
+  <Card title="Tracing quickstart" icon="rocket" href="/tracing/quickstart">
+    Get your first trace in under 5 minutes
+  </Card>
+  <Card title="Prompt setup" icon="wrench" href="/autotune/setup">
+    Add ze.prompt() to your codebase
+  </Card>
+  <Card title="Judges" icon="gavel" href="/judges/introduction">
+    How calibrated judges evaluate your production traffic
+  </Card>
+  <Card title="CLI" icon="terminal" href="/integrations/cli">
+    Manage traces, prompts, and judges from your terminal
+  </Card>
+</CardGroup>
