@@ -46,6 +46,7 @@
             "group": "Prompts",
             "pages": [
               "autotune/introduction",
+              "autotune/prompts/optimization",
               "autotune/sdks/python",
               "autotune/sdks/typescript",
               "autotune/reference"
@@ -74,10 +75,6 @@
                 ]
               }
             ]
-          },
-          {
-            "group": "Optimization",
-            "pages": ["autotune/prompts/prompts"]
           },
           {
             "group": "Helpers",

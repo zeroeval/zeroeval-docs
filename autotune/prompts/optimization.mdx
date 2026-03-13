@@ -1,0 +1,171 @@
+---
+title: "Optimization"
+description: "Use feedback on production traces to generate and validate better prompts"
+---
+
+<video src="/videos/prompt-optimization.mp4" alt="Prompt optimizations" controls muted playsInline loop preload="metadata" />
+
+ZeroEval uses feedback on your production completions to propose better prompt versions, then validates them before you roll out. The result is a concrete prompt edit you can review, test across models, and deploy -- all without manual prompt engineering.
+
+## How optimization works
+
+Every optimization follows the same lifecycle:
+
+<Steps>
+  <Step title="Collect feedback">
+    Attach thumbs-up/down ratings, reasons, and expected outputs to real completions.
+    This is the raw signal optimization learns from.
+  </Step>
+  <Step title="Start an optimization run">
+    Trigger an optimization from the dashboard. ZeroEval selects a strategy based on speed
+    and depth, then generates a candidate prompt from your feedback.
+  </Step>
+  <Step title="Compare against the baseline">
+    The candidate is scored against your current prompt using the same feedback signal,
+    so you can see whether it actually improves behavior.
+  </Step>
+  <Step title="Validate with simulations">
+    Run the candidate against test cases and multiple models to confirm improvements
+    generalize beyond the examples used during optimization.
+  </Step>
+  <Step title="Deploy">
+    Publish the winning prompt version. Your app picks it up automatically through
+    `ze.prompt()` with no code changes required.
+  </Step>
+</Steps>
+
+## Before you optimize
+
+Optimization quality depends directly on the quality and quantity of feedback attached to your completions. Before starting a run, make sure:
+
+- **Your prompt is tracked** with `ze.prompt()` so completions are linked to specific prompt versions.
+- **Completions are flowing** through ZeroEval with enough volume to represent real usage patterns.
+- **Feedback is attached** to those completions -- both positive and negative examples help.
+
+The most useful feedback includes **reasons** (explaining why an output was good or bad) and **expected outputs** (showing what the response should have been). Vague thumbs-down signals without context produce weaker optimizations.
+
+<Note>
+For details on how to submit feedback through the dashboard, SDK, or API, see [Human Feedback](/feedback/human-feedback).
+</Note>
+
+## Start an optimization run
+
+Navigate to your prompt's **Suggestions** tab in the ZeroEval dashboard and click **Optimize Prompt**. ZeroEval will:
+
+1. Gather feedback examples linked to your prompt.
+2. Select an optimization strategy based on the complexity of your prompt and the available signal.
+3. Generate one or more candidate prompts.
+
+<video src="/videos/auto-tuning-2.mp4" alt="Prompt optimizations with feedback" controls muted playsInline loop preload="metadata" />
+
+## Review the candidate prompt
+
+Optimization produces a **candidate** -- a proposed new version of your prompt. It does not overwrite your current prompt automatically.
+
+You can review the candidate side-by-side with your **baseline** (the current active version) to understand exactly what changed and why. The candidate is derived from patterns in your feedback: corrections steer the wording, positive examples reinforce what already works.
+
+## Compare against your baseline
+
+ZeroEval measures whether the candidate actually outperforms the baseline using the feedback-derived signal. The comparison shows:
+
+- How the candidate scores relative to the current prompt on the same set of examples.
+- Whether improvements on some examples come at the cost of regressions on others.
+- An overall recommendation based on the comparison results.
+
+This step ensures you are not adopting a prompt that simply looks different -- it needs to measurably perform better.
+
+## Validate with simulations
+
+After optimization, you can run the candidate against test cases using multiple models to confirm the improvement holds up beyond the training examples.
+
+<video src="/videos/auto-tuning-model-leaderboard.mp4" alt="Model leaderboard" controls muted playsInline loop preload="metadata" />
+
+Simulations help answer:
+
+- Does the candidate work well across different models, not just the one it was optimized for?
+- Does it handle edge cases that were not part of the original feedback set?
+- Are there any regressions on specific scenarios?
+
+ZeroEval automatically queues an initial simulation after a successful optimization run, testing the candidate across popular models.
+
+## Optimization strategies
+
+ZeroEval offers three optimization strategies, each suited to a different speed and depth tradeoff:
+
+| Strategy | Speed | Best for |
+|----------|-------|----------|
+| **Quick Refine** | Seconds | Fast iteration on straightforward prompt fixes. Rewrites the prompt in a single pass using your feedback examples. |
+| **Bootstrap** | Minutes | Prompts where good examples clearly demonstrate the desired behavior. Selects high-quality demonstrations and chains them with the prompt. |
+| **GEPA** | 10-60 minutes | Complex prompts or multi-intent optimization. Runs a deeper search that evolves candidates across multiple generations, guided by reflection on performance. |
+
+You do not need to choose a strategy manually -- ZeroEval selects the appropriate one based on your prompt and feedback. However, you can override this if you want faster iteration (Quick Refine) or a more thorough search (GEPA).
+
+## Multi-intent optimization and guardrails
+
+Some prompts serve multiple goals. For example, a customer support prompt might need to be both accurate and concise -- improving one should not come at the expense of the other.
+
+### Intent weighting
+
+When your prompt has multiple linked judges (intents), you can assign weights to each intent to tell the optimizer which goals matter most. Intents with higher weight have more influence on which candidate is selected.
+
+### Guardrails
+
+Guardrails are quality floors that prevent adopting a candidate that regresses on important intents. You can set minimum thresholds per intent, and any candidate that falls below those thresholds is automatically rejected -- even if it improves overall performance.
+
+This ensures that optimization never ships a prompt that fixes one problem by creating another.
+
+## Use optimized prompts in production
+
+When you use `ze.prompt()` with a `content` fallback, ZeroEval automatically resolves to the latest published version from your dashboard. Once you publish an optimized candidate, your app starts using it immediately with no code changes:
+
+<CodeGroup>
+```python Python
+import zeroeval as ze
+
+ze.init()
+
+system_prompt = ze.prompt(
+    name="support-bot",
+    content="You are a helpful customer support agent."
+)
+```
+```typescript TypeScript
+import * as ze from 'zeroeval';
+
+ze.init();
+
+const systemPrompt = await ze.prompt({
+  name: "support-bot",
+  content: "You are a helpful customer support agent."
+});
+```
+</CodeGroup>
+
+Your `content` string serves as the fallback for initial setup or if the ZeroEval service is unreachable. Once an optimized version is published, `ze.prompt()` returns that version instead.
+
+To bypass optimization and force the hardcoded content (useful for debugging or A/B testing), use explicit mode:
+
+<CodeGroup>
+```python Python
+prompt = ze.prompt(
+    name="support-bot",
+    from_="explicit",
+    content="You are a helpful customer support agent."
+)
+```
+```typescript TypeScript
+const prompt = await ze.prompt({
+  name: "support-bot",
+  from: "explicit",
+  content: "You are a helpful customer support agent."
+});
+```
+</CodeGroup>
+
+## Best practices
+
+- **Wait for enough signal.** Optimizing with only a handful of feedback examples produces unreliable results. Aim for a representative sample of both positive and negative completions before running.
+- **Include corrections, not just thumbs.** Reasons and expected outputs give the optimizer concrete material to work with. A thumbs-down alone tells the system something is wrong but not what the right answer looks like.
+- **Validate before rollout.** Use simulations to confirm the candidate works across models and edge cases before publishing it to production.
+- **Iterate.** Optimization is not a one-time step. As your product evolves and usage patterns shift, new feedback will surface new improvement opportunities. Run optimization periodically as fresh signal accumulates.
+- **Use guardrails for multi-intent prompts.** If your prompt serves multiple goals, set guardrails to prevent regressions on critical intents.
