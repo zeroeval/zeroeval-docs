@@ -233,49 +233,9 @@ if (span) {
 }
 ```
 
-## Signals
+## Feedback
 
-Signals capture user feedback, behavior, or metrics -- thumbs-up, star ratings, dwell time, task completion. They connect real-world outcomes to your traces.
-
-You can attach signals to **completions**, **spans**, **sessions**, and **traces**.
-
-### Convenience Helpers
-
-Send signals to whichever entity is currently active:
-
-```typescript
-import * as ze from 'zeroeval';
-
-await ze.withSpan({ name: 'process_request' }, async () => {
-  // Signal on the current span
-  ze.sendSpanSignal('success', true);
-  ze.sendSpanSignal('latency_ms', 150);
-
-  // Signal on the current trace
-  ze.sendTraceSignal('user_satisfied', true);
-  ze.sendTraceSignal('total_cost', 0.045);
-
-  // Signal on the current session
-  ze.sendSessionSignal('converted', true);
-  ze.sendSessionSignal('pages_visited', 5);
-});
-```
-
-### Direct Signal API
-
-For sending signals to specific entities by ID:
-
-```typescript
-import * as ze from 'zeroeval';
-
-// Send to a specific entity
-await ze.sendSignal('span', spanId, 'accuracy', 0.95);
-await ze.sendSignal('trace', traceId, 'model_used', 'gpt-4o');
-await ze.sendSignal('session', sessionId, 'user_tier', 'premium');
-
-// Retrieve signals for an entity
-const signals = await ze.getEntitySignals('span', spanId);
-```
+To attach human or programmatic feedback to completions, see [Human Feedback](/feedback/human-feedback) and the [Feedback SDK docs](/feedback/typescript). For automated quality evaluations, see [Judges](/judges/introduction).
 
 ## Advanced Configuration
 

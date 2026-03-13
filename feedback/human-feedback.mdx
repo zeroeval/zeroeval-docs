@@ -86,29 +86,6 @@ await ze.sendFeedback({
 
 Expected outputs are used during [prompt optimization](/autotune/prompts/prompts) to generate better prompt variants.
 
-### Using signals for custom metrics
-
-For feedback that doesn't fit the thumbs-up/down model -- star ratings, NPS scores, task completion -- use signals:
-
-<CodeGroup>
-
-```python Python
-span = ze.get_current_span()
-ze.set_signal(span, {
-    "star_rating": 4,
-    "task_completed": True,
-    "time_on_task_sec": 12.5
-})
-```
-
-```typescript TypeScript
-ze.sendSpanSignal("star_rating", 4);
-ze.sendSpanSignal("task_completed", true);
-ze.sendSpanSignal("time_on_task_sec", 12.5);
-```
-
-</CodeGroup>
-
 ## Feedback Links
 
 For collecting feedback from users who don't have a ZeroEval account (e.g. customers, external reviewers), create a feedback link that anyone can use:

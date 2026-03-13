@@ -1,6 +1,6 @@
 ---
 title: "API Reference"
-description: "REST API for creating, retrieving, updating, and deleting signals"
+description: "REST API for submitting and retrieving feedback"
 ---
 
 Base URL: `https://api.zeroeval.com`
@@ -9,164 +9,6 @@ All requests require a Bearer token:
 
 ```
 Authorization: Bearer YOUR_ZEROEVAL_API_KEY
-```
-
----
-
-## Create Signal
-
-```
-POST /signals/
-```
-
-Attach a signal to a span, trace, session, or completion.
-
-**Request body:**
-
-| Field         | Type                             | Required | Default     | Description                                 |
-| ------------- | -------------------------------- | -------- | ----------- | ------------------------------------------- |
-| `entity_type` | `string`                         | Yes      | —           | `session`, `trace`, `span`, or `completion` |
-| `entity_id`   | `string`                         | Yes      | —           | UUID of the target entity                   |
-| `name`        | `string`                         | Yes      | —           | Signal name (e.g. `user_satisfaction`)      |
-| `value`       | `string \| bool \| int \| float` | Yes      | —           | Signal value                                |
-| `signal_type` | `string`                         | No       | `"boolean"` | `boolean` or `numerical`                    |
-| `project_id`  | `string`                         | No       | `null`      | Project ID (inferred from auth if omitted)  |
-
-```bash
-curl -X POST https://api.zeroeval.com/signals/ \
-  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "entity_type": "span",
-    "entity_id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "thumbs_up",
-    "value": true,
-    "signal_type": "boolean"
-  }'
-```
-
-**Response:** 201
-
-```json
-{
-  "status": "success",
-  "message": "Signal processed",
-  "processed_count": 1,
-  "failed_count": 0,
-  "errors": null
-}
-```
-
----
-
-## Bulk Create Signals
-
-```
-POST /signals/bulk
-```
-
-Send multiple signals in a single request.
-
-**Request body:**
-
-```json
-{
-  "signals": [
-    {
-      "entity_type": "span",
-      "entity_id": "...",
-      "name": "accuracy",
-      "value": 0.95,
-      "signal_type": "numerical"
-    },
-    {
-      "entity_type": "trace",
-      "entity_id": "...",
-      "name": "successful",
-      "value": true
-    }
-  ]
-}
-```
-
-**Response:** 201 (same schema as single create)
-
----
-
-## Get Entity Signals
-
-```
-GET /signals/entity/{entity_type}/{entity_id}
-```
-
-Retrieve all signals attached to an entity.
-
-| Path Parameter | Description                                 |
-| -------------- | ------------------------------------------- |
-| `entity_type`  | `session`, `trace`, `span`, or `completion` |
-| `entity_id`    | UUID of the entity                          |
-
-**Response:** 200
-
-```json
-{
-  "entity_type": "span",
-  "entity_id": "550e8400-...",
-  "signals": [
-    { "name": "thumbs_up", "value": true, "type": "boolean" },
-    { "name": "accuracy", "value": 0.95, "type": "numerical" }
-  ]
-}
-```
-
----
-
-## Update Signal
-
-```
-PUT /signals/entity/{entity_type}/{entity_id}/{signal_name}
-```
-
-Update the value of an existing signal.
-
-**Request body:**
-
-| Field         | Type                             | Required | Description              |
-| ------------- | -------------------------------- | -------- | ------------------------ |
-| `value`       | `string \| bool \| int \| float` | Yes      | New signal value         |
-| `signal_type` | `string`                         | No       | `boolean` or `numerical` |
-
-**Response:** 200
-
----
-
-## Delete Signal
-
-```
-DELETE /signals/entity/{entity_type}/{entity_id}/{signal_name}
-```
-
-Remove a signal from an entity.
-
-**Response:** 204 No Content
-
----
-
-## Get Unique Signal Names
-
-```
-GET /signals/unique-names?project_id={project_id}
-```
-
-List all signal names that have been used in a project.
-
-**Response:** 200
-
-```json
-{
-  "project_id": "...",
-  "signal_names": ["thumbs_up", "accuracy", "latency_ms", "user_satisfied"]
-}
 ```
 
 ---
@@ -220,4 +62,110 @@ curl -X POST https://api.zeroeval.com/v1/prompts/support-bot/completions/550e840
 <Note>
   If feedback already exists for the same completion from the same user, it will
   be updated with the new values.
+</Note>
+
+---
+
+## Unified Entity Feedback
+
+```
+GET /projects/{project_id}/feedback/{entity_type}/{entity_id}
+```
+
+Retrieve all feedback -- human reviews and judge evaluations -- for a span, trace, or session in a single response.
+
+| Path Parameter | Description                        |
+| -------------- | ---------------------------------- |
+| `project_id`   | UUID of the project                |
+| `entity_type`  | `span`, `trace`, or `session`      |
+| `entity_id`    | UUID of the entity                 |
+
+**Response:** 200
+
+```json
+{
+  "entity_type": "span",
+  "entity_id": "550e8400-...",
+  "summary": {
+    "total": 3,
+    "human_feedback_count": 1,
+    "judge_evaluation_count": 2
+  },
+  "items": [
+    {
+      "kind": "human_feedback",
+      "id": "fb123e45-...",
+      "span_id": "550e8400-...",
+      "thumbs_up": true,
+      "reason": "Clear and helpful",
+      "created_at": "2025-01-15T10:30:00Z",
+      "created_by": {
+        "id": "user-123",
+        "email": "reviewer@example.com",
+        "name": "Alice"
+      },
+      "source_type": "human"
+    },
+    {
+      "kind": "judge_evaluation",
+      "id": "je456f78-...",
+      "span_id": "550e8400-...",
+      "automation_id": "judge-abc-...",
+      "judge_name": "Helpfulness",
+      "evaluation_result": true,
+      "evaluation_reason": "Response directly answers the question with clear steps.",
+      "confidence_score": 0.92,
+      "model_used": "gemini-3-flash-preview",
+      "evaluation_duration_ms": 1200,
+      "score": 8.5,
+      "evaluation_type": "scored",
+      "score_min": 0,
+      "score_max": 10,
+      "pass_threshold": 7.0,
+      "criteria_scores": {
+        "clarity": { "score": 9, "reason": "Well-structured response" },
+        "accuracy": { "score": 8, "reason": "Correct information provided" }
+      },
+      "created_at": "2025-01-15T10:31:00Z"
+    }
+  ]
+}
+```
+
+### Response fields
+
+**`summary`** -- aggregate counts for fast display:
+
+| Field                      | Type  | Description                        |
+| -------------------------- | ----- | ---------------------------------- |
+| `total`                    | `int` | Total feedback items               |
+| `human_feedback_count`     | `int` | Number of human review items       |
+| `judge_evaluation_count`   | `int` | Number of judge evaluation items   |
+
+**`items[]`** -- each item has a `kind` field (`human_feedback` or `judge_evaluation`) that determines which fields are present:
+
+| Field (human_feedback)  | Type     | Description                          |
+| ----------------------- | -------- | ------------------------------------ |
+| `thumbs_up`             | `bool`   | Positive or negative                 |
+| `reason`                | `string` | Reviewer's explanation               |
+| `expected_output`       | `string` | Corrected output (if provided)       |
+| `created_by`            | `object` | User who submitted the feedback      |
+| `source_type`           | `string` | `"human"` or `"judge"`               |
+
+| Field (judge_evaluation)   | Type     | Description                                  |
+| -------------------------- | -------- | -------------------------------------------- |
+| `automation_id`            | `string` | Judge automation UUID                        |
+| `judge_name`               | `string` | Display name of the judge                    |
+| `evaluation_result`        | `bool`   | Whether the output passed                    |
+| `evaluation_reason`        | `string` | Judge's reasoning                            |
+| `confidence_score`         | `float`  | Judge confidence (0-1)                       |
+| `model_used`               | `string` | Model used for the evaluation                |
+| `score`                    | `float`  | Score value (scored evaluations only)        |
+| `evaluation_type`          | `string` | `"binary"` or `"scored"`                     |
+| `score_min` / `score_max`  | `float`  | Score range (scored evaluations only)        |
+| `pass_threshold`           | `float`  | Threshold for pass/fail                      |
+| `criteria_scores`          | `object` | Per-criterion scores and reasons             |
+
+<Note>
+  For traces and sessions, feedback is aggregated from all descendant spans.
 </Note>

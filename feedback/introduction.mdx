@@ -10,7 +10,7 @@ ZeroEval supports two kinds of feedback:
 - **Human feedback** -- thumbs-up/down, star ratings, corrections, and expected outputs submitted by users or reviewers
 - **AI feedback** -- automated evaluations from calibrated judges that score outputs against criteria you define
 
-Both feed into the same system. Feedback attached to completions powers [prompt optimization](/autotune/introduction). Signals attached to spans, traces, and sessions let you filter and monitor quality across your entire system.
+Both feed into the same system. Feedback attached to completions powers [prompt optimization](/autotune/introduction). You can also retrieve unified feedback -- combining human reviews and judge evaluations -- for any span, trace, or session via the [Feedback API](/feedback/api-reference#unified-entity-feedback).
 
 ## How feedback flows
 
@@ -25,8 +25,8 @@ Both feed into the same system. Feedback attached to completions powers [prompt 
     criteria.
   </Step>
   <Step title="Quality becomes measurable">
-    Feedback appears on traces and completions in the console. Filter by
-    thumbs-up rate, judge scores, or custom signals to find patterns.
+    Feedback appears on spans, traces, and completions in the console. Filter by
+    thumbs-up rate, judge scores, or tags to find patterns.
   </Step>
   <Step title="Improvements are driven by data">
     Use feedback to optimize prompts, compare models, calibrate judges, and

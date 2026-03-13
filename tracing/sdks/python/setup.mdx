@@ -249,49 +249,9 @@ with ze.span(name="root_invoke", session=session_info, tags={"run": "invoke"}):
     ze.set_tag(current_session, {"env": "local"})
 ```
 
-## Signals
+## Feedback
 
-Signals capture user feedback, behavior, or metrics -- thumbs-up, star ratings, dwell time, task completion, error rates. They connect real-world outcomes to your traces.
-
-You can attach signals to **completions**, **spans**, **sessions**, and **traces**.
-
-### Setting Signals
-
-```python
-with ze.span(name="process_query") as span:
-    response = process_user_query(query)
-
-    ze.set_signal(span, {"user_satisfaction": True, "response_quality": 4.5})
-```
-
-### Signals on Different Targets
-
-```python
-current_span = ze.get_current_span()
-ze.set_signal(current_span, {"helpful": True, "rating": 5})
-
-trace_id = ze.get_current_trace()
-ze.set_signal(trace_id, {"request_successful": True, "total_cost": 0.045})
-
-session_id = ze.get_current_session()
-ze.set_signal(session_id, {"converted": True, "pages_visited": 5})
-```
-
-### Common Signal Patterns
-
-```python
-# Binary feedback
-ze.set_signal(span, {"thumbs_up": True})
-
-# Star rating
-ze.set_signal(span, {"star_rating": 4})
-
-# Continuous metrics
-ze.set_signal(span, {"response_time_ms": 1250.5, "accuracy": 0.94})
-
-# Categorical outcomes
-ze.set_signal(span, {"task_status": "success", "user_intent": "purchase"})
-```
+To attach human or programmatic feedback to completions, see [Human Feedback](/feedback/human-feedback) and the [Feedback SDK docs](/feedback/python). For automated quality evaluations, see [Judges](/judges/introduction).
 
 ## CLI Tooling
 

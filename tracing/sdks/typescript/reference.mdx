@@ -302,86 +302,6 @@ await ze.sendFeedback({
 
 ---
 
-## Signals API
-
-### `sendSignal()`
-
-Send a signal to a specific entity.
-
-```typescript
-async function sendSignal(
-  entityType: "session" | "trace" | "span" | "completion",
-  entityId: string,
-  name: string,
-  value: string | boolean | number,
-  signalType?: "boolean" | "numerical",
-): Promise<void>;
-```
-
-### `sendTraceSignal()`
-
-Send a signal to the current trace.
-
-```typescript
-function sendTraceSignal(
-  name: string,
-  value: string | boolean | number,
-  signalType?: "boolean" | "numerical",
-): void;
-```
-
-### `sendSessionSignal()`
-
-Send a signal to the current session.
-
-```typescript
-function sendSessionSignal(
-  name: string,
-  value: string | boolean | number,
-  signalType?: "boolean" | "numerical",
-): void;
-```
-
-### `sendSpanSignal()`
-
-Send a signal to the current span.
-
-```typescript
-function sendSpanSignal(
-  name: string,
-  value: string | boolean | number,
-  signalType?: "boolean" | "numerical",
-): void;
-```
-
-### `getEntitySignals()`
-
-Retrieve signals for a specific entity.
-
-```typescript
-async function getEntitySignals(
-  entityType: "session" | "trace" | "span" | "completion",
-  entityId: string,
-): Promise<Signal[]>;
-```
-
-#### Example
-
-```typescript
-import * as ze from "zeroeval";
-
-await ze.withSpan({ name: "process-request" }, async () => {
-  // Process something...
-
-  // Send signals
-  ze.sendSpanSignal("success", true);
-  ze.sendSpanSignal("latency_ms", 150);
-  ze.sendTraceSignal("user_satisfied", true);
-});
-```
-
----
-
 ## Utility Functions
 
 ### `renderTemplate()`
@@ -471,15 +391,6 @@ interface PromptMetadata {
   prompt_version_id?: string;
   content_hash?: string;
   variables?: Record<string, string>;
-}
-```
-
-### `Signal`
-
-```typescript
-interface Signal {
-  value: string | boolean | number;
-  type: "boolean" | "numerical";
 }
 ```
 

@@ -749,46 +749,6 @@ if trace_id:
     ze.set_tag(trace_id, {"version": "1.5"})
 ```
 
-### `set_signal()`
-
-Send a signal to a span, trace, or session.
-
-```python
-def set_signal(
-    target: Union[Span, str],
-    signals: dict[str, Union[str, bool, int, float]]
-) -> bool
-```
-
-**Parameters:**
-
-- `target`: The entity to attach signals to
-  - `Span`: Sends signals to the specific span
-  - `str`: Sends signals to the trace (if active trace ID) or session
-- `signals` (dict): Dictionary of signal names to values
-
-**Returns:** True if signals were sent successfully, False otherwise
-
-**Example:**
-
-```python
-import zeroeval as ze
-
-# Send signals to current span
-current_span = ze.get_current_span()
-if current_span:
-    ze.set_signal(current_span, {
-        "accuracy": 0.95,
-        "is_successful": True,
-        "error_count": 0
-    })
-
-# Send signals to trace
-trace_id = ze.get_current_trace()
-if trace_id:
-    ze.set_signal(trace_id, {"model_score": 0.85})
-```
-
 ## Judge Feedback APIs
 
 ### `send_feedback()`

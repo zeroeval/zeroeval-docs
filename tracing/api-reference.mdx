@@ -1,6 +1,6 @@
 ---
 title: API Reference
-description: REST API for ingesting and querying spans, traces, sessions, and signals
+description: REST API for ingesting and querying spans, traces, and sessions
 ---
 
 Base URL: `https://api.zeroeval.com`
@@ -47,7 +47,6 @@ Send one or more spans. Traces and sessions referenced by the spans are auto-cre
 | `tags`           | `object`        | No       | `{}`            | Key-value tags for filtering                                 |
 | `trace_tags`     | `object`        | No       | `{}`            | Tags applied to the parent trace                             |
 | `session_tags`   | `object`        | No       | `{}`            | Tags applied to the parent session                           |
-| `signals`        | `object`        | No       | `{}`            | Signal name → value pairs                                    |
 | `error_code`     | `string`        | No       | `null`          | Error code or exception class                                |
 | `error_message`  | `string`        | No       | `null`          | Error description                                            |
 | `error_stack`    | `string`        | No       | `null`          | Stack trace                                                  |
@@ -154,8 +153,6 @@ Retrieve spans with filtering, sorting, and pagination.
 
 Any unrecognized query parameter is treated as a **tag filter** (e.g. `?environment=production`).
 
-Signal filters use the pattern `signal_<name>=value`, `signal_<name>_min=0.5`, `signal_<name>_max=1.0`.
-
 **Response:** `SpanRead[]` (200)
 
 ---
@@ -238,7 +235,7 @@ GET /traces
 | `limit`          | `int`      | `50`    | 1–500                                                               |
 | `offset`         | `int`      | `0`     | Pagination offset                                                   |
 
-Tag and signal filters work the same as for spans.
+Tag filters work the same as for spans.
 
 **Response:** `TraceRead[]` (200)
 
@@ -258,7 +255,6 @@ Each trace includes:
 | `root_span_input`  | `string`   | Input from the root span  |
 | `root_span_output` | `string`   | Output from the root span |
 | `tags`             | `object`   | Tags                      |
-| `signals`          | `array`    | Attached signals          |
 
 ---
 
@@ -308,7 +304,7 @@ GET /sessions
 | `limit`          | `int`      | `50`    | 1–500                                                   |
 | `offset`         | `int`      | `0`     | Pagination offset                                       |
 
-Tag and signal filters work the same as for spans.
+Tag filters work the same as for spans.
 
 **Response:** `SessionRead[]` (200)
 
@@ -324,148 +320,12 @@ Each session includes:
 | `cost`        | `float`  | Total cost       |
 | `duration`    | `float`  | Total duration   |
 | `tags`        | `object` | Tags             |
-| `signals`     | `array`  | Attached signals |
 
 ---
 
-## Signals
+## Feedback
 
-### Create Signal
-
-```
-POST /signals/
-```
-
-Attach a signal to a span, trace, session, or completion.
-
-**Request body:**
-
-| Field         | Type                             | Required | Default     | Description                                 |
-| ------------- | -------------------------------- | -------- | ----------- | ------------------------------------------- |
-| `entity_type` | `string`                         | Yes      | —           | `session`, `trace`, `span`, or `completion` |
-| `entity_id`   | `string`                         | Yes      | —           | UUID of the target entity                   |
-| `name`        | `string`                         | Yes      | —           | Signal name (e.g. `user_satisfaction`)      |
-| `value`       | `string \| bool \| int \| float` | Yes      | —           | Signal value                                |
-| `signal_type` | `string`                         | No       | `"boolean"` | `boolean` or `numerical`                    |
-| `project_id`  | `string`                         | No       | `null`      | Project ID                                  |
-
-```bash
-curl -X POST https://api.zeroeval.com/signals/ \
-  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "entity_type": "span",
-    "entity_id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "thumbs_up",
-    "value": true,
-    "signal_type": "boolean"
-  }'
-```
-
-**Response:** `SignalResponse` (201)
-
-```json
-{
-  "status": "success",
-  "message": "Signal processed",
-  "processed_count": 1,
-  "failed_count": 0,
-  "errors": null
-}
-```
-
----
-
-### Bulk Create Signals
-
-```
-POST /signals/bulk
-```
-
-Send multiple signals in a single request.
-
-**Request body:**
-
-```json
-{
-  "signals": [
-    {
-      "entity_type": "span",
-      "entity_id": "...",
-      "name": "accuracy",
-      "value": 0.95,
-      "signal_type": "numerical"
-    },
-    {
-      "entity_type": "trace",
-      "entity_id": "...",
-      "name": "successful",
-      "value": true
-    }
-  ]
-}
-```
-
-**Response:** `SignalResponse` (201)
-
----
-
-### Get Entity Signals
-
-```
-GET /signals/entity/{entity_type}/{entity_id}
-```
-
-Retrieve all signals attached to an entity.
-
-| Path Parameter | Description                                 |
-| -------------- | ------------------------------------------- |
-| `entity_type`  | `session`, `trace`, `span`, or `completion` |
-| `entity_id`    | UUID of the entity                          |
-
-**Response:**
-
-```json
-{
-  "entity_type": "span",
-  "entity_id": "550e8400-...",
-  "signals": [
-    { "name": "thumbs_up", "value": true, "type": "boolean" },
-    { "name": "accuracy", "value": 0.95, "type": "numerical" }
-  ]
-}
-```
-
----
-
-### Update Signal
-
-```
-PUT /signals/entity/{entity_type}/{entity_id}/{signal_name}
-```
-
-Update the value of an existing signal.
-
-**Request body:**
-
-| Field         | Type                             | Required | Description              |
-| ------------- | -------------------------------- | -------- | ------------------------ |
-| `value`       | `string \| bool \| int \| float` | Yes      | New signal value         |
-| `signal_type` | `string`                         | No       | `boolean` or `numerical` |
-
-**Response:** `SignalResponse` (200)
-
----
-
-### Delete Signal
-
-```
-DELETE /signals/entity/{entity_type}/{entity_id}/{signal_name}
-```
-
-Remove a signal from an entity.
-
-**Response:** 204 No Content
+To retrieve feedback (human reviews and judge evaluations) for spans, traces, or sessions, use the [Feedback API](/feedback/api-reference#unified-entity-feedback).
 
 ---
 
