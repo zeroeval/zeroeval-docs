@@ -1,0 +1,65 @@
+---
+title: "Python"
+description: "Submit completion feedback from Python to power prompt optimization"
+---
+
+## Completion Feedback
+
+Attach structured feedback to a specific LLM completion to power prompt optimization.
+
+### `send_feedback()`
+
+```python
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id="550e8400-e29b-41d4-a716-446655440000",
+    thumbs_up=False,
+    reason="Response was too verbose",
+    expected_output="A concise 2-3 sentence response"
+)
+```
+
+| Parameter           | Type    | Required | Description                                                                       |
+| ------------------- | ------- | -------- | --------------------------------------------------------------------------------- |
+| `prompt_slug`       | `str`   | Yes      | Prompt name (same as `ze.prompt(name=...)`)                                       |
+| `completion_id`     | `str`   | Yes      | UUID of the completion span                                                       |
+| `thumbs_up`         | `bool`  | Yes      | Positive or negative feedback                                                     |
+| `reason`            | `str`   | No       | Explanation of the feedback                                                       |
+| `expected_output`   | `str`   | No       | What the output should have been                                                  |
+| `metadata`          | `dict`  | No       | Additional metadata                                                               |
+| `judge_id`          | `str`   | No       | Judge automation ID (for judge feedback)                                          |
+| `expected_score`    | `float` | No       | Expected score (for scored judges)                                                |
+| `score_direction`   | `str`   | No       | `"too_high"` or `"too_low"`                                                       |
+| `criteria_feedback` | `dict`  | No       | Per-criterion feedback: `{"criterion": {"expected_score": 4.0, "reason": "..."}}` |
+
+### End-to-end example
+
+```python
+import zeroeval as ze
+from openai import OpenAI
+
+ze.init()
+client = OpenAI()
+
+system_prompt = ze.prompt(
+    name="support-bot",
+    content="You are a helpful customer support agent."
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "How do I reset my password?"}
+    ]
+)
+
+is_good = evaluate_response(response.choices[0].message.content)
+
+ze.send_feedback(
+    prompt_slug="support-bot",
+    completion_id=response.id,
+    thumbs_up=is_good,
+    reason="Clear instructions" if is_good else "Missing reset link"
+)
+```

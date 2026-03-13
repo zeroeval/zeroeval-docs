@@ -1,0 +1,64 @@
+---
+title: "TypeScript"
+description: "Submit completion feedback from TypeScript to power prompt optimization"
+---
+
+## Completion Feedback
+
+Attach structured feedback to a specific LLM completion to power prompt optimization.
+
+### `sendFeedback()`
+
+```typescript
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: "550e8400-e29b-41d4-a716-446655440000",
+  thumbsUp: false,
+  reason: "Response was too verbose",
+  expectedOutput: "A concise 2-3 sentence response",
+});
+```
+
+| Parameter        | Type                      | Required | Description                                      |
+| ---------------- | ------------------------- | -------- | ------------------------------------------------ |
+| `promptSlug`     | `string`                  | Yes      | Prompt name (same as `ze.prompt({ name: ... })`) |
+| `completionId`   | `string`                  | Yes      | UUID of the completion span                      |
+| `thumbsUp`       | `boolean`                 | Yes      | Positive or negative feedback                    |
+| `reason`         | `string`                  | No       | Explanation of the feedback                      |
+| `expectedOutput` | `string`                  | No       | What the output should have been                 |
+| `metadata`       | `Record<string, unknown>` | No       | Additional metadata                              |
+| `judgeId`        | `string`                  | No       | Judge automation ID (for judge feedback)         |
+| `expectedScore`  | `number`                  | No       | Expected score (for scored judges)               |
+| `scoreDirection` | `'too_high' \| 'too_low'` | No       | Score direction for scored judges                |
+
+### End-to-end example
+
+```typescript
+import * as ze from "zeroeval";
+import { OpenAI } from "openai";
+
+ze.init();
+const client = ze.wrap(new OpenAI());
+
+const systemPrompt = await ze.prompt({
+  name: "support-bot",
+  content: "You are a helpful customer support agent.",
+});
+
+const response = await client.chat.completions.create({
+  model: "gpt-4",
+  messages: [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: "How do I reset my password?" },
+  ],
+});
+
+const isGood = evaluateResponse(response.choices[0].message.content);
+
+await ze.sendFeedback({
+  promptSlug: "support-bot",
+  completionId: response.id,
+  thumbsUp: isGood,
+  reason: isGood ? "Clear instructions" : "Missing reset link",
+});
+```

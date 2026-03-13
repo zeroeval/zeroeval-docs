@@ -1,0 +1,52 @@
+---
+title: "Introduction"
+description: "Attach human and AI feedback to your agent interactions to drive quality improvements"
+---
+
+Your agent produces thousands of outputs, but without feedback you can't tell which ones are good. Feedback closes the loop -- it connects real-world quality judgments to the traces, spans, and completions your agent generates.
+
+ZeroEval supports two kinds of feedback:
+
+- **Human feedback** -- thumbs-up/down, star ratings, corrections, and expected outputs submitted by users or reviewers
+- **AI feedback** -- automated evaluations from calibrated judges that score outputs against criteria you define
+
+Both feed into the same system. Feedback attached to completions powers [prompt optimization](/autotune/introduction). You can also retrieve unified feedback -- combining human reviews and judge evaluations -- for any span, trace, or session via the [Feedback API](/feedback/api-reference#unified-entity-feedback).
+
+## How feedback flows
+
+<Steps>
+  <Step title="Agent produces output">
+    Your agent runs and ZeroEval captures the full trace -- inputs, outputs,
+    model, prompt version.
+  </Step>
+  <Step title="Feedback is attached">
+    Humans review outputs in the dashboard or your app submits feedback
+    programmatically. Judges evaluate outputs automatically based on your
+    criteria.
+  </Step>
+  <Step title="Quality becomes measurable">
+    Feedback appears on spans, traces, and completions in the console. Filter by
+    thumbs-up rate, judge scores, or tags to find patterns.
+  </Step>
+  <Step title="Improvements are driven by data">
+    Use feedback to optimize prompts, compare models, calibrate judges, and
+    catch regressions before users do.
+  </Step>
+</Steps>
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Human Feedback" icon="user" href="/feedback/human-feedback">
+    Collect feedback from reviewers in the dashboard or from end users via
+    like/dislike buttons, ratings, and corrections.
+  </Card>
+  <Card
+    title="AI Feedback (Judges)"
+    icon="scale-balanced"
+    href="/judges/introduction"
+  >
+    Configure AI evaluators that automatically score every completion against
+    criteria you define. Includes built-in judges for common failures.
+  </Card>
+</CardGroup>

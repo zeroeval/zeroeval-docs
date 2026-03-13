@@ -113,6 +113,146 @@ trace_id = ze.get_current_trace()
 session_id = ze.get_current_session()
 ```
 
+## Sessions
+
+Sessions group related spans together, making it easier to track complex workflows, user interactions, or multi-step processes.
+
+### Basic Session
+
+Provide a session ID to associate spans with a session:
+
+```python
+import uuid
+import zeroeval as ze
+
+session_id = str(uuid.uuid4())
+
+@ze.span(name="process_request", session=session_id)
+def process_request(data):
+    return transform_data(data)
+```
+
+### Named Sessions
+
+For better organization in the dashboard, provide both an ID and a name:
+
+```python
+@ze.span(
+    name="user_interaction",
+    session={
+        "id": session_id,
+        "name": "Customer Support Chat - User #12345"
+    }
+)
+def handle_support_chat(user_id, message):
+    return generate_response(message)
+```
+
+### Session Inheritance
+
+Child spans automatically inherit the session from their parent:
+
+```python
+session_info = {
+    "id": str(uuid.uuid4()),
+    "name": "Order Processing Pipeline"
+}
+
+@ze.span(name="process_order", session=session_info)
+def process_order(order_id):
+    validate_order(order_id)
+    charge_payment(order_id)
+    fulfill_order(order_id)
+
+@ze.span(name="validate_order")
+def validate_order(order_id):
+    return check_inventory(order_id)
+
+@ze.span(name="charge_payment")
+def charge_payment(order_id):
+    return process_payment(order_id)
+```
+
+### Context Manager Sessions
+
+```python
+session_info = {
+    "id": str(uuid.uuid4()),
+    "name": "Data Pipeline Run"
+}
+
+with ze.span(name="etl_pipeline", session=session_info) as pipeline_span:
+    with ze.span(name="extract_data") as extract_span:
+        raw_data = fetch_from_source()
+        extract_span.set_io(output_data=f"Extracted {len(raw_data)} records")
+
+    with ze.span(name="transform_data") as transform_span:
+        clean_data = transform_records(raw_data)
+        transform_span.set_io(
+            input_data=f"{len(raw_data)} raw records",
+            output_data=f"{len(clean_data)} clean records"
+        )
+```
+
+## Tags
+
+Tags are key-value pairs attached to spans, traces, or sessions. They power the facet filters in the console so you can slice your telemetry by user, plan, model, tenant, or anything else.
+
+### Tag Once, Inherit Everywhere
+
+Tags on the first span automatically flow down to all child spans:
+
+```python
+@ze.span(
+    name="handle_request",
+    tags={
+        "user_id": "42",
+        "tenant": "acme-corp",
+        "plan": "enterprise"
+    }
+)
+def handle_request():
+    with ze.span(name="fetch_data"):
+        ...
+
+    with ze.span(name="process", tags={"stage": "post"}):
+        ...
+```
+
+### Tag a Single Span
+
+Tags provided on a specific span stay only on that span -- they are not copied to siblings or parents:
+
+```python
+@ze.span(name="top_level")
+def top_level():
+    with ze.span(name="db_call", tags={"table": "customers", "operation": "SELECT"}):
+        query_database()
+
+    with ze.span(name="render"):
+        render_template()
+```
+
+### Granular Tagging
+
+Add tags at the span, trace, or session level after creation:
+
+```python
+with ze.span(name="root_invoke", session=session_info, tags={"run": "invoke"}):
+    current_span = ze.get_current_span()
+    ze.set_tag(current_span, {"phase": "pre-run"})
+
+    current_trace = ze.get_current_trace()
+    ze.set_tag(current_trace, {"run_mode": "invoke"})
+
+    current_session = ze.get_current_session()
+    ze.set_tag(current_session, {"env": "local"})
+```
+
+## Feedback
+
+To attach human or programmatic feedback to completions, see [Human Feedback](/feedback/human-feedback) and the [Feedback SDK docs](/feedback/python). For automated quality evaluations, see [Judges](/judges/introduction).
+
 ## CLI Tooling
 
 The Python SDK includes helpful CLI commands:

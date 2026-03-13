@@ -16,7 +16,7 @@
           {
             "group": "Tracing",
             "pages": [
-              "tracing/quickstart",
+              "tracing/introduction",
               {
                 "group": "SDKs",
                 "pages": [
@@ -38,43 +38,49 @@
                   }
                 ]
               },
-              {
-                "group": "Advanced",
-                "pages": [
-                  "tracing/sessions",
-                  "tracing/tagging",
-                  "tracing/signals",
-                  "tracing/manual-instrumentation",
-                  "tracing/opentelemetry"
-                ]
-              },
-              "tracing/reference"
+              "tracing/api-reference",
+              "tracing/opentelemetry"
             ]
           },
           {
             "group": "Prompts",
             "pages": [
               "autotune/introduction",
-              "autotune/setup",
-              {
-                "group": "Optimization",
-                "pages": ["autotune/prompts/models", "autotune/prompts/prompts"]
-              },
+              "autotune/sdks/python",
+              "autotune/sdks/typescript",
               "autotune/reference"
             ]
           },
           {
-            "group": "Judges",
+            "group": "Feedback",
             "pages": [
-              "judges/introduction",
-              "judges/setup",
-              "judges/multimodal-evaluation",
-              "judges/submit-feedback",
-              "judges/pull-evaluations"
+              "feedback/introduction",
+              {
+                "group": "Human Feedback",
+                "pages": [
+                  "feedback/human-feedback",
+                  "feedback/python",
+                  "feedback/typescript",
+                  "feedback/api-reference"
+                ]
+              },
+              {
+                "group": "AI Feedback (Judges)",
+                "pages": [
+                  "judges/introduction",
+                  "judges/calibration",
+                  "judges/multimodal-evaluation",
+                  "judges/pull-evaluations"
+                ]
+              }
             ]
           },
           {
-            "group": "Integrations",
+            "group": "Optimization",
+            "pages": ["autotune/prompts/prompts"]
+          },
+          {
+            "group": "Helpers",
             "pages": [
               "integrations/introduction",
               "integrations/skills",

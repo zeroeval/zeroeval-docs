@@ -1,0 +1,349 @@
+---
+title: API Reference
+description: REST API for ingesting and querying spans, traces, and sessions
+---
+
+Base URL: `https://api.zeroeval.com`
+
+All requests require a Bearer token in the `Authorization` header:
+
+```
+Authorization: Bearer YOUR_ZEROEVAL_API_KEY
+```
+
+Get an API key from [Settings → API Keys](https://app.zeroeval.com/settings?section=api-keys).
+
+---
+
+## Spans
+
+### Ingest Spans
+
+```
+POST /spans
+```
+
+Send one or more spans. Traces and sessions referenced by the spans are auto-created if they don't exist.
+
+**Request body:** `SpanCreate[]`
+
+| Field            | Type            | Required | Default         | Description                                                  |
+| ---------------- | --------------- | -------- | --------------- | ------------------------------------------------------------ |
+| `trace_id`       | `string (UUID)` | Yes      | —               | Trace this span belongs to                                   |
+| `name`           | `string`        | Yes      | —               | Descriptive name                                             |
+| `started_at`     | `ISO 8601`      | Yes      | —               | When the span started                                        |
+| `id`             | `string (UUID)` | No       | auto-generated  | Client-provided span ID                                      |
+| `kind`           | `string`        | No       | `"generic"`     | `generic`, `llm`, `tts`, `http`, `database`, `vector_store`  |
+| `status`         | `string`        | No       | `null`          | `unset`, `ok`, `error`                                       |
+| `ended_at`       | `ISO 8601`      | No       | `null`          | When the span completed                                      |
+| `duration_ms`    | `float`         | No       | `null`          | Duration in milliseconds                                     |
+| `cost`           | `float`         | No       | auto-calculated | Cost (auto-calculated for LLM spans)                         |
+| `parent_span_id` | `string (UUID)` | No       | `null`          | Parent span for nesting                                      |
+| `session_id`     | `string (UUID)` | No       | `null`          | Session to associate with                                    |
+| `session`        | `object`        | No       | `null`          | `{"id": "...", "name": "..."}` — alternative to `session_id` |
+| `input_data`     | `string`        | No       | `null`          | Input data (JSON string for messages)                        |
+| `output_data`    | `string`        | No       | `null`          | Output/response text                                         |
+| `attributes`     | `object`        | No       | `{}`            | Arbitrary key-value attributes                               |
+| `tags`           | `object`        | No       | `{}`            | Key-value tags for filtering                                 |
+| `trace_tags`     | `object`        | No       | `{}`            | Tags applied to the parent trace                             |
+| `session_tags`   | `object`        | No       | `{}`            | Tags applied to the parent session                           |
+| `error_code`     | `string`        | No       | `null`          | Error code or exception class                                |
+| `error_message`  | `string`        | No       | `null`          | Error description                                            |
+| `error_stack`    | `string`        | No       | `null`          | Stack trace                                                  |
+| `code_filepath`  | `string`        | No       | `null`          | Source file path                                             |
+| `code_lineno`    | `int`           | No       | `null`          | Source line number                                           |
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.zeroeval.com/spans \
+  -H "Authorization: Bearer $ZEROEVAL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '[{
+    "trace_id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "chat_completion",
+    "kind": "llm",
+    "started_at": "2025-01-15T10:30:00Z",
+    "ended_at": "2025-01-15T10:30:02Z",
+    "status": "ok",
+    "attributes": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "inputTokens": 150,
+      "outputTokens": 230
+    },
+    "input_data": "[{\"role\": \"user\", \"content\": \"What is the capital of France?\"}]",
+    "output_data": "The capital of France is Paris.",
+    "tags": {"environment": "production"}
+  }]'
+```
+
+```python Python
+import requests, json, uuid
+from datetime import datetime, timezone
+
+requests.post(
+    "https://api.zeroeval.com/spans",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json=[{
+        "trace_id": str(uuid.uuid4()),
+        "name": "chat_completion",
+        "kind": "llm",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "ended_at": datetime.now(timezone.utc).isoformat(),
+        "status": "ok",
+        "attributes": {
+            "provider": "openai",
+            "model": "gpt-4o",
+            "inputTokens": 150,
+            "outputTokens": 230
+        },
+        "input_data": json.dumps([{"role": "user", "content": "Hello"}]),
+        "output_data": "Hi there!"
+    }]
+)
+```
+
+</CodeGroup>
+
+**Response:** `SpanRead[]` (200)
+
+#### LLM Cost Calculation
+
+For automatic cost calculation on LLM spans, set `kind` to `"llm"` and include these attributes:
+
+| Attribute      | Required | Description                             |
+| -------------- | -------- | --------------------------------------- |
+| `provider`     | Yes      | `"openai"`, `"gemini"`, `"anthropic"`   |
+| `model`        | Yes      | `"gpt-4o"`, `"claude-3-5-sonnet"`, etc. |
+| `inputTokens`  | Yes      | Number of input tokens                  |
+| `outputTokens` | Yes      | Number of output tokens                 |
+
+Cost is calculated as: `(inputTokens × inputPrice + outputTokens × outputPrice) / 1,000,000`
+
+---
+
+### Query Spans
+
+```
+GET /spans
+```
+
+Retrieve spans with filtering, sorting, and pagination.
+
+| Parameter        | Type       | Default | Description                                                   |
+| ---------------- | ---------- | ------- | ------------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by span ID                                             |
+| `trace_id`       | `string`   | —       | Filter by trace ID                                            |
+| `parent_span_id` | `string`   | —       | Filter by parent; `"null"` for root spans                     |
+| `span_kind`      | `string`   | —       | `llm`, `generic`, `tts`, `http`, etc.                         |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                                     |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                                     |
+| `names`          | `string`   | —       | Comma-separated span names                                    |
+| `error_codes`    | `string`   | —       | Comma-separated error codes                                   |
+| `has_error`      | `bool`     | —       | `true` or `false`                                             |
+| `duration_min`   | `float`    | —       | Minimum duration (ms)                                         |
+| `duration_max`   | `float`    | —       | Maximum duration (ms)                                         |
+| `cost_min`       | `float`    | —       | Minimum cost                                                  |
+| `cost_max`       | `float`    | —       | Maximum cost                                                  |
+| `sort_by`        | `string`   | —       | `started_at`, `name`, `status`, `duration_ms`, `cost`, `kind` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                               |
+| `limit`          | `int`      | `5000`  | 1–10000                                                       |
+| `offset`         | `int`      | `0`     | Pagination offset                                             |
+
+Any unrecognized query parameter is treated as a **tag filter** (e.g. `?environment=production`).
+
+**Response:** `SpanRead[]` (200)
+
+---
+
+### Get Span Attachments
+
+```
+GET /spans/{span_id}/attachments
+```
+
+Returns all attachments (images, screenshots) for a span with presigned URLs.
+
+**Response:**
+
+```json
+{
+  "attachments": [
+    {
+      "type": "image",
+      "url": "https://...",
+      "label": "Homepage screenshot"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+## Traces
+
+### Create Traces
+
+```
+POST /traces
+```
+
+Create one or more traces. Traces are also auto-created when ingesting spans.
+
+**Request body:** `TraceCreate[]`
+
+| Field         | Type            | Required | Default        | Description              |
+| ------------- | --------------- | -------- | -------------- | ------------------------ |
+| `session_id`  | `string (UUID)` | Yes      | —              | Parent session           |
+| `name`        | `string`        | Yes      | —              | Trace name               |
+| `started_at`  | `ISO 8601`      | Yes      | —              | Start time               |
+| `id`          | `string (UUID)` | No       | auto-generated | Client-provided trace ID |
+| `status`      | `string`        | No       | `null`         | `unset`, `ok`, `error`   |
+| `ended_at`    | `ISO 8601`      | No       | `null`         | End time                 |
+| `duration_ms` | `float`         | No       | `null`         | Duration in milliseconds |
+| `cost`        | `float`         | No       | `null`         | Total cost               |
+| `attributes`  | `object`        | No       | `{}`           | Arbitrary attributes     |
+| `tags`        | `object`        | No       | `{}`           | Key-value tags           |
+
+**Response:** `TraceRead[]` (200)
+
+---
+
+### Query Traces
+
+```
+GET /traces
+```
+
+| Parameter        | Type       | Default | Description                                                         |
+| ---------------- | ---------- | ------- | ------------------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by trace ID                                                  |
+| `session_id`     | `string`   | —       | Filter by session ID                                                |
+| `status`         | `string`   | —       | Filter by status                                                    |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                                           |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                                           |
+| `names`          | `string`   | —       | Comma-separated trace names                                         |
+| `has_error`      | `bool`     | —       | `true` or `false`                                                   |
+| `duration_min`   | `float`    | —       | Minimum duration (ms)                                               |
+| `duration_max`   | `float`    | —       | Maximum duration (ms)                                               |
+| `cost_min`       | `float`    | —       | Minimum cost                                                        |
+| `cost_max`       | `float`    | —       | Maximum cost                                                        |
+| `sort_by`        | `string`   | —       | `started_at`, `name`, `status`, `span_count`, `duration_ms`, `cost` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                                     |
+| `limit`          | `int`      | `50`    | 1–500                                                               |
+| `offset`         | `int`      | `0`     | Pagination offset                                                   |
+
+Tag filters work the same as for spans.
+
+**Response:** `TraceRead[]` (200)
+
+Each trace includes:
+
+| Field              | Type       | Description               |
+| ------------------ | ---------- | ------------------------- |
+| `id`               | `string`   | Trace ID                  |
+| `session_id`       | `string`   | Parent session            |
+| `name`             | `string`   | Trace name                |
+| `status`           | `string`   | `unset`, `ok`, `error`    |
+| `started_at`       | `ISO 8601` | Start time                |
+| `ended_at`         | `ISO 8601` | End time                  |
+| `duration_ms`      | `float`    | Duration                  |
+| `cost`             | `float`    | Total cost                |
+| `span_count`       | `int`      | Number of spans           |
+| `root_span_input`  | `string`   | Input from the root span  |
+| `root_span_output` | `string`   | Output from the root span |
+| `tags`             | `object`   | Tags                      |
+
+---
+
+## Sessions
+
+### Create Sessions
+
+```
+POST /sessions
+```
+
+Create one or more sessions. Sessions are also auto-created when ingesting spans with a `session_id` or `session` field.
+
+**Request body:** `SessionCreate[]`
+
+| Field        | Type            | Required | Default        | Description                 |
+| ------------ | --------------- | -------- | -------------- | --------------------------- |
+| `project_id` | `string`        | Yes      | —              | Project ID                  |
+| `name`       | `string`        | No       | `null`         | Human-readable session name |
+| `id`         | `string (UUID)` | No       | auto-generated | Client-provided session ID  |
+| `attributes` | `object`        | No       | `{}`           | Arbitrary attributes        |
+| `tags`       | `object`        | No       | `{}`           | Key-value tags              |
+
+**Response:** `SessionRead[]` (200)
+
+---
+
+### Query Sessions
+
+```
+GET /sessions
+```
+
+| Parameter        | Type       | Default | Description                                             |
+| ---------------- | ---------- | ------- | ------------------------------------------------------- |
+| `id`             | `string`   | —       | Filter by session ID                                    |
+| `created_before` | `ISO 8601` | —       | Upper bound on created_at                               |
+| `created_after`  | `ISO 8601` | —       | Lower bound on created_at                               |
+| `names`          | `string`   | —       | Comma-separated session names                           |
+| `has_error`      | `bool`     | —       | `true` or `false`                                       |
+| `duration_min`   | `float`    | —       | Minimum duration                                        |
+| `duration_max`   | `float`    | —       | Maximum duration                                        |
+| `cost_min`       | `float`    | —       | Minimum cost                                            |
+| `cost_max`       | `float`    | —       | Maximum cost                                            |
+| `sort_by`        | `string`   | —       | `created_at`, `name`, `trace_count`, `cost`, `duration` |
+| `sort_order`     | `string`   | `desc`  | `asc` or `desc`                                         |
+| `limit`          | `int`      | `50`    | 1–500                                                   |
+| `offset`         | `int`      | `0`     | Pagination offset                                       |
+
+Tag filters work the same as for spans.
+
+**Response:** `SessionRead[]` (200)
+
+Each session includes:
+
+| Field         | Type     | Description      |
+| ------------- | -------- | ---------------- |
+| `id`          | `string` | Session ID       |
+| `project_id`  | `string` | Project ID       |
+| `name`        | `string` | Session name     |
+| `trace_count` | `int`    | Number of traces |
+| `error_count` | `int`    | Number of errors |
+| `cost`        | `float`  | Total cost       |
+| `duration`    | `float`  | Total duration   |
+| `tags`        | `object` | Tags             |
+
+---
+
+## Feedback
+
+To retrieve feedback (human reviews and judge evaluations) for spans, traces, or sessions, use the [Feedback API](/feedback/api-reference#unified-entity-feedback).
+
+---
+
+## OpenTelemetry (OTLP)
+
+### Ingest OTLP Traces
+
+```
+POST /v1/traces
+```
+
+Accepts standard OpenTelemetry Protocol (OTLP) trace data in JSON or protobuf format.
+
+**Headers:**
+
+| Header          | Value                                          |
+| --------------- | ---------------------------------------------- |
+| `Authorization` | `Bearer YOUR_ZEROEVAL_API_KEY`                 |
+| `Content-Type`  | `application/json` or `application/x-protobuf` |
+
+This endpoint is compatible with the OpenTelemetry Collector's `otlphttp` exporter. See [OpenTelemetry](/tracing/opentelemetry) for collector configuration.

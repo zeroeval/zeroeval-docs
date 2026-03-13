@@ -32,7 +32,7 @@ mintlify install
 
 | Directory | Purpose |
 |-----------|---------|
-| `tracing/` | Monitoring & tracing guides, SDK docs (Python + TypeScript), advanced topics (sessions, tagging, signals, OTel) |
+| `tracing/` | Monitoring & tracing guides, SDK docs (Python + TypeScript), advanced topics (sessions, tagging, OTel) |
 | `autotune/` | Prompt optimization ("Prompts" in nav), setup, model configs |
 | `judges/` | AI evaluation judges, setup, multimodal eval, feedback submission |
 | `evaluations/` | Evaluations section (currently placeholder) |

@@ -138,7 +138,9 @@ When using runtime tools like `tsx` or `ts-node`, pass the `--experimental-decor
 
 ## Sessions
 
-Group related spans into sessions:
+Sessions group related spans together for tracking workflows, user interactions, or multi-step processes.
+
+### Basic Session
 
 ```typescript
 import { v4 as uuidv4 } from 'uuid';
@@ -158,6 +160,34 @@ async function userJourney(userId: string) {
       await ze.withSpan({ name: 'step_1' }, () => welcome(userId));
       await ze.withSpan({ name: 'step_2' }, () => setupProfile(userId));
       await ze.withSpan({ name: 'step_3' }, () => sendConfirmation(userId));
+    }
+  );
+}
+```
+
+### Multi-Step Pipeline
+
+```typescript
+async function ragPipeline(query: string) {
+  const sessionId = uuidv4();
+
+  return ze.withSpan(
+    { name: 'rag_pipeline', sessionId, sessionName: 'RAG Query' },
+    async () => {
+      const docs = await ze.withSpan(
+        { name: 'retrieve' },
+        () => vectorSearch(query)
+      );
+
+      const ranked = await ze.withSpan(
+        { name: 'rerank' },
+        () => rerankDocs(query, docs)
+      );
+
+      return ze.withSpan(
+        { name: 'generate' },
+        () => generateAnswer(query, ranked)
+      );
     }
   );
 }
@@ -202,6 +232,10 @@ if (span) {
   ze.setTag(span, { action: 'process_payment' });
 }
 ```
+
+## Feedback
+
+To attach human or programmatic feedback to completions, see [Human Feedback](/feedback/human-feedback) and the [Feedback SDK docs](/feedback/typescript). For automated quality evaluations, see [Judges](/judges/introduction).
 
 ## Advanced Configuration
 
