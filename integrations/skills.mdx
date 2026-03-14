@@ -9,9 +9,12 @@ They work with Cursor, Claude Code, Codex, and 30+ other agents that support the
 
 ## Available skills
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="zeroeval-install" icon="download">
-    Installs the SDK (Python or TypeScript), verifies your first trace, migrates prompts to `ze.prompt`, and recommends starter judges.
+    Installs the SDK (Python or TypeScript), verifies your first trace, migrates prompts to `ze.prompt`, and recommends starter judges. Routes to `custom-tracing` for non-SDK languages.
+  </Card>
+  <Card title="custom-tracing" icon="code">
+    Send traces to ZeroEval without the SDK. Covers direct REST API ingestion (`POST /spans`) and OpenTelemetry (OTLP) export for any language.
   </Card>
   <Card title="create-judge" icon="gavel">
     Helps you pick an evaluation type (binary or scored), write a judge template, define criteria, and create the judge via dashboard or API.
@@ -42,6 +45,7 @@ npx skills add zeroeval/zeroeval-skills --list
 
 # Install a specific plugin
 /plugin install zeroeval-install@zeroeval-skills
+/plugin install custom-tracing@zeroeval-skills
 /plugin install create-judge@zeroeval-skills
 /plugin install prompt-migration@zeroeval-skills
 
@@ -55,12 +59,14 @@ git clone https://github.com/zeroeval/zeroeval-skills.git
 # Cursor
 mkdir -p .cursor/skills
 cp -r zeroeval-skills/skills/zeroeval-install .cursor/skills/zeroeval-install
+cp -r zeroeval-skills/skills/custom-tracing .cursor/skills/custom-tracing
 cp -r zeroeval-skills/skills/create-judge .cursor/skills/create-judge
 cp -r zeroeval-skills/skills/prompt-migration .cursor/skills/prompt-migration
 
 # Claude Code
 mkdir -p .claude/skills
 cp -r zeroeval-skills/skills/zeroeval-install .claude/skills/zeroeval-install
+cp -r zeroeval-skills/skills/custom-tracing .claude/skills/custom-tracing
 cp -r zeroeval-skills/skills/create-judge .claude/skills/create-judge
 cp -r zeroeval-skills/skills/prompt-migration .claude/skills/prompt-migration
 ```
@@ -74,8 +80,8 @@ On Windows without symlink support, use `npx skills` or the manual copy method. 
 ## Requirements
 
 - A ZeroEval account and API key — [zeroeval.com](https://zeroeval.com)
-- Python 3.8+ or Node 18+
-- An LLM provider SDK (OpenAI, Vercel AI, LangChain, etc.)
+- **SDK path** (zeroeval-install): Python 3.8+ or Node 18+, plus an LLM provider SDK (OpenAI, Vercel AI, LangChain, etc.)
+- **Direct API / OTLP path** (custom-tracing): any language with an HTTP client or OpenTelemetry exporter
 
 <Tip>
 The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills) has the latest skill content and deeper reference playbooks. This page covers discovery and install only.
@@ -83,7 +89,7 @@ The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills) h
 
 ## After installation
 
-Once installed, your coding agent picks up the skills automatically. Ask it to "set up zeroeval", "create a judge", or "migrate my prompts to ze.prompt" and it will use them.
+Once installed, your coding agent picks up the skills automatically. Ask it to "set up zeroeval", "send traces via API", "create a judge", or "migrate my prompts to ze.prompt" and it will use them.
 
 If you want to read the product docs directly:
 
