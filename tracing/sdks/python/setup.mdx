@@ -83,6 +83,44 @@ def complex_workflow():
             save_span.set_io(output_data=f"Saved {result} records")
 ```
 
+### Artifact Spans
+
+When a single prompt run produces multiple judged outputs (e.g. a final decision and a customer card), use `ze.artifact_span` to mark each output as a named artifact. The prompt completions page surfaces the primary artifact as the row preview and lets you switch between artifacts in the detail view.
+
+```python
+import zeroeval as ze
+
+def resolve_ticket(ticket):
+    with ze.span(name="resolve-ticket"):
+        system_prompt = ze.prompt(name="support-copilot", content="...")
+        decision = run_agent(system_prompt, ticket)
+
+        with ze.artifact_span(
+            name="final-decision",
+            artifact_type="final_decision",
+            role="primary",
+            label="Final Decision",
+            tags={"judge_target": "support_ops_final_decision"},
+        ) as s:
+            s.set_io(input_data=ticket.body, output_data=decision.json())
+
+        with ze.artifact_span(
+            name="customer-card",
+            artifact_type="customer_card",
+            role="secondary",
+            label="Customer Card",
+            tags={"has_customer_card": "true"},
+        ) as card:
+            card.set_io(input_data=ticket.summary, output_data=decision.json())
+            card.add_image(base64_data=render_card(decision))
+```
+
+`artifact_span` defaults to `kind="llm"` and writes the `completion_artifact_*` attributes automatically. All other `ze.span` features (tags, sessions, prompt metadata inheritance) work the same way.
+
+<Note>
+  `ze.artifact_span` is available in the **Python SDK only** for now.
+</Note>
+
 ## Advanced Configuration
 
 Fine-tune the tracer behavior:

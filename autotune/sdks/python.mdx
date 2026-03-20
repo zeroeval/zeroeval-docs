@@ -155,6 +155,22 @@ response = client.chat.completions.create(
 )
 ```
 
+## Multi-Artifact Runs
+
+When a single prompt-linked run produces multiple judged outputs (e.g. a final decision and a visual card), use `ze.artifact_span` to mark each output as a named artifact. The primary artifact becomes the default completion preview; secondary artifacts are accessible in the detail view.
+
+```python
+with ze.artifact_span(
+    name="final-decision",
+    artifact_type="final_decision",
+    role="primary",
+    label="Final Decision",
+) as s:
+    s.set_io(input_data=ticket_text, output_data=decision_json)
+```
+
+See the full API and examples in [Python Tracing Reference](/tracing/sdks/python/reference#artifact_span).
+
 ## Sending Feedback
 
 Attach feedback to completions to power prompt optimization:

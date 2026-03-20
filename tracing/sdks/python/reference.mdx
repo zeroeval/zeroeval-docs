@@ -119,6 +119,72 @@ with ze.span(name="data_processing") as current_span:
     current_span.set_io(input_data="input", output_data=str(result))
 ```
 
+### `artifact_span`
+
+Ergonomic wrapper for creating artifact-bearing spans. Produces a span with `kind="llm"` and the `completion_artifact_*` attributes pre-filled so the prompt completions page surfaces it as a first-class artifact.
+
+```python
+artifact_span(
+    name: str,
+    *,
+    artifact_type: str,
+    role: str = "primary",
+    label: Optional[str] = None,
+    kind: str = "llm",
+    session_id: Optional[str] = None,
+    session: Optional[Union[str, dict[str, str]]] = None,
+    attributes: Optional[dict[str, Any]] = None,
+    input_data: Optional[str] = None,
+    output_data: Optional[str] = None,
+    tags: Optional[dict[str, str]] = None,
+)
+```
+
+**Parameters:**
+
+- `name` (str): Name of the span
+- `artifact_type` (str): Artifact type identifier (e.g. `"final_decision"`, `"customer_card"`)
+- `role` (str): `"primary"` (used for row preview) or `"secondary"`. Defaults to `"primary"`
+- `label` (str, optional): Human-friendly label shown in the artifact switcher. Defaults to the span name
+- `kind` (str): Span kind. Defaults to `"llm"`
+- `session` (Union[str, dict], optional): Session information
+- `attributes` (dict, optional): Additional attributes merged with artifact metadata. Artifact keys take precedence
+- `input_data` (str, optional): Manual input data override
+- `output_data` (str, optional): Manual output data override
+- `tags` (dict, optional): Tags to attach to the span
+
+**Usage as Context Manager:**
+
+```python
+import zeroeval as ze
+
+with ze.artifact_span(
+    name="final-decision",
+    artifact_type="final_decision",
+    role="primary",
+    label="Final Decision",
+    tags={"judge_target": "support_ops_final_decision"},
+) as s:
+    s.set_io(input_data="ticket text", output_data=decision_json)
+```
+
+**Usage as Decorator:**
+
+```python
+@ze.artifact_span(
+    name="generate-card",
+    artifact_type="customer_card",
+    role="secondary",
+    label="Customer Card",
+)
+def generate_card(ticket):
+    return render_card(ticket)
+```
+
+<Note>
+  `ze.artifact_span` is available in the **Python SDK only** for now.
+</Note>
+
 ### `@experiment`
 
 Decorator that attaches dataset and model information to a function.
