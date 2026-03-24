@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
+  "theme": "luma",
   "name": "ZeroEval Documentation",
   "colors": {
     "primary": "#6B7280",

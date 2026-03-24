@@ -233,6 +233,81 @@ if (span) {
 }
 ```
 
+## Manual Prompt-Linked Spans
+
+When you want `ze.prompt()` to manage a specific LLM interaction but do not want global auto-instrumentation (e.g. your agent makes many LLM calls and only one should be tracked as a prompt generation), disable integrations and create the span yourself.
+
+### When to use this
+
+- Your codebase makes many LLM calls but only a subset should appear as prompt completions.
+- You use a provider that has no auto-integration (Vapi, a custom HTTP endpoint, etc.).
+- You want full control over which codepath produces prompt-linked traces.
+
+### Setup
+
+Disable integrations you do not want, then initialize:
+
+```typescript
+import * as ze from 'zeroeval';
+
+ze.init({
+  integrations: { openai: false, vercelAI: false },
+});
+```
+
+### Create a prompt-linked span
+
+1. Call `ze.prompt()` to register the prompt version and get a decorated string.
+2. Use `extractZeroEvalMetadata()` to split the decorated string into clean content and linkage metadata.
+3. Send the clean content to your provider.
+4. Wrap the call in `ze.withSpan()` with `kind: 'llm'` and the metadata in `attributes.zeroeval`.
+
+```typescript
+import * as ze from 'zeroeval';
+import { extractZeroEvalMetadata } from 'zeroeval';
+
+const decorated = await ze.prompt({
+  name: 'customer-support',
+  content: 'You are a helpful support agent for {{company}}.',
+  variables: { company: 'Acme' },
+  from: 'explicit',
+});
+
+const { metadata, cleanContent } = extractZeroEvalMetadata(decorated);
+
+await ze.withSpan(
+  {
+    name: 'llm.chat.completions.create',
+    attributes: {
+      kind: 'llm',
+      task: metadata!.task,
+      zeroeval: metadata,
+      provider: 'my-custom-provider',
+      model: 'gpt-4o',
+    },
+    inputData: [
+      { role: 'system', content: cleanContent },
+      { role: 'user', content: 'I need help with my order' },
+    ],
+    outputData: { role: 'assistant', content: response.text },
+  },
+  async () => {
+    // Make the actual provider call here
+    const response = await myProvider.chat([
+      { role: 'system', content: cleanContent },
+      { role: 'user', content: 'I need help with my order' },
+    ]);
+    return response;
+  }
+);
+```
+
+The span will be ingested as an `llm` span linked to the prompt version. Judge evaluations, feedback, and the prompt completions page all work as if an auto-integration created the span.
+
+<Note>
+  `extractZeroEvalMetadata` is exported from the top-level `zeroeval` package.
+</Note>
+
 ## Feedback
 
 To attach human or programmatic feedback to completions, see [Human Feedback](/feedback/human-feedback) and the [Feedback SDK docs](/feedback/typescript). For automated quality evaluations, see [Judges](/judges/introduction).
