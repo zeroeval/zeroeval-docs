@@ -171,6 +171,77 @@ with ze.artifact_span(
 
 See the full API and examples in [Python Tracing Reference](/tracing/sdks/python/reference#artifact_span).
 
+## Manual Prompt-Linked Spans
+
+When you want `ze.prompt()` to manage a specific LLM interaction but do not want global auto-instrumentation (e.g. your agent makes many LLM calls and only one should be tracked as a prompt generation), disable integrations and create the span yourself.
+
+### When to use this
+
+- Your codebase makes many LLM calls but only a subset should appear as prompt completions.
+- You use a provider that has no auto-integration (a custom HTTP endpoint, an internal model service, etc.).
+- You want full control over which codepath produces prompt-linked traces.
+
+### Setup
+
+Disable all integrations, then initialize:
+
+```python
+import zeroeval as ze
+
+ze.init(disabled_integrations=["openai", "gemini", "langchain", "langgraph"])
+```
+
+### Create a prompt-linked span
+
+Call `ze.prompt()` inside an active span so the SDK writes `task` / `zeroeval` metadata onto the trace. Then open a child span with `kind="llm"` (or use `ze.artifact_span()`) around your provider call. The SDK automatically propagates prompt linkage to child spans in the same trace.
+
+```python
+import zeroeval as ze
+
+def handle_request(user_message: str):
+    with ze.span(name="support-pipeline"):
+        system_prompt = ze.prompt(
+            name="customer-support",
+            content="You are a helpful support agent for {{company}}.",
+            variables={"company": "Acme"},
+            from_="explicit",
+        )
+
+        # The <zeroeval> tag is embedded in the string returned by ze.prompt().
+        # Strip it before sending to the provider if needed.
+        clean_content = system_prompt.split("</zeroeval>", 1)[-1]
+
+        with ze.span(name="llm.chat", kind="llm", attributes={
+            "provider": "my-custom-provider",
+            "model": "gpt-4o",
+        }) as llm_span:
+            response = my_provider.chat(
+                messages=[
+                    {"role": "system", "content": clean_content},
+                    {"role": "user", "content": user_message},
+                ]
+            )
+            llm_span.set_io(
+                input_data=user_message,
+                output_data=response.text,
+            )
+```
+
+The SDK automatically stamps prompt metadata (`task`, `zeroeval.prompt_version_id`, etc.) onto every span in the trace, so the inner `llm` span is linked to the prompt version without any extra wiring. Judge evaluations, feedback, and the prompt completions page all work as if an auto-integration created the span.
+
+You can also use `ze.artifact_span()` instead of `ze.span(kind="llm")` when you want the output to appear as a named completion artifact:
+
+```python
+with ze.artifact_span(
+    name="support-reply",
+    artifact_type="reply",
+    role="primary",
+    label="Support Reply",
+) as s:
+    response = my_provider.chat(messages=[...])
+    s.set_io(input_data=user_message, output_data=response.text)
+```
+
 ## Sending Feedback
 
 Attach feedback to completions to power prompt optimization:
