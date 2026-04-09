@@ -1,0 +1,183 @@
+---
+title: "PII redaction"
+description: "Opt-in SDK-side redaction for tracing data in the Python and TypeScript SDKs"
+---
+
+ZeroEval supports opt-in source-side PII redaction in the Python and TypeScript
+SDKs. When enabled, sensitive values are redacted before spans are buffered,
+logged, or sent by the SDK.
+
+<Note>
+  This is an SDK-side feature. ZeroEval does not rely on backend-side redaction
+  for this behavior.
+</Note>
+
+## Enable redaction
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import zeroeval as ze
+
+    ze.init(
+        api_key="YOUR_API_KEY",
+        redaction={"enabled": True},
+    )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import * as ze from "zeroeval";
+
+    ze.init({
+      apiKey: "YOUR_API_KEY",
+      redaction: { enabled: true },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+You can also enable the default redaction toggle with:
+
+```bash
+export ZEROEVAL_REDACT_PII=true
+```
+
+Python uses snake_case nested keys such as `redact_inputs`,
+`redact_session_names`, `sensitive_keys`, and `custom_patterns`. TypeScript uses
+the camelCase equivalents `redactInputs`, `redactSessionNames`,
+`sensitiveKeys`, and `customPatterns`.
+
+## What gets redacted
+
+By default, the SDKs redact sensitive values found in:
+
+- inputs and outputs
+- attributes
+- error messages and stacks
+- session names
+- tag values
+
+Built-in detectors cover:
+
+- email addresses
+- phone numbers
+- SSN-style identifiers
+- PAN / credit card numbers
+- bearer tokens, JWTs, and common API key formats
+- cookie and authorization header values
+- IP addresses
+
+Key-based detection also force-redacts common sensitive fields such as
+`email`, `phone`, `password`, `token`, `authorization`, `cookie`, and
+`api_key` / `apiKey`.
+
+## What stays intact
+
+Redaction is meant to preserve trace structure. The SDKs keep:
+
+- span names
+- trace IDs and span IDs
+- timing and status fields
+- token counts, model/provider metadata, and cost metadata unless the value
+  itself is sensitive
+
+## Placeholder behavior
+
+Sensitive values are replaced with stable placeholders inside a single trace:
+
+```text
+alice@example.com -> [REDACTED_EMAIL_A]
+bob@example.com   -> [REDACTED_EMAIL_B]
+alice@example.com -> [REDACTED_EMAIL_A]
+```
+
+- the same normalized sensitive value in one trace gets the same placeholder
+- different values in the same trace get different placeholders
+- placeholder assignment resets per trace
+- matching is exact after normalization only
+- this is not fuzzy identity resolution
+
+That means repeated references across parent and child spans stay joinable
+without preserving the original value.
+
+## Normalization and limitations
+
+| Type | Normalization used for placeholder reuse |
+| --- | --- |
+| Email | Trim + lowercase |
+| Phone | Digits only |
+| SSN / PAN | Digits only |
+| IP | Canonical or lowercase string as implemented by each SDK |
+| Secrets | Exact trimmed string |
+
+Important limitations:
+
+- there is no reversible backend token vault
+- there is no de-anonymization support
+- there is no fuzzy entity resolution across semantically related strings
+- bypassing SDK capture paths bypasses this protection
+
+## Examples
+
+The SDK repositories include runnable examples that match the implemented
+behavior:
+
+<Tabs>
+  <Tab title="Python">
+    From `zeroeval-sdk/examples/pii_redaction.py`:
+
+    ```python
+    import zeroeval as ze
+
+    ze.init(
+        api_key="sk_ze_demo_local",
+        redaction={"enabled": True},
+    )
+
+    with ze.span(
+        name="pii-redaction-demo",
+        session={"id": "alice@example.com", "name": "Alice alice@example.com"},
+        tags={"customer_email": "alice@example.com"},
+    ) as span:
+        span.set_io(
+            input_data={"email": "alice@example.com", "phone": "+1 (415) 555-1234"},
+            output_data={"result": "Reach alice@example.com"},
+        )
+        span.set_error(
+            code="ValueError",
+            message="Failed for alice@example.com with Bearer secret-demo-token",
+        )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    From `zeroeval-ts/examples/10-pii-redaction.ts`:
+
+    ```typescript
+    import * as ze from "zeroeval";
+
+    ze.init({
+      apiKey: "demo-api-key",
+      redaction: { enabled: true },
+    });
+
+    const span = ze.tracer.startSpan("demo.pii_redaction", {
+      sessionId: "alice@example.com",
+      sessionName: "Alice Example <alice@example.com>",
+      tags: { customer_email: "alice@example.com" },
+    });
+
+    span.setIO(
+      {
+        email: "alice@example.com",
+        phone: "+1 (415) 555-1212",
+        apiKey: "sk-live-abcdef1234567890",
+      },
+      "Send follow-up to alice@example.com and bob@example.com"
+    );
+    ```
+  </Tab>
+</Tabs>
+
+In both SDKs, repeated exact values such as the same email address will reuse
+the same placeholder within the trace.

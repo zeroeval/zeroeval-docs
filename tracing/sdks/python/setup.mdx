@@ -34,6 +34,12 @@ ze.init(api_key="YOUR_API_KEY")
   `~/.config/zeroeval/config.json`
 </Note>
 
+<Tip>
+  Need source-side PII redaction? Pass `redaction={"enabled": True}` to
+  `ze.init(...)` or set `ZEROEVAL_REDACT_PII=true`. See [PII
+  redaction](/tracing/pii-redaction).
+</Tip>
+
 ## Patterns
 
 ### Decorators
