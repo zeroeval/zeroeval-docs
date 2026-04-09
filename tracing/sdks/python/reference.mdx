@@ -24,10 +24,11 @@ def init(
     api_url: str = None,
     disabled_integrations: list[str] = None,
     enabled_integrations: list[str] = None,
-    setup_otlp: bool = True,
+    setup_otlp: bool = False,
     service_name: str = "zeroeval-app",
     tags: dict[str, str] = None,
-    sampling_rate: float = None
+    sampling_rate: float = None,
+    redaction: dict[str, object] = None
 ) -> None
 ```
 
@@ -40,10 +41,11 @@ def init(
 | `api_url`               | `str`            | `"https://api.zeroeval.com"` | API endpoint URL                                  |
 | `disabled_integrations` | `list[str]`      | `None`                       | Integrations to disable (e.g. `["langchain"]`)    |
 | `enabled_integrations`  | `list[str]`      | `None`                       | Only enable these integrations                    |
-| `setup_otlp`            | `bool`           | `True`                       | Configure OpenTelemetry OTLP export               |
+| `setup_otlp`            | `bool`           | `False`                      | Configure OpenTelemetry OTLP export               |
 | `service_name`          | `str`            | `"zeroeval-app"`             | OTLP service name                                 |
 | `tags`                  | `dict[str, str]` | `None`                       | Global tags applied to all spans                  |
 | `sampling_rate`         | `float`          | `None`                       | Sampling rate 0.0-1.0 (1.0 = sample all)          |
+| `redaction`             | `dict[str, object]` | `None`                    | Source-side PII redaction settings                |
 
 **Example:**
 
@@ -54,9 +56,29 @@ ze.init(
     api_key="your-api-key",
     sampling_rate=0.1,
     disabled_integrations=["langchain"],
+    redaction={"enabled": True},
     debug=True
 )
 ```
+
+`redaction` uses snake_case keys in Python:
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `bool` | `False` | Turn source-side redaction on |
+| `redact_inputs` | `bool` | `True` | Redact `input_data` |
+| `redact_outputs` | `bool` | `True` | Redact `output_data` |
+| `redact_attributes` | `bool` | `True` | Redact span attributes |
+| `redact_errors` | `bool` | `True` | Redact error messages and stacks |
+| `redact_session_names` | `bool` | `True` | Redact session names |
+| `redact_tag_values` | `bool` | `True` | Redact span, trace, and session tag values |
+| `sensitive_keys` | `list[str]` | built-in list | Force-redact matching keys such as `email`, `api_key`, `authorization`, and `cookie` |
+| `custom_patterns` | `list[Pattern[str] \| str]` | `[]` | Additional regex patterns to redact |
+
+<Tip>
+  See [PII redaction](/tracing/pii-redaction) for scope, placeholder behavior,
+  normalization rules, and examples.
+</Tip>
 
 ## Decorators
 
@@ -895,6 +917,7 @@ Set before importing ZeroEval to configure default behavior.
 | `ZEROEVAL_SAMPLING_RATE`         | float   | `"1.0"`                      | Sampling rate (0.0-1.0)                 |
 | `ZEROEVAL_DISABLED_INTEGRATIONS` | string  | `""`                         | Comma-separated integrations to disable |
 | `ZEROEVAL_DEBUG`                 | boolean | `"false"`                    | Enable debug logging                    |
+| `ZEROEVAL_REDACT_PII`            | boolean | `"false"`                    | Enable SDK-side PII redaction           |
 
 ```bash
 export ZEROEVAL_API_KEY="ze_1234567890abcdef"
@@ -919,6 +942,7 @@ ze.tracer.configure(
     flush_interval=0.5,
     max_spans=100,
     sampling_rate=0.05,
+    redaction={"enabled": True},
     integrations={"openai": True, "langchain": False}
 )
 ```

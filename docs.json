@@ -17,6 +17,7 @@
             "group": "Tracing",
             "pages": [
               "tracing/introduction",
+              "tracing/pii-redaction",
               {
                 "group": "SDKs",
                 "pages": [
@@ -128,6 +129,11 @@
     ]
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude"
+    ]
   }
 }

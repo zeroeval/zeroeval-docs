@@ -25,12 +25,13 @@ function init(opts?: InitOptions): void;
 | -------------------- | ------------------------- | -------------------------- | --------------------------------------- |
 | `apiKey`             | `string`                  | `ZEROEVAL_API_KEY` env     | Your ZeroEval API key                   |
 | `apiUrl`             | `string`                  | `https://api.zeroeval.com` | Custom API URL                          |
-| `workspaceName`      | `string`                  | `"Personal Organization"`  | Workspace/organization name             |
+| `workspaceName`      | `string`                  | `"Personal Workspace"`     | Workspace/organization name             |
 | `flushInterval`      | `number`                  | `10`                       | Interval in seconds to flush spans      |
 | `maxSpans`           | `number`                  | `100`                      | Maximum spans to buffer before flushing |
 | `collectCodeDetails` | `boolean`                 | `true`                     | Capture source code context             |
 | `integrations`       | `Record<string, boolean>` | —                          | Enable/disable specific integrations    |
 | `debug`              | `boolean`                 | `false`                    | Enable debug logging                    |
+| `redaction`          | `Partial<RedactionConfig>` | —                         | Source-side PII redaction settings      |
 
 #### Example
 
@@ -39,9 +40,29 @@ import * as ze from "zeroeval";
 
 ze.init({
   apiKey: "your-api-key",
+  redaction: { enabled: true },
   debug: true,
 });
 ```
+
+`redaction` uses camelCase keys in TypeScript:
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enabled` | `boolean` | `false` | Turn source-side redaction on |
+| `redactInputs` | `boolean` | `true` | Redact `input_data` |
+| `redactOutputs` | `boolean` | `true` | Redact `output_data` |
+| `redactAttributes` | `boolean` | `true` | Redact span attributes |
+| `redactErrors` | `boolean` | `true` | Redact error messages and stacks |
+| `redactSessionNames` | `boolean` | `true` | Redact session names |
+| `redactTagValues` | `boolean` | `true` | Redact span, trace, and session tag values |
+| `sensitiveKeys` | `string[]` | built-in list | Force-redact matching keys such as `email`, `apiKey`, `authorization`, and `cookie` |
+| `customPatterns` | `Array<RegExp \| string>` | `[]` | Additional patterns to redact |
+
+<Tip>
+  See [PII redaction](/tracing/pii-redaction) for scope, placeholder behavior,
+  normalization rules, and examples.
+</Tip>
 
 ---
 
@@ -408,6 +429,7 @@ Set before importing ZeroEval to configure default behavior.
 | `ZEROEVAL_SAMPLING_RATE`         | float   | `"1.0"`                      | Sampling rate (0.0-1.0)                 |
 | `ZEROEVAL_DISABLED_INTEGRATIONS` | string  | `""`                         | Comma-separated integrations to disable |
 | `ZEROEVAL_DEBUG`                 | boolean | `"false"`                    | Enable debug logging                    |
+| `ZEROEVAL_REDACT_PII`            | boolean | `"false"`                    | Enable SDK-side PII redaction           |
 
 ```bash
 export ZEROEVAL_API_KEY="ze_1234567890abcdef"

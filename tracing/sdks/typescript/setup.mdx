@@ -41,6 +41,12 @@ ze.init({
 });
 ```
 
+<Tip>
+  Need source-side PII redaction? Pass `redaction: { enabled: true }` to
+  `init(...)` or set `ZEROEVAL_REDACT_PII=true`. See [PII
+  redaction](/tracing/pii-redaction).
+</Tip>
+
 ## Patterns
 
 The SDK offers two ways to add tracing to your TypeScript/JavaScript code:
@@ -251,6 +257,7 @@ ze.init({
   maxSpans: 200,              // Buffer up to 200 spans
   collectCodeDetails: true,   // Capture source code context
   debug: false,               // Enable debug logging
+  redaction: { enabled: true },
   integrations: {
     openai: true,             // Enable OpenAI integration
     vercelAI: true,           // Enable Vercel AI SDK integration
