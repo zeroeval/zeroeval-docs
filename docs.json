@@ -17,7 +17,6 @@
             "group": "Tracing",
             "pages": [
               "tracing/introduction",
-              "tracing/pii-redaction",
               {
                 "group": "SDKs",
                 "pages": [
@@ -39,6 +38,7 @@
                   }
                 ]
               },
+              "tracing/pii-redaction",
               "tracing/api-reference",
               "tracing/opentelemetry"
             ]
