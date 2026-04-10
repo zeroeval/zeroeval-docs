@@ -45,19 +45,17 @@ ze.init({
 });
 ```
 
-`redaction` uses camelCase keys in TypeScript:
+`redaction` uses camelCase keys in TypeScript. Redaction applies only to
+ingested payload fields (`input_data` and `output_data`). Attributes, tags,
+session metadata, and error messages are not redacted.
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enabled` | `boolean` | `false` | Turn source-side redaction on |
 | `redactInputs` | `boolean` | `true` | Redact `input_data` |
 | `redactOutputs` | `boolean` | `true` | Redact `output_data` |
-| `redactAttributes` | `boolean` | `true` | Redact span attributes |
-| `redactErrors` | `boolean` | `true` | Redact error messages and stacks |
-| `redactSessionNames` | `boolean` | `true` | Redact session names |
-| `redactTagValues` | `boolean` | `true` | Redact span, trace, and session tag values |
-| `sensitiveKeys` | `string[]` | built-in list | Force-redact matching keys such as `email`, `apiKey`, `authorization`, and `cookie` |
-| `customPatterns` | `Array<RegExp \| string>` | `[]` | Additional patterns to redact |
+| `sensitiveKeys` | `string[]` | built-in list | Force-redact matching keys such as `email`, `apiKey`, `authorization`, and `cookie` inside IO payloads |
+| `customPatterns` | `Array<RegExp \| string>` | `[]` | Additional patterns to redact inside IO payloads |
 
 <Tip>
   See [PII redaction](/tracing/pii-redaction) for scope, placeholder behavior,

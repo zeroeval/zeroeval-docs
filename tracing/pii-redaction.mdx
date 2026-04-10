@@ -4,8 +4,8 @@ description: "Opt-in SDK-side redaction for tracing data in the Python and TypeS
 ---
 
 ZeroEval supports opt-in source-side PII redaction in the Python and TypeScript
-SDKs. When enabled, sensitive values are redacted before spans are buffered,
-logged, or sent by the SDK.
+SDKs. When enabled, sensitive values in ingested payload fields (`input_data`
+and `output_data`) are redacted before spans are sent by the SDK.
 
 <Note>
   This is an SDK-side feature. ZeroEval does not rely on backend-side redaction
@@ -43,20 +43,19 @@ You can also enable the default redaction toggle with:
 export ZEROEVAL_REDACT_PII=true
 ```
 
-Python uses snake_case nested keys such as `redact_inputs`,
-`redact_session_names`, `sensitive_keys`, and `custom_patterns`. TypeScript uses
-the camelCase equivalents `redactInputs`, `redactSessionNames`,
+Python uses snake_case nested keys such as `redact_inputs`, `sensitive_keys`,
+and `custom_patterns`. TypeScript uses the camelCase equivalents `redactInputs`,
 `sensitiveKeys`, and `customPatterns`.
 
 ## What gets redacted
 
-By default, the SDKs redact sensitive values found in:
+Redaction applies to ingested payload fields only:
 
-- inputs and outputs
-- attributes
-- error messages and stacks
-- session names
-- tag values
+- `input_data` (the value passed to `setIO` / `set_io`)
+- `output_data` (the value passed to `setIO` / `set_io`)
+
+When wrapper integrations (OpenAI, Vercel AI, LangChain) serialize prompts and
+tool arguments into these IO fields, those values are also redacted.
 
 Built-in detectors cover:
 
@@ -68,19 +67,23 @@ Built-in detectors cover:
 - cookie and authorization header values
 - IP addresses
 
-Key-based detection also force-redacts common sensitive fields such as
+Key-based detection force-redacts common sensitive fields such as
 `email`, `phone`, `password`, `token`, `authorization`, `cookie`, and
-`api_key` / `apiKey`.
+`api_key` / `apiKey` when they appear inside ingested IO payloads.
 
 ## What stays intact
 
-Redaction is meant to preserve trace structure. The SDKs keep:
+All span metadata outside of `input_data` and `output_data` is preserved
+unchanged:
 
 - span names
 - trace IDs and span IDs
 - timing and status fields
-- token counts, model/provider metadata, and cost metadata unless the value
-  itself is sensitive
+- attributes
+- tags, trace tags, and session tags
+- session identifiers and session names
+- error messages and stacks
+- token counts, model/provider metadata, and cost metadata
 
 ## Placeholder behavior
 
@@ -120,8 +123,9 @@ Important limitations:
 
 ## Examples
 
-The SDK repositories include runnable examples that match the implemented
-behavior:
+The SDK repositories include runnable examples. In both examples, only the
+values passed to `set_io` / `setIO` are redacted. Session metadata, tags,
+attributes, and error messages are sent unchanged.
 
 <Tabs>
   <Tab title="Python">
@@ -144,14 +148,16 @@ behavior:
             input_data={"email": "alice@example.com", "phone": "+1 (415) 555-1234"},
             output_data={"result": "Reach alice@example.com"},
         )
-        span.set_error(
-            code="ValueError",
-            message="Failed for alice@example.com with Bearer secret-demo-token",
-        )
     ```
+
+    In the resulting span:
+    - `input_data.email` becomes `[REDACTED_EMAIL_A]`
+    - `input_data.phone` becomes `[REDACTED_PHONE_A]`
+    - `output_data.result` contains `[REDACTED_EMAIL_A]`
+    - `session_id`, `session_name`, and `tags.customer_email` stay as-is
   </Tab>
   <Tab title="TypeScript">
-    From `zeroeval-ts/examples/10-pii-redaction.ts`:
+    From `zeroeval-ts-sdk/examples/10-pii-redaction.ts`:
 
     ```typescript
     import * as ze from "zeroeval";
@@ -176,8 +182,14 @@ behavior:
       "Send follow-up to alice@example.com and bob@example.com"
     );
     ```
+
+    In the resulting span:
+    - `input_data` contains `[REDACTED_EMAIL_A]`, `[REDACTED_PHONE_A]`,
+      `[REDACTED_SECRET_A]`
+    - `output_data` contains `[REDACTED_EMAIL_A]` and `[REDACTED_EMAIL_B]`
+    - `sessionId`, `sessionName`, and `tags.customer_email` stay as-is
   </Tab>
 </Tabs>
 
-In both SDKs, repeated exact values such as the same email address will reuse
-the same placeholder within the trace.
+Repeated exact values such as the same email address reuse the same
+placeholder within a trace.

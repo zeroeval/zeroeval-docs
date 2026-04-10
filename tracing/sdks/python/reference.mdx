@@ -61,19 +61,17 @@ ze.init(
 )
 ```
 
-`redaction` uses snake_case keys in Python:
+`redaction` uses snake_case keys in Python. Redaction applies only to
+ingested payload fields (`input_data` and `output_data`). Attributes, tags,
+session metadata, and error messages are not redacted.
 
 | Key | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enabled` | `bool` | `False` | Turn source-side redaction on |
 | `redact_inputs` | `bool` | `True` | Redact `input_data` |
 | `redact_outputs` | `bool` | `True` | Redact `output_data` |
-| `redact_attributes` | `bool` | `True` | Redact span attributes |
-| `redact_errors` | `bool` | `True` | Redact error messages and stacks |
-| `redact_session_names` | `bool` | `True` | Redact session names |
-| `redact_tag_values` | `bool` | `True` | Redact span, trace, and session tag values |
-| `sensitive_keys` | `list[str]` | built-in list | Force-redact matching keys such as `email`, `api_key`, `authorization`, and `cookie` |
-| `custom_patterns` | `list[Pattern[str] \| str]` | `[]` | Additional regex patterns to redact |
+| `sensitive_keys` | `list[str]` | built-in list | Force-redact matching keys such as `email`, `api_key`, `authorization`, and `cookie` inside IO payloads |
+| `custom_patterns` | `list[Pattern[str] \| str]` | `[]` | Additional regex patterns to redact inside IO payloads |
 
 <Tip>
   See [PII redaction](/tracing/pii-redaction) for scope, placeholder behavior,
