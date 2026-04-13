@@ -161,6 +161,75 @@ if __name__ == "__main__":
     agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
 ```
 
+## Claude Agent SDK
+
+Anthropic's Python [Claude Agent SDK](https://pypi.org/project/claude-agent-sdk/) (`claude-agent-sdk`) is automatically traced. Each agent turn becomes its own ZeroEval trace, and all turns in the same Claude conversation are grouped into one ZeroEval session via the `claude_session_id` attribute.
+
+### One-shot query
+
+```python
+import zeroeval as ze
+ze.init()
+
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+from claude_agent_sdk.types import AssistantMessage, TextBlock
+
+async for message in query(
+    prompt="What are the three largest cities in Japan?",
+    options=ClaudeAgentOptions(
+        permission_mode="plan",
+        max_turns=3,
+    ),
+):
+    if isinstance(message, AssistantMessage):
+        for block in message.content:
+            if isinstance(block, TextBlock):
+                print(block.text)
+    elif isinstance(message, ResultMessage):
+        print(f"Cost: ${message.total_cost_usd:.4f}")
+```
+
+### Multi-turn conversation
+
+With `ClaudeSDKClient`, each `query()` call opens a new trace while all turns in the same conversation share a single session.
+
+```python
+import zeroeval as ze
+ze.init()
+
+from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
+from claude_agent_sdk.types import AssistantMessage, ResultMessage, TextBlock
+
+async with ClaudeSDKClient(
+    options=ClaudeAgentOptions(permission_mode="plan", max_turns=3)
+) as client:
+    await client.query("What is the population of Tokyo?")
+    async for msg in client.receive_response():
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if isinstance(block, TextBlock):
+                    print(block.text)
+
+    await client.query("How does that compare to Osaka?")
+    async for msg in client.receive_response():
+        if isinstance(msg, AssistantMessage):
+            for block in msg.content:
+                if isinstance(block, TextBlock):
+                    print(block.text)
+```
+
+<Info>
+ZeroEval automatically captures assistant output, tool use and tool result summaries, total cost, token usage, stop reason, permission decisions from `can_use_tool` callbacks, hook metadata, and partial stream event counts when `include_partial_messages` is enabled.
+</Info>
+
+<Tip>
+To disable the Claude Agent SDK integration, pass `disabled_integrations=["claude_agent"]` to `ze.init()` or set `ZEROEVAL_DISABLED_INTEGRATIONS=claude_agent`.
+</Tip>
+
+<Note>
+Only public Claude Agent SDK APIs are instrumented -- private transport and protocol internals are not patched. The Claude CLI's own OpenTelemetry output (beta) is separate from this integration; if you need both, enable `CLAUDE_CODE_ENABLE_TELEMETRY=1` in `ClaudeAgentOptions.env` and point an OTLP collector at each backend independently.
+</Note>
+
 <Note>
   Need help? Contact us at [founders@zeroeval.com](mailto:founders@zeroeval.com) or join our [Discord](https://discord.gg/MuExkGMNVz).
-</Note> 
+</Note>

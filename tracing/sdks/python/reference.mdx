@@ -947,20 +947,21 @@ ze.tracer.configure(
 
 ## Available Integrations
 
-| Integration            | Name          | Auto-Instruments     |
-| ---------------------- | ------------- | -------------------- |
-| `OpenAIIntegration`    | `"openai"`    | OpenAI client calls  |
-| `GeminiIntegration`    | `"gemini"`    | Google Gemini calls  |
-| `LangChainIntegration` | `"langchain"` | LangChain components |
-| `LangGraphIntegration` | `"langgraph"` | LangGraph workflows  |
-| `HttpxIntegration`     | `"httpx"`     | HTTPX requests       |
-| `VocodeIntegration`    | `"vocode"`    | Vocode voice SDK     |
+| Integration                | Name              | Auto-Instruments              |
+| -------------------------- | ----------------- | ----------------------------- |
+| `OpenAIIntegration`        | `"openai"`        | OpenAI client calls           |
+| `GeminiIntegration`        | `"gemini"`        | Google Gemini calls           |
+| `LangChainIntegration`     | `"langchain"`     | LangChain components          |
+| `LangGraphIntegration`     | `"langgraph"`     | LangGraph workflows           |
+| `ClaudeAgentIntegration`   | `"claude_agent"`  | Claude Agent SDK turns        |
+| `HttpxIntegration`         | `"httpx"`         | HTTPX requests                |
+| `VocodeIntegration`        | `"vocode"`        | Vocode voice SDK              |
 
 Control integrations via:
 
-- **Environment:** `ZEROEVAL_DISABLED_INTEGRATIONS="langchain,langgraph"`
-- **Init:** `disabled_integrations=["langchain"]` or `enabled_integrations=["openai"]`
-- **Runtime:** `ze.tracer.configure(integrations={"langchain": False})`
+- **Environment:** `ZEROEVAL_DISABLED_INTEGRATIONS="langchain,claude_agent"`
+- **Init:** `disabled_integrations=["claude_agent"]` or `enabled_integrations=["openai"]`
+- **Runtime:** `ze.tracer.configure(integrations={"claude_agent": False})`
 
 ## Configuration Examples
 
