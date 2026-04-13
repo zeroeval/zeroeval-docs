@@ -78,6 +78,7 @@ function wrap<T extends object>(client: T): WrappedClient<T>;
 
 - OpenAI SDK (`openai` package)
 - Vercel AI SDK (`ai` package)
+- Claude Agent SDK (`@anthropic-ai/claude-agent-sdk` package)
 
 #### Examples
 
@@ -93,6 +94,54 @@ import * as ai from "ai";
 import * as ze from "zeroeval";
 
 const wrappedAI = ze.wrap(ai);
+
+// Claude Agent SDK
+import * as ze from "zeroeval";
+
+const claudeAgentSdk = await import("@anthropic-ai/claude-agent-sdk");
+const sdk = ze.wrap(claudeAgentSdk);
+```
+
+### `wrapClaudeAgentSdk()`
+
+Wraps the entire `@anthropic-ai/claude-agent-sdk` module so that `query()` and session helpers are automatically traced.
+
+```typescript
+function wrapClaudeAgentSdk<T extends object>(module: T): T;
+```
+
+#### Example
+
+```typescript
+import * as ze from "zeroeval";
+
+const claudeAgentSdk = await import("@anthropic-ai/claude-agent-sdk");
+const sdk = ze.wrapClaudeAgentSdk(claudeAgentSdk);
+
+for await (const message of sdk.query({ prompt: "Hello!" })) {
+  // each query() call is traced as a claude_agent.query span
+}
+```
+
+### `wrapClaudeAgentQuery()`
+
+Wraps only the `query` function from the Claude Agent SDK.
+
+```typescript
+function wrapClaudeAgentQuery(queryFn: QueryFn): QueryFn;
+```
+
+#### Example
+
+```typescript
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import * as ze from "zeroeval";
+
+const tracedQuery = ze.wrapClaudeAgentQuery(query);
+
+for await (const message of tracedQuery({ prompt: "Hello!" })) {
+  // traced as a claude_agent.query span
+}
 ```
 
 ---
@@ -448,6 +497,7 @@ ze.init({
   integrations: {
     openai: true,
     vercelAI: true,
+    claudeAgent: true,
   },
 });
 ```

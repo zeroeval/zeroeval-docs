@@ -121,6 +121,70 @@ const result = await chain.invoke(
 );
 ```
 
+## Claude Agent SDK
+
+Anthropic's [`@anthropic-ai/claude-agent-sdk`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) is natively traced. Each agent `query()` call becomes its own ZeroEval trace, and all turns in the same Claude conversation are grouped into one ZeroEval session via the `claude_session_id` attribute.
+
+```bash
+npm install @anthropic-ai/claude-agent-sdk
+```
+
+### Wrap the whole module (recommended)
+
+```typescript
+import * as ze from 'zeroeval';
+
+ze.init();
+
+const claudeAgentSdk = await import('@anthropic-ai/claude-agent-sdk');
+const sdk = ze.wrapClaudeAgentSdk(claudeAgentSdk);
+
+for await (const message of sdk.query({
+  prompt: 'What files are in this directory?',
+  options: { allowedTools: ['Bash', 'Glob'] },
+})) {
+  if ('result' in message && message.type === 'result') {
+    console.log('Result:', message.result);
+  }
+}
+```
+
+### Wrap only the query function
+
+If you only need to trace `query()` calls, you can wrap the function directly:
+
+```typescript
+import * as ze from 'zeroeval';
+import { query } from '@anthropic-ai/claude-agent-sdk';
+
+ze.init();
+
+const tracedQuery = ze.wrapClaudeAgentQuery(query);
+
+for await (const message of tracedQuery({
+  prompt: 'List all TypeScript files',
+  options: { allowedTools: ['Glob'] },
+})) {
+  if ('result' in message && message.type === 'result') {
+    console.log('Result:', message.result);
+  }
+}
+```
+
+### What gets traced
+
+The Claude Agent SDK integration automatically captures:
+- Assistant output text and tool use summaries
+- Token usage, total cost, and stop reason
+- Permission decisions from `canUseTool` callbacks
+- Hook metadata
+- Stream event counts when partial messages are enabled
+- Session grouping across multi-turn conversations via `claude_session_id`
+
+<Note>
+Only public Claude Agent SDK APIs are instrumented -- private transport and protocol internals are not patched.
+</Note>
+
 ## Auto-Detection
 
 The `wrap()` function automatically detects which client you're wrapping:
@@ -137,6 +201,10 @@ const openai = ze.wrap(new OpenAI());
 
 // Automatically detected as Vercel AI SDK
 const wrappedAI = ze.wrap(ai);
+
+// Automatically detected as Claude Agent SDK
+const claudeAgentSdk = await import('@anthropic-ai/claude-agent-sdk');
+const sdk = ze.wrap(claudeAgentSdk);
 ```
 
 <Info>
