@@ -24,7 +24,7 @@ def init(
     api_url: str = None,
     disabled_integrations: list[str] = None,
     enabled_integrations: list[str] = None,
-    setup_otlp: bool = True,
+    setup_otlp: bool = False,
     service_name: str = "zeroeval-app",
     tags: dict[str, str] = None,
     sampling_rate: float = None
@@ -40,7 +40,7 @@ def init(
 | `api_url`               | `str`            | `"https://api.zeroeval.com"` | API endpoint URL                                  |
 | `disabled_integrations` | `list[str]`      | `None`                       | Integrations to disable (e.g. `["langchain"]`)    |
 | `enabled_integrations`  | `list[str]`      | `None`                       | Only enable these integrations                    |
-| `setup_otlp`            | `bool`           | `True`                       | Configure OpenTelemetry OTLP export               |
+| `setup_otlp`            | `bool`           | `False`                      | Capture OpenTelemetry spans from other libraries   |
 | `service_name`          | `str`            | `"zeroeval-app"`             | OTLP service name                                 |
 | `tags`                  | `dict[str, str]` | `None`                       | Global tags applied to all spans                  |
 | `sampling_rate`         | `float`          | `None`                       | Sampling rate 0.0-1.0 (1.0 = sample all)          |

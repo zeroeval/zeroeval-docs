@@ -121,6 +121,51 @@ def resolve_ticket(ticket):
   `ze.artifact_span` is available in the **Python SDK only** for now.
 </Note>
 
+## Threading
+
+The SDK automatically propagates span context across `threading.Thread` and `ThreadPoolExecutor` workers. Spans created in child threads nest under the parent with no extra code:
+
+```python
+import threading
+import zeroeval as ze
+
+def process_chunk(chunk_id):
+    with ze.span("process_chunk", tags={"chunk": chunk_id}):
+        # This span is a child of "parallel_pipeline"
+        return analyze(chunk_id)
+
+with ze.span("parallel_pipeline"):
+    threads = [threading.Thread(target=process_chunk, args=(i,)) for i in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+```
+
+## Multi-Process Apps (Celery, Workers)
+
+`ze.init()` is idempotent — calling it multiple times is safe. Place it inside the function that runs in the process you want to trace, not at module scope in shared files:
+
+```python
+from celery import Celery
+
+app = Celery("tasks")
+
+@app.task
+def my_task(data):
+    import zeroeval as ze
+    ze.init()  # safe to call every invocation
+
+    with ze.span("my_task"):
+        return process(data)
+```
+
+<Warning>
+  Avoid calling `ze.init()` at module scope in files imported by multiple
+  processes (e.g. both an API server and a Celery worker). This can cause
+  duplicate spans from the process that shouldn't be tracing.
+</Warning>
+
 ## Advanced Configuration
 
 Fine-tune the tracer behavior:
@@ -128,7 +173,6 @@ Fine-tune the tracer behavior:
 ```python
 from zeroeval.observability.tracer import tracer
 
-# Configure tracer settings
 tracer.configure(
     flush_interval=5.0,        # Flush every 5 seconds
     max_spans=200,             # Buffer up to 200 spans

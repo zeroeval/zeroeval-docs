@@ -11,16 +11,22 @@ They work with Cursor, Claude Code, Codex, and 30+ other agents that support the
 
 <CardGroup cols={2}>
   <Card title="zeroeval-install" icon="download">
-    Installs the SDK (Python or TypeScript), verifies your first trace, migrates prompts to `ze.prompt`, and recommends starter judges. Routes to `custom-tracing` for non-SDK languages.
+    Installs the SDK (Python or TypeScript), verifies your first trace, migrates
+    prompts to `ze.prompt`, and recommends starter judges. Routes to
+    `custom-tracing` for non-SDK languages.
   </Card>
   <Card title="custom-tracing" icon="code">
-    Send traces to ZeroEval without the SDK. Covers direct REST API ingestion (`POST /spans`) and OpenTelemetry (OTLP) export for any language.
+    Send traces to ZeroEval without the SDK. Covers direct REST API ingestion
+    (`POST /spans`) and OpenTelemetry (OTLP) export for any language.
   </Card>
   <Card title="create-judge" icon="gavel">
-    Helps you pick an evaluation type (binary or scored), write a judge template, define criteria, and create the judge via dashboard or API.
+    Helps you pick an evaluation type (binary or scored), write a judge
+    template, define criteria, and create the judge via dashboard or API.
   </Card>
   <Card title="prompt-migration" icon="arrows-rotate">
-    Migrates hardcoded prompts to `ze.prompt`, wires feedback collection, connects judges, and walks through the staged rollout to prompt optimization.
+    Migrates hardcoded prompts to `ze.prompt`, wires feedback collection,
+    connects judges, and walks through the staged rollout to prompt
+    optimization.
   </Card>
 </CardGroup>
 
@@ -74,7 +80,9 @@ cp -r zeroeval-skills/skills/prompt-migration .claude/skills/prompt-migration
 </CodeGroup>
 
 <Note>
-On Windows without symlink support, use `npx skills` or the manual copy method. The `plugins/` directory in the repo contains symlinks that may not resolve on Windows.
+  On Windows without symlink support, use `npx skills` or the manual copy
+  method. The `plugins/` directory in the repo contains symlinks that may not
+  resolve on Windows.
 </Note>
 
 ## Requirements
@@ -84,7 +92,9 @@ On Windows without symlink support, use `npx skills` or the manual copy method. 
 - **Direct API / OTLP path** (custom-tracing): any language with an HTTP client or OpenTelemetry exporter
 
 <Tip>
-The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills) has the latest skill content and deeper reference playbooks. This page covers discovery and install only.
+  The [zeroeval-skills GitHub repo](https://github.com/zeroeval/zeroeval-skills)
+  has the latest skill content and deeper reference playbooks. This page covers
+  discovery and install only.
 </Tip>
 
 ## After installation

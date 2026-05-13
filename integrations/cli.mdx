@@ -25,6 +25,7 @@ For non-interactive environments like CI or coding agents, use `auth set` instea
 ```bash
 zeroeval auth set --api-key-env ZEROEVAL_API_KEY
 ```
+
 </Tip>
 
 ### Auth commands
@@ -47,6 +48,7 @@ The CLI resolves credentials in this order:
 3. Global CLI config file
 
 Config file location:
+
 - **macOS / Linux**: `~/.config/zeroeval/config.json` (or `$XDG_CONFIG_HOME/zeroeval/config.json`)
 - **Windows**: `%APPDATA%/zeroeval/config.json`
 
@@ -58,13 +60,13 @@ Global flags must appear **before** the subcommand:
 zeroeval --output json --project-id <id> --timeout 30.0 traces list
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--output text\|json` | `text` | Output format. `json` emits stable JSON to stdout, errors to stderr. |
-| `--project-id` | env / config | Project context. Required for monitoring, prompts, judges, and optimization commands. |
-| `--api-base-url` | `https://api.zeroeval.com` | Override the API URL. |
-| `--quiet` | off | Suppress non-essential output. |
-| `--timeout` | `20.0` | HTTP request timeout in seconds. |
+| Flag                  | Default                    | Description                                                                           |
+| --------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| `--output text\|json` | `text`                     | Output format. `json` emits stable JSON to stdout, errors to stderr.                  |
+| `--project-id`        | env / config               | Project context. Required for monitoring, prompts, judges, and optimization commands. |
+| `--api-base-url`      | `https://api.zeroeval.com` | Override the API URL.                                                                 |
+| `--quiet`             | off                        | Suppress non-essential output.                                                        |
+| `--timeout`           | `20.0`                     | HTTP request timeout in seconds.                                                      |
 
 ### Output modes
 
@@ -73,12 +75,12 @@ zeroeval --output json --project-id <id> --timeout 30.0 traces list
 
 ### Exit codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `2` | User / validation error |
-| `3` | Auth or permission error |
-| `4` | Remote API or network error |
+| Code | Meaning                     |
+| ---- | --------------------------- |
+| `0`  | Success                     |
+| `2`  | User / validation error     |
+| `3`  | Auth or permission error    |
+| `4`  | Remote API or network error |
 
 ## Querying and filtering
 
@@ -128,12 +130,12 @@ zeroeval sessions list --start-date 2025-01-01 --end-date 2025-02-01 --limit 50
 zeroeval sessions get <session_id>
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--start-date` | ISO date string lower bound |
-| `--end-date` | ISO date string upper bound |
-| `--limit` | Max results (default 50) |
-| `--offset` | Pagination offset (default 0) |
+| Flag           | Description                   |
+| -------------- | ----------------------------- |
+| `--start-date` | ISO date string lower bound   |
+| `--end-date`   | ISO date string upper bound   |
+| `--limit`      | Max results (default 50)      |
+| `--offset`     | Pagination offset (default 0) |
 
 ### Traces
 
@@ -191,7 +193,7 @@ zeroeval prompts feedback create \
 ```
 
 <Note>
-`--thumbs-up` and `--thumbs-down` are mutually exclusive and one is required.
+  `--thumbs-up` and `--thumbs-down` are mutually exclusive and one is required.
 </Note>
 
 ## Judges
@@ -220,11 +222,11 @@ zeroeval judges evaluations <judge_id> \
   --limit 200
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--evaluation-result` | `true` or `false` |
-| `--feedback-state` | Filter by feedback state |
-| `--start-date` / `--end-date` | Date range |
+| Flag                          | Description              |
+| ----------------------------- | ------------------------ |
+| `--evaluation-result`         | `true` or `false`        |
+| `--feedback-state`            | Filter by feedback state |
+| `--start-date` / `--end-date` | Date range               |
 
 ### Create a judge
 
@@ -249,21 +251,21 @@ zeroeval judges create \
   --pass-threshold 7
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--name` | required | Judge name |
-| `--prompt` | — | Inline prompt text (mutually exclusive with `--prompt-file`) |
-| `--prompt-file` | — | Path to file containing the prompt |
-| `--evaluation-type` | `binary` | `binary` or `scored` |
-| `--score-min` | `0.0` | Minimum score (scored only) |
-| `--score-max` | `10.0` | Maximum score (scored only) |
-| `--pass-threshold` | — | Pass threshold (scored only) |
-| `--sample-rate` | `1.0` | Fraction of spans to evaluate |
-| `--backfill` | `100` | Number of existing spans to backfill |
-| `--tag` | — | Tag filter in `key=value1,value2` format. Repeatable. |
-| `--tag-match` | `all` | `all` or `any` |
-| `--target-prompt-id` | — | Scope judge to a specific prompt |
-| `--temperature` | `0.0` | LLM temperature for judge |
+| Flag                 | Default  | Description                                                  |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `--name`             | required | Judge name                                                   |
+| `--prompt`           | —        | Inline prompt text (mutually exclusive with `--prompt-file`) |
+| `--prompt-file`      | —        | Path to file containing the prompt                           |
+| `--evaluation-type`  | `binary` | `binary` or `scored`                                         |
+| `--score-min`        | `0.0`    | Minimum score (scored only)                                  |
+| `--score-max`        | `10.0`   | Maximum score (scored only)                                  |
+| `--pass-threshold`   | —        | Pass threshold (scored only)                                 |
+| `--sample-rate`      | `1.0`    | Fraction of spans to evaluate                                |
+| `--backfill`         | `100`    | Number of existing spans to backfill                         |
+| `--tag`              | —        | Tag filter in `key=value1,value2` format. Repeatable.        |
+| `--tag-match`        | `all`    | `all` or `any`                                               |
+| `--target-prompt-id` | —        | Scope judge to a specific prompt                             |
+| `--temperature`      | `0.0`    | LLM temperature for judge                                    |
 
 ### Submit judge feedback
 
@@ -308,11 +310,11 @@ zeroeval optimize judge start <judge_id> --optimizer-type dspy_bootstrap
 zeroeval optimize judge promote <judge_id> <run_id> --yes
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--optimizer-type` | `quick_refine` | `quick_refine`, `dspy_bootstrap`, or `dspy_gepa` |
-| `--config` | — | JSON string of extra optimizer configuration |
-| `--yes` | off | Skip the confirmation prompt (also skipped in `--output json` mode) |
+| Flag               | Default        | Description                                                         |
+| ------------------ | -------------- | ------------------------------------------------------------------- |
+| `--optimizer-type` | `quick_refine` | `quick_refine`, `dspy_bootstrap`, or `dspy_gepa`                    |
+| `--config`         | —              | JSON string of extra optimizer configuration                        |
+| `--yes`            | off            | Skip the confirmation prompt (also skipped in `--output json` mode) |
 
 ## Spec (machine-readable manual)
 
